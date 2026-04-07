@@ -1,36 +1,25 @@
-
 <img src="./docs/images/1131.png" width = "350" height = "500" alt="Firefly" align=right />
 
 <div align="center">
 
-# Firefly
+# 团子和蛋糕的博客
 > A Fresh and Beautiful Astro Static Blog Theme Template
-> 
+>
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
 ![pnpm >= 9](https://img.shields.io/badge/pnpm-%3E%3D9-blue)
 ![Astro](https://img.shields.io/badge/Astro-5.17.2-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 >
-> [![Stars](https://img.shields.io/github/stars/CuteLeaf/Firefly?style=social)](https://github.com/CuteLeaf/Firefly/stargazers)
-[![Forks](https://img.shields.io/github/forks/CuteLeaf/Firefly?style=social)](https://github.com/CuteLeaf/Firefly/network/members)
-[![Issues](https://img.shields.io/github/issues/CuteLeaf/Firefly)](https://github.com/CuteLeaf/Firefly/issues)
-> 
-> [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z41NQALY)
-> 
 > ![GitHub License](https://img.shields.io/github/license/CuteLeaf/Firefly)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/CuteLeaf/Firefly)
-[![Afdian Sponsor](https://img.shields.io/badge/Afdian-Sponsor%20Author-ff69b4.svg)](https://afdian.com/a/cuteleaf)
 </div>
 
 
 ---
 📖 README:
-**[简体中文](README.zh.md)** | **[繁體中文](docs/README.zh-TW.md)** | **[English](README.md)** | **[日本語](docs/README.ja.md)** | **[Русский](docs/README.ru.md)** 
+**[简体中文](README.zh.md)** | **[English](README.md)**
 
 🚀 Quick Guide:
-[**🖥️Live Demo**](https://firefly.cuteleaf.cn/) /
-[**📝Documentation**](https://docs-firefly.cuteleaf.cn/) /
-[**🍀My Blog**](https://blog.cuteleaf.cn)
+[**🖥️Live Site**](https://blog.tsh520.cn/) 
 
 ⚡ Static Site Generation: Ultra-fast loading speed and SEO optimization based on Astro
 
@@ -44,13 +33,7 @@
 <img alt="Lighthouse" src="./docs/images/Lighthouse.png" />
 
 >[!TIP]
->Firefly is a fresh and beautiful personal blog theme template based on the Astro framework and the Fuwari template, designed for tech enthusiasts and content creators. This theme integrates modern web technology stacks, provides rich functional modules and highly customizable interfaces, allowing you to easily create a professional and beautiful personal blog website.
->
->In important layouts, Firefly innovatively adds dual sidebars, article grid (multi-column) layout, masonry layout, includes site statistics, calendar component, table of contents and other widgets to enrich the sidebar, while also retaining the original fuwari layout, which can be freely switched in the configuration file according to your preferences.
->
->**For more layout configurations and demos, please see: [Firefly Layout System Details](https://firefly.cuteleaf.cn/posts/firefly-layout-system/)**
->
->Firefly supports i18n multi-language switching, but except for Simplified Chinese, other languages are AI-translated. If there are any errors, welcome to submit [Pull Request](https://github.com/CuteLeaf/Firefly/pulls) for correction.
+>This is a personal blog website based on the Firefly theme template, which is built on the Astro framework. It features a modern design, rich functionality, and excellent performance, making it an ideal platform for sharing thoughts, knowledge, and life experiences.
 
 ## ✨ Features
 
@@ -59,8 +42,8 @@
 - [x] **Astro + Tailwind CSS** - Ultra-fast static site generation based on modern tech stack
 - [x] **Smooth Animations** - Swup page transition animations for silky smooth browsing experience
 - [x] **Responsive Design** - Perfect adaptation for desktop, tablet and mobile devices
-- [x] **Multi-language Support** - i18n internationalization, supports Simplified Chinese, Traditional Chinese, English, Japanese, Russian
-- [x] **Full-text Search** - Client-side search based on Pagefind, supports article content indexing.
+- [x] **Multi-language Support** - i18n internationalization, supports Simplified Chinese and English
+- [x] **Full-text Search** - Client-side search based on Pagefind, supports article content indexing
 
 ### Personalization
 - [x] **Dynamic Sidebar** - Supports single sidebar, dual sidebar configuration
@@ -82,10 +65,9 @@
 - [x] **Share Poster** - Supports generating beautiful article share posters
 - [x] **Sakura Effect** - Supports sakura effect, fullscreen sakura animation
 - [x] **Friend Links** - Beautiful friend links display page
-- [x] **Ad Component** - Supports custom sidebar advertising content
-- [x] **Bangumi** - Display anime and game tracking based on Bangumi API
-- [x] **Comment System** - Integrates Twikoo, Waline, Giscus, Disqus, Artalk comment systems
-- [x] **Visit Counter** - Supports calling Waline, Twikoo built-in visit tracking
+- [x] **Bangumi** - Display anime, games, books and music collection
+- [x] **Comment System** - Integrates Waline comment system
+- [x] **Visit Counter** - Supports calling Waline built-in visit tracking
 - [x] **Music Player** - Material Design 3 style music player
 
 ### Content Enhancement
@@ -102,9 +84,6 @@
 - [x] **SEO Optimization** - Complete meta tags and structured data
 - [x] **RSS Feed** - Automatically generates RSS Feed
 - [x] **Sitemap** - Automatically generates XML Sitemap with page filtering configuration
-- [x] **Analytics** - Integrates Google Analytics, Microsoft Clarity
-
-If you have useful features and optimizations, please submit a [Pull Request](https://github.com/CuteLeaf/Firefly/pulls)
 
 ## 🚀 Quick Start
 
@@ -117,17 +96,11 @@ If you have useful features and optimizations, please submit a [Pull Request](ht
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Cuteleaf/Firefly.git
-   cd Firefly
+   git clone https://github.com/your-username/dumplingandcakeblog.git
+   cd dumplingandcakeblog
    ```
-   
-   **First [Fork](https://github.com/CuteLeaf/Firefly/fork) to your own repository then clone (recommended). Don't forget to Star before Fork!**
 
-   ```bash
-   git clone https://github.com/you-github-name/Firefly.git
-   cd Firefly
-   ```
-3. **Install dependencies:**
+2. **Install dependencies:**
    ```bash
    # Install pnpm if not installed
    npm install -g pnpm
@@ -136,10 +109,10 @@ If you have useful features and optimizations, please submit a [Pull Request](ht
    pnpm install
    ```
 
-4. **Configure blog:**
+3. **Configure blog:**
    - Edit configuration files in `src/config/` directory to customize blog settings
 
-5. **Start development server:**
+4. **Start development server:**
    ```bash
    pnpm dev
    ```
@@ -160,8 +133,6 @@ If you have useful features and optimizations, please submit a [Pull Request](ht
 
 ## 📖 Configuration
 
-> 📚 **Detailed Configuration Documentation**: Check [Firefly Documentation](https://docs-firefly.cuteleaf.cn/) for complete configuration guide
-
 ### Setting Website Language
 
 To set the default language for your blog, edit the `src/config/siteConfig.ts` file:
@@ -173,10 +144,7 @@ const SITE_LANG = "zh_CN";
 
 **Supported language codes:**
 - `zh_CN` - Simplified Chinese
-- `zh_TW` - Traditional Chinese
 - `en` - English
-- `ja` - Japanese
-- `ru` - Russian
 
 ### Configuration File Structure
 
@@ -199,7 +167,6 @@ src/
 │   ├── navBarConfig.ts       # Navbar configuration
 │   ├── musicConfig.ts        # Music player configuration
 │   ├── pioConfig.ts          # Mascot configuration
-│   ├── adConfig.ts           # Ad configuration
 │   ├── friendsConfig.ts      # Friend links configuration
 │   ├── sponsorConfig.ts      # Sponsor configuration
 │   └── coverImageConfig.ts   # Article cover image configuration
@@ -227,9 +194,9 @@ comment: true    # Enable comments
 
 In addition to the default [GitHub Flavored Markdown](https://github.github.com/gfm/) support in Astro, there are some additional Markdown features:
 
-- Admonitions - Supports configuration for GitHub, Obsidian, and VitePress themes ([Preview and Usage](https://firefly.cuteleaf.cn/posts/markdown-extended/))
-- GitHub Repository Cards ([Preview and Usage](https://firefly.cuteleaf.cn/posts/markdown-extended/))
-- Enhanced Code Blocks based on Expressive Code ([Preview](http://firefly.cuteleaf.cn/posts/code-examples/) / [Documentation](https://expressive-code.com/))
+- Admonitions - Supports configuration for GitHub, Obsidian, and VitePress themes
+- GitHub Repository Cards
+- Enhanced Code Blocks based on Expressive Code
 
 ## 🧞 Commands
 
@@ -249,9 +216,7 @@ All commands need to be executed in the project root directory:
 
 ## 🙏 Acknowledgments
 
-Special thanks to [saicaca](https://github.com/saicaca) for developing the [fuwari](https://github.com/saicaca/fuwari) template, which Firefly is based on for secondary development.
-
-The copyright of Firefly-related image assets belongs to [miHoYo](https://www.mihoyo.com/), the developer of the game ["Honkai: Star Rail"](https://sr.mihoyo.com/).
+This blog is based on the [Firefly](https://github.com/CuteLeaf/Firefly) theme template, which is built on the [Astro](https://astro.build) framework and [Tailwind CSS](https://tailwindcss.com).
 
 ### Tech Stack
 
@@ -259,53 +224,15 @@ The copyright of Firefly-related image assets belongs to [miHoYo](https://www.mi
 - [Tailwind CSS](https://tailwindcss.com) 
 - [Iconify](https://iconify.design)
 
-### Inspiration Projects
-
-- [fuwari](https://github.com/saicaca/fuwari)
-- [hexo-theme-shoka](https://github.com/amehime/hexo-theme-shoka)
-- [astro-koharu](https://github.com/cosZone/astro-koharu)
-- [Mizuki](https://github.com/matsuzaka-yuki/Mizuki)
-
-### Other References
-- Blogger `霞葉` [Bangumi Collection](https://kasuha.com/posts/fuwari-enhance-ep2/) page component
-- Bilibili creator `公公的日常` Q-version [Firefly Mascot Spine Model](https://www.bilibili.com/video/BV1fuVzzdE5y)
-
 ## 📝 License
 
 This project is licensed under the [MIT license](https://mit-license.org/). See the [LICENSE](./LICENSE) file for details.
 
-Originally forked from [saicaca/fuwari](https://github.com/saicaca/fuwari). Thanks to the original author for their contributions. 
+Originally based on [CuteLeaf/Firefly](https://github.com/CuteLeaf/Firefly), which was forked from [saicaca/fuwari](https://github.com/saicaca/fuwari). Thanks to all the original contributors for their valuable work.
 
 **Copyright Notice:**
 - Copyright (c) 2024 [saicaca](https://github.com/saicaca) - [fuwari](https://github.com/saicaca/fuwari)
 - Copyright (c) 2025 [CuteLeaf](https://github.com/CuteLeaf) - [Firefly](https://github.com/CuteLeaf/Firefly)
+- Copyright (c) 2026 [团子和蛋糕](https://blog.tsh520.cn) - Personal Blog
 
 Under the MIT license, you are free to use, modify, and distribute the code, but you must retain the above copyright notice.
-
-## 🍀 Contributors
-
-Thanks to the following contributors for their contributions to this project. If you have any questions or suggestions, please submit an [Issue](https://github.com/CuteLeaf/Firefly/issues) or [Pull Request](https://github.com/CuteLeaf/Firefly/pulls).
-
-><a href="https://github.com/CuteLeaf/Firefly/graphs/contributors">
->  <img src="https://contrib.rocks/image?repo=CuteLeaf/Firefly" />
-></a>
-
-Thanks to the following contributors for their contributions to the original project [fuwari](https://github.com/saicaca/fuwari), which laid the foundation for this project.
-
-><a href="https://github.com/saicaca/fuwari/graphs/contributors">
->  <img src="https://contrib.rocks/image?repo=saicaca/fuwari" />
-></a>
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=CuteLeaf/Firefly&type=Date)](https://star-history.com/#CuteLeaf/Firefly&Date)
-
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
