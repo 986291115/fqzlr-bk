@@ -17,7 +17,7 @@
 
 ---
 📖 README：
-**[简体中文](README.zh.md)** | **[English](README.md)**
+**[简体中文](README.md)** | **[English](README.en.md)**
 
 🚀 快速指南：
 [**🖥️在线站点**](https://blog.tsh520.cn/) 
