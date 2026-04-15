@@ -1,7 +1,6 @@
 ---
 title: Java动态代理
 published: 2026-03-11
-description: Java学习
 image: https://re.tsh520.cn/cover/ThisCover_20260331_145936.webp
 tags:
   - java

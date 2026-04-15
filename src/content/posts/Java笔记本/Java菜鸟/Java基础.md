@@ -1,7 +1,6 @@
 ---
 title: Java基础
 published: 2026-02-06
-description: 记录Java基础学习笔记。
 image: https://re.tsh520.cn/cover/ThisCover_20260331_145949.webp
 tags:
   - java
