@@ -80,11 +80,11 @@ export const en: Translation = {
 	[Key.updatedAt]: "Updated at",
 	[Key.readTime]: "Read time",
 	[Key.license]: "License",
-	[Key.bangumi]: "Life",
+	[Key.bangumi]: "Records",
 	[Key.moments]: "Moments",
 
 	[Key.recentMoments]: "Recent Moments",
-	[Key.recentLife]: "Recent Life",
+	[Key.recentLife]: "Recent Records",
 	[Key.recentItems]: "Recent Updates",
 	// Bangumi Filter and Status Text
 	[Key.bangumiTitle]: "My Life Records",
@@ -252,6 +252,7 @@ export const en: Translation = {
 	[Key.siteStatsLastUpdate]: "Last Activity",
 	[Key.siteStatsDaysAgo]: "{days} days ago",
 	[Key.siteStatsDays]: "{days} days",
+	[Key.siteHeatmap]: "Activity Heatmap",
 	[Key.today]: "Today",
 
 	// Calendar Component

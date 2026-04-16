@@ -249,6 +249,7 @@ export const ru: Translation = {
 	[Key.siteStatsLastUpdate]: "Последняя активность",
 	[Key.siteStatsDaysAgo]: "{days} дней назад",
 	[Key.siteStatsDays]: "{days} дней",
+	[Key.siteHeatmap]: "Тепловая карта активности",
 	[Key.today]: "Сегодня",
 
 	// Компонент календаря

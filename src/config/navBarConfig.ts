@@ -35,10 +35,58 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	// 生活 (原本的番组计划)
 	if (siteConfig.pages.bangumi) {
 		links.push({
-			name: "生活",
+			name: "记录",
 			url: "/bangumi/",
 			icon: "material-symbols:camera-outdoor",
 		});
+	}
+
+	// 新生活功能页 - 放在记录后面、我的网站前面
+	// 找到记录所在的索引，在其后插入生活
+	const lifeLink = {
+		name: "生活",
+		url: "/life/",
+		icon: "material-symbols:favorite",
+		children: [
+			{
+				name: "总览",
+				url: "/life/",
+				icon: "material-symbols:home-outline",
+			},
+			{
+				name: "健康",
+				url: "/life/health/",
+				icon: "material-symbols:favorite-outline",
+			},
+			{
+				name: "想法",
+				url: "/life/ideas/",
+				icon: "material-symbols:lightbulb-outline",
+			},
+			{
+				name: "地点",
+				url: "/life/places/",
+				icon: "material-symbols:location-on-outline",
+			},
+			{
+				name: "计划",
+				url: "/life/plans/",
+				icon: "material-symbols:check-circle-outline",
+			},
+			{
+				name: "笔记本",
+				url: "/life/notebooks/",
+				icon: "material-symbols:book-outline",
+			},
+		],
+	};
+
+	// 找到记录(link)的索引，在其后插入生活
+	const recordIndex = links.findIndex((link) => typeof link !== 'number' && link.name === "记录");
+	if (recordIndex !== -1) {
+		links.splice(recordIndex + 1, 0, lifeLink);
+	} else {
+		links.push(lifeLink);
 	}
 
 	// 我的网站

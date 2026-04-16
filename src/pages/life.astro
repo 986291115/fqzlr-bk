@@ -1,0 +1,675 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import RingProgress from "@/components/life/RingProgress.astro";
+import MiniLineChart from "@/components/life/MiniLineChart.astro";
+import ActivityHeatmap from "@/components/life/ActivityHeatmap.astro";
+import CompareCard from "@/components/life/CompareCard.astro";
+
+const lifeEntries = await getCollection("life");
+const workoutEntries = await getCollection("lifeWorkout");
+const sleepEntries = await getCollection("lifeSleep");
+const foodEntries = await getCollection("lifeFood");
+const notebookEntries = await getCollection("notebooks");
+
+const isIn = (entryId: string, folder: string) =>
+	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
+
+const meta = lifeEntries.find((entry) => isIn(entry.id, "meta"))?.data;
+
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth();
+const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+const isSameMonth = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+};
+
+const isSameYear = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear;
+};
+
+const isSamePeriod = (dateText: string, year: number, month: number) => {
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === year && d.getMonth() === month;
+};
+
+const sortByDateDesc = <T extends Record<string, unknown>>(list: T[], field: keyof T) =>
+	[...list].sort((a, b) =>
+		String(b[field] || "").localeCompare(String(a[field] || "")),
+	);
+
+// 运动数据
+const sortedWorkouts = sortByDateDesc(workoutEntries.map((e) => ({ ...e.data, date: e.data.date })), "date");
+const yearWorkout = sortedWorkouts.filter((item) => isSameYear(item.date));
+const lastYearWorkout = sortedWorkouts.filter((item) => isSamePeriod(item.date, currentYear - 1, currentMonth));
+const yearRunKm = yearWorkout.reduce((acc, item) => acc + (item.runKm || 0), 0);
+const lastYearRunKm = lastYearWorkout.reduce((acc, item) => acc + (item.runKm || 0), 0);
+const yearWorkoutMins = yearWorkout.reduce((acc, item) => acc + (item.workoutMinutes || 0), 0);
+const lastYearWorkoutMins = lastYearWorkout.reduce((acc, item) => acc + (item.workoutMinutes || 0), 0);
+const workoutCount = sortedWorkouts.length;
+
+// 睡眠数据
+const sortedSleep = sortByDateDesc(sleepEntries.map((e) => ({ ...e.data, date: e.data.date })), "date");
+const yearSleep = sortedSleep.filter((item) => isSameYear(item.date));
+const avgSleepHours = yearSleep.length > 0
+	? yearSleep.reduce((acc, item) => acc + (item.sleepHours || 0), 0) / yearSleep.length
+	: 0;
+const avgSleepQuality = yearSleep.length > 0
+	? yearSleep.reduce((acc, item) => acc + (item.sleepQuality || 3), 0) / yearSleep.length
+	: 0;
+const insomniaCount = sortedSleep.filter((item) => (item.sleepQuality || 3) < 2).length;
+
+// 饮食数据
+const sortedFood = sortByDateDesc(foodEntries.map((e) => ({ ...e.data, date: e.data.date })), "date");
+const totalAvoidFoods = sortedFood.reduce((acc, item) => acc + (item.avoidFoods?.length || 0), 0);
+
+// 想法数据
+const ideas = lifeEntries
+	.filter((entry) => isIn(entry.id, "ideas"))
+	.map((entry) => entry.data);
+const ideasDone = ideas.filter((item) => item.status === "done");
+const ideasTodo = ideas.filter((item) => item.status !== "done");
+const thisMonthIdeasDone = ideasDone.filter((item) => isSameMonth(item.completedAt)).length;
+const lastMonthIdeasDone = ideasDone.filter((item) => {
+	if (!item.completedAt) return false;
+	const d = new Date(item.completedAt);
+	return d.getFullYear() === lastMonthYear && d.getMonth() === lastMonth;
+}).length;
+
+// 计划数据
+const plans = lifeEntries
+	.filter((entry) => isIn(entry.id, "plans"))
+	.map((entry) => entry.data);
+const totalMonthCheckins = plans.reduce(
+	(acc, plan) => acc + (plan.checkins || []).filter((date) => isSameMonth(date)).length,
+	0,
+);
+const totalLastMonthCheckins = plans.reduce(
+	(acc, plan) => acc + (plan.checkins || []).filter((date) => isSamePeriod(date, lastMonthYear, lastMonth)).length,
+	0,
+);
+const totalYearCheckins = plans.reduce(
+	(acc, plan) => acc + (plan.checkins || []).filter((date) => isSameYear(date)).length,
+	0,
+);
+const monthTargetTotal = plans.reduce((acc, plan) => acc + (plan.monthlyTarget || 0), 0);
+const monthPlanRate =
+	monthTargetTotal > 0 ? Math.min(100, Math.round((totalMonthCheckins / monthTargetTotal) * 100)) : 0;
+
+// 连续打卡天数
+const calculateStreak = () => {
+	const allCheckins = new Set<string>();
+	plans.forEach((plan) => {
+		(plan.checkins || []).forEach((date) => allCheckins.add(date));
+	});
+	const sortedDates = [...allCheckins].sort().reverse();
+	let streak = 0;
+	const today = new Date().toISOString().split("T")[0];
+	let currentDate = new Date(today);
+
+	for (const dateStr of sortedDates) {
+		const checkDate = new Date(dateStr);
+		const diffDays = Math.floor((currentDate.getTime() - checkDate.getTime()) / (1000 * 60 * 60 * 24));
+		if (diffDays <= 1) {
+			streak++;
+			currentDate = checkDate;
+		} else {
+			break;
+		}
+	}
+	return streak;
+};
+const currentStreak = calculateStreak();
+
+// 地点数据
+const visitedPlaces = lifeEntries
+	.filter((entry) => isIn(entry.id, "places"))
+	.map((entry) => entry.data);
+const visitedProvincesCount = new Set(visitedPlaces.map((p) => p.province).filter(Boolean)).size;
+const visitedCitiesCount = new Set(visitedPlaces.map((p) => p.city).filter(Boolean)).size;
+
+// 热力图数据（汇总所有打卡）
+const heatmapData: { date: string; count: number }[] = [];
+const checkinDates = new Map<string, number>();
+plans.forEach((plan) => {
+	(plan.checkins || []).forEach((date) => {
+		checkinDates.set(date, (checkinDates.get(date) || 0) + 1);
+	});
+});
+checkinDates.forEach((count, date) => {
+	heatmapData.push({ date, count });
+});
+
+// 折线图数据（最近8周跑步里程）
+const getWeeklyRunData = () => {
+	const weeks = 8;
+	const data: { label: string; value: number }[] = [];
+	const today = new Date();
+	for (let i = weeks - 1; i >= 0; i--) {
+		const weekEnd = new Date(today);
+		weekEnd.setDate(weekEnd.getDate() - i * 7);
+		const weekStart = new Date(weekEnd);
+		weekStart.setDate(weekStart.getDate() - 6);
+
+		let weekKm = 0;
+		sortedWorkouts.forEach((w) => {
+			const d = new Date(w.date);
+			if (d >= weekStart && d <= weekEnd) {
+				weekKm += w.runKm || 0;
+			}
+		});
+
+		const month = weekEnd.getMonth() + 1;
+		const day = weekEnd.getDate();
+		data.push({ label: `${month}/${day}`, value: Math.round(weekKm * 10) / 10 });
+	}
+	return data;
+};
+const weeklyRunData = getWeeklyRunData();
+
+// 折线图数据（最近8周睡眠时长）
+const getWeeklySleepData = () => {
+	const weeks = 8;
+	const data: { label: string; value: number }[] = [];
+	const today = new Date();
+	for (let i = weeks - 1; i >= 0; i--) {
+		const weekEnd = new Date(today);
+		weekEnd.setDate(weekEnd.getDate() - i * 7);
+		const weekStart = new Date(weekEnd);
+		weekStart.setDate(weekStart.getDate() - 6);
+
+		const weekSleep = sortedSleep.filter((s) => {
+			const d = new Date(s.date);
+			return d >= weekStart && d <= weekEnd;
+		});
+		const avgHours = weekSleep.length > 0
+			? weekSleep.reduce((acc, s) => acc + (s.sleepHours || 0), 0) / weekSleep.length
+			: 0;
+
+		const month = weekEnd.getMonth() + 1;
+		const day = weekEnd.getDate();
+		data.push({ label: `${month}/${day}`, value: Math.round(avgHours * 10) / 10 });
+	}
+	return data;
+};
+const weeklySleepData = getWeeklySleepData();
+
+const pageTitle = meta?.title ?? "生活";
+const pageDescription = meta?.description ?? "健康、日记、灵感、规划与足迹的集中记录区";
+const panelTitle = meta?.label || "生活数据面板";
+const panelDescription = meta?.value || "把每天的健康、日记、想法、规划和足迹统一记录。";
+---
+
+<MainGridLayout title={pageTitle} description={pageDescription}>
+	<div class="life-page flex w-full flex-col gap-5">
+		<!-- 标题区 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<div class="life-hero">
+				<h1 class="mb-2 text-3xl font-bold leading-tight text-[var(--primary)]">{panelTitle}</h1>
+				<p class="life-intro text-[var(--content-meta)]">{panelDescription}</p>
+			</div>
+		</section>
+
+		<!-- 功能导航 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:apps" class="text-xl text-[var(--primary)]" />
+				功能导航
+			</h2>
+			<div class="life-nav-grid">
+				<a href="/life/health/" class="life-nav-card group">
+					<div class="life-nav-icon">🏃</div>
+					<div class="life-nav-info">
+						<h3>健康</h3>
+						<p>运动、睡眠、饮食记录</p>
+					</div>
+					<div class="life-nav-enter">
+						<span class="life-nav-enter-text">点击进入</span>
+						<Icon name="material-symbols:arrow-forward-rounded" class="text-xl" />
+					</div>
+				</a>
+
+				<a href="/life/notebooks/" class="life-nav-card group">
+					<div class="life-nav-icon">📚</div>
+					<div class="life-nav-info">
+						<h3>笔记本</h3>
+						<p>成长日记、学习复盘、灵感随笔</p>
+					</div>
+					<div class="life-nav-enter">
+						<span class="life-nav-enter-text">点击进入</span>
+						<Icon name="material-symbols:arrow-forward-rounded" class="text-xl" />
+					</div>
+				</a>
+
+				<a href="/life/ideas/" class="life-nav-card group">
+					<div class="life-nav-icon">💡</div>
+					<div class="life-nav-info">
+						<h3>奇思妙想</h3>
+						<p>随手记录的灵感与创意</p>
+					</div>
+					<div class="life-nav-enter">
+						<span class="life-nav-enter-text">点击进入</span>
+						<Icon name="material-symbols:arrow-forward-rounded" class="text-xl" />
+					</div>
+				</a>
+
+				<a href="/life/plans/" class="life-nav-card group">
+					<div class="life-nav-icon">✅</div>
+					<div class="life-nav-info">
+						<h3>规划打卡</h3>
+						<p>每日习惯目标与打卡统计</p>
+					</div>
+					<div class="life-nav-enter">
+						<span class="life-nav-enter-text">点击进入</span>
+						<Icon name="material-symbols:arrow-forward-rounded" class="text-xl" />
+					</div>
+				</a>
+
+				<a href="/life/places/" class="life-nav-card group">
+					<div class="life-nav-icon">🗺️</div>
+					<div class="life-nav-info">
+						<h3>去过的地方</h3>
+						<p>足迹地图与旅行记录</p>
+					</div>
+					<div class="life-nav-enter">
+						<span class="life-nav-enter-text">点击进入</span>
+						<Icon name="material-symbols:arrow-forward-rounded" class="text-xl" />
+					</div>
+				</a>
+			</div>
+		</section>
+
+		<!-- 环形进度图区 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:target" class="text-xl text-[var(--primary)]" />
+				目标完成度
+			</h2>
+			<div class="ring-grid">
+				<RingProgress
+					value={totalMonthCheckins}
+					max={monthTargetTotal}
+					label="本月打卡"
+					sublabel={`${monthTargetTotal > 0 ? monthTargetTotal : '设置目标'}`}
+					color="var(--primary)"
+				/>
+				<RingProgress
+					value={workoutCount}
+					max={52}
+					label="年运动次数"
+					sublabel="目标 52 次"
+					color="#22c55e"
+				/>
+				<RingProgress
+					value={ideasDone.length}
+					max={ideas.length}
+					label="灵感完成率"
+					sublabel={`${ideas.length} 个想法`}
+					color="#f59e0b"
+				/>
+				<RingProgress
+					value={currentStreak}
+					max={30}
+					label="连续打卡"
+					sublabel="天"
+					color="#8b5cf6"
+				/>
+			</div>
+		</section>
+
+		<!-- 数据对比卡片区 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:trending-up" class="text-xl text-[var(--primary)]" />
+				数据对比
+			</h2>
+			<div class="compare-grid">
+				<CompareCard
+					title="今年跑步里程"
+					current={yearRunKm}
+					previous={lastYearRunKm}
+					unit=" km"
+					format="duration"
+					trendLabel="同比"
+				/>
+				<CompareCard
+					title="今年运动时长"
+					current={yearWorkoutMins}
+					previous={lastYearWorkoutMins}
+					unit=" 分钟"
+					format="number"
+					trendLabel="同比"
+				/>
+				<CompareCard
+					title="本月打卡次数"
+					current={totalMonthCheckins}
+					previous={totalLastMonthCheckins}
+					format="number"
+					trendLabel="环比"
+				/>
+				<CompareCard
+					title="本月灵感完成"
+					current={thisMonthIdeasDone}
+					previous={lastMonthIdeasDone}
+					format="number"
+					trendLabel="环比"
+				/>
+			</div>
+		</section>
+
+		<!-- 迷你折线图区 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:show-chart" class="text-xl text-[var(--primary)]" />
+				趋势数据
+			</h2>
+			<div class="chart-grid">
+				<MiniLineChart
+					data={weeklyRunData}
+					label="近8周跑步里程"
+					color="var(--primary)"
+				/>
+				<MiniLineChart
+					data={weeklySleepData}
+					label="近8周平均睡眠"
+					color="#8b5cf6"
+					height={80}
+				/>
+			</div>
+		</section>
+
+		<!-- 热力图区 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:calendar-month" class="text-xl text-[var(--primary)]" />
+				打卡活跃度
+			</h2>
+			<ActivityHeatmap
+				data={heatmapData}
+				label="打卡热力图"
+				weeks={20}
+			/>
+		</section>
+
+		<!-- 详细统计数据 -->
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-5 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<Icon name="material-symbols:analytics" class="text-xl text-[var(--primary)]" />
+				详细统计
+			</h2>
+			<div class="stats-grid">
+				<div class="stat-card">
+					<div class="stat-icon">🏃</div>
+					<div class="stat-content">
+						<div class="stat-value">{yearRunKm.toFixed(1)} km</div>
+						<div class="stat-label">今年跑步</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">😴</div>
+					<div class="stat-content">
+						<div class="stat-value">{avgSleepHours.toFixed(1)} h</div>
+						<div class="stat-label">平均睡眠时长</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">⭐</div>
+					<div class="stat-content">
+						<div class="stat-value">{avgSleepQuality.toFixed(1)}</div>
+						<div class="stat-label">平均睡眠质量</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">🔥</div>
+					<div class="stat-content">
+						<div class="stat-value">{currentStreak}</div>
+						<div class="stat-label">连续打卡天数</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">💡</div>
+					<div class="stat-content">
+						<div class="stat-value">{ideasDone.length}/{ideas.length}</div>
+						<div class="stat-label">灵感完成数</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">📅</div>
+					<div class="stat-content">
+						<div class="stat-value">{totalYearCheckins}</div>
+						<div class="stat-label">今年打卡总数</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">🚫</div>
+					<div class="stat-content">
+						<div class="stat-value">{totalAvoidFoods}</div>
+						<div class="stat-label">戒口次数</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">🏥</div>
+					<div class="stat-content">
+						<div class="stat-value">{insomniaCount}</div>
+						<div class="stat-label">失眠次数</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">📍</div>
+					<div class="stat-content">
+						<div class="stat-value">{visitedProvincesCount}</div>
+						<div class="stat-label">去过省份</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">🌆</div>
+					<div class="stat-content">
+						<div class="stat-value">{visitedCitiesCount}</div>
+						<div class="stat-label">去过城市</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">📓</div>
+					<div class="stat-content">
+						<div class="stat-value">{notebookEntries.length}</div>
+						<div class="stat-label">笔记本数量</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">📊</div>
+					<div class="stat-content">
+						<div class="stat-value">{workoutCount}</div>
+						<div class="stat-label">运动总次数</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<style>
+	.life-page {
+		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
+	}
+
+	.life-section {
+		border: 1px solid var(--life-border);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
+		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+	}
+
+	.life-hero {
+		padding: 1rem;
+		border-radius: 1rem;
+		background:
+			radial-gradient(120% 160% at 100% 0%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 65%),
+			radial-gradient(90% 120% at 0% 100%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 68%),
+			var(--card-bg);
+		border: 1px solid var(--life-border);
+	}
+
+	.life-intro {
+		max-width: 62ch;
+		line-height: 1.7;
+	}
+
+	/* 环形进度图网格 */
+	.ring-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 1.5rem;
+		justify-items: center;
+	}
+
+	/* 数据对比网格 */
+	.compare-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
+	}
+
+	/* 折线图网格 */
+	.chart-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1rem;
+	}
+
+	/* 详细统计网格 */
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 1rem;
+	}
+
+	.stat-card {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem;
+		border: 1px solid var(--life-border);
+		border-radius: var(--radius-large);
+		background: var(--card-bg);
+		transition: all 0.2s ease;
+	}
+
+	.stat-card:hover {
+		border-color: var(--primary);
+		transform: translateY(-2px);
+	}
+
+	.stat-icon {
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.stat-content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.stat-value {
+		font-size: 1.125rem;
+		font-weight: 700;
+		color: var(--text-color);
+	}
+
+	.stat-label {
+		font-size: 0.7rem;
+		color: var(--content-meta);
+	}
+
+	/* 导航网格 */
+	.life-nav-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 1rem;
+	}
+
+	.life-nav-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem;
+		border: 1px solid var(--life-border);
+		border-radius: var(--radius-large);
+		background: var(--card-bg);
+		text-decoration: none;
+		transition: all 0.2s ease;
+	}
+
+	.life-nav-card:hover {
+		border-color: var(--primary);
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+	}
+
+	.life-nav-icon {
+		font-size: 2rem;
+		line-height: 1;
+	}
+
+	.life-nav-info h3 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--text-color);
+		margin: 0;
+	}
+
+	.life-nav-info p {
+		font-size: 0.875rem;
+		color: var(--content-meta);
+		margin: 0.25rem 0 0;
+	}
+
+	.life-nav-enter {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		margin-top: auto;
+		padding: 0.75rem 1rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+		border-radius: 0.5rem;
+		color: var(--primary);
+		font-weight: 600;
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
+	}
+
+	.life-nav-card:hover .life-nav-enter {
+		background: var(--primary);
+		color: white;
+		transform: translateX(4px);
+	}
+
+	.life-nav-enter-text {
+		display: inline-block;
+	}
+
+	:global(html.dark) .life-section {
+		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	}
+
+	@media (max-width: 640px) {
+		.ring-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.stats-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+</style>

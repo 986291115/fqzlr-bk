@@ -1,0 +1,259 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+
+const workoutEntries = await getCollection("lifeWorkout");
+const sleepEntries = await getCollection("lifeSleep");
+const foodEntries = await getCollection("lifeFood");
+
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth();
+
+const isSameMonth = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+};
+
+const isSameYear = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear;
+};
+
+const sum = (arr: number[]) => arr.reduce((acc, num) => acc + num, 0);
+const avg = (arr: number[]) => (arr.length > 0 ? sum(arr) / arr.length : 0);
+
+const sortedWorkouts = [...workoutEntries].sort((a, b) =>
+	(b.data.date || "").localeCompare(a.data.date || ""),
+);
+const sortedSleep = [...sleepEntries].sort((a, b) =>
+	(b.data.date || "").localeCompare(a.data.date || ""),
+);
+const sortedFood = [...foodEntries].sort((a, b) =>
+	(b.data.date || "").localeCompare(a.data.date || ""),
+);
+
+const monthWorkout = sortedWorkouts.filter((item) => isSameMonth(item.data.date));
+const yearWorkout = sortedWorkouts.filter((item) => isSameYear(item.data.date));
+const monthRunKm = sum(monthWorkout.map((item) => item.data.runKm || 0));
+const yearRunKm = sum(yearWorkout.map((item) => item.data.runKm || 0));
+const totalRunKm = sum(sortedWorkouts.map((item) => item.data.runKm || 0));
+const monthWorkoutMins = sum(monthWorkout.map((item) => item.data.workoutMinutes || 0));
+const yearWorkoutMins = sum(yearWorkout.map((item) => item.data.workoutMinutes || 0));
+const totalWorkoutMins = sum(sortedWorkouts.map((item) => item.data.workoutMinutes || 0));
+const workoutCount = sortedWorkouts.length;
+
+const monthSleep = sortedSleep.filter((item) => isSameMonth(item.data.date));
+const yearSleep = sortedSleep.filter((item) => isSameYear(item.data.date));
+const monthSleepAvg = avg(monthSleep.map((item) => item.data.sleepHours || 0));
+const yearSleepAvg = avg(yearSleep.map((item) => item.data.sleepHours || 0));
+const insomniaCount = sortedSleep.filter((item) => (item.data.sleepQuality || 3) < 2).length;
+const latestSleep = sortedSleep[0]?.data || null;
+
+const monthFood = sortedFood.filter((item) => isSameMonth(item.data.date));
+const monthAllowedFoods = sum(monthFood.map((item) => item.data.allowedFoods?.length || 0));
+const monthAvoidFoods = sum(monthFood.map((item) => item.data.avoidFoods?.length || 0));
+const totalAvoidFoods = sum(sortedFood.map((item) => item.data.avoidFoods?.length || 0));
+---
+
+<MainGridLayout title="健康" description="运动、睡眠、饮食记录">
+	<div class="life-page flex w-full flex-col gap-5">
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h1 class="mb-2 text-3xl font-bold text-[var(--primary)]">🏃 健康</h1>
+			<p class="text-sm text-[var(--content-meta)]">运动、睡眠、饮食记录，每次记录后新建 md 文件即可。</p>
+
+			<div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">本月跑步</div>
+					<div class="mt-1 text-xl font-bold">{monthRunKm.toFixed(1)} km</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">今年跑步</div>
+					<div class="mt-1 text-xl font-bold">{yearRunKm.toFixed(1)} km</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">积累距离</div>
+					<div class="mt-1 text-xl font-bold">{totalRunKm.toFixed(1)} km</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">运动次数</div>
+					<div class="mt-1 text-xl font-bold">{workoutCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">失眠次数</div>
+					<div class="mt-1 text-xl font-bold">{insomniaCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">戒口次数</div>
+					<div class="mt-1 text-xl font-bold">{totalAvoidFoods}</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<span class="text-xl">🏃</span>运动记录
+			</h2>
+			<div class="space-y-3">
+				{sortedWorkouts.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无运动记录，在 `life/health/workout/` 下新建 md 即可添加。
+					</div>
+				) : (
+					sortedWorkouts.map((record) => (
+						<article class="life-data-item rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4">
+							<div class="mb-2 flex items-center justify-between">
+								<span class="font-semibold">{record.data.date}</span>
+								<span class="text-sm text-[var(--content-meta)]">{record.data.workoutType || "未填写"}</span>
+							</div>
+							<div class="flex flex-wrap gap-4 text-sm text-[var(--content-meta)]">
+								<span>🏃 {(record.data.runKm || 0).toFixed(1)} km</span>
+								<span>⏱️ {record.data.workoutMinutes || 0} 分钟</span>
+								<span>👟 {record.data.stepsToday || 0} 步</span>
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<span class="text-xl">😴</span>睡眠记录
+			</h2>
+			<div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">本月平均</div>
+					<div class="mt-1 text-lg font-semibold">{monthSleepAvg > 0 ? `${monthSleepAvg.toFixed(1)} 小时` : "无"}</div>
+				</div>
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">今年平均</div>
+					<div class="mt-1 text-lg font-semibold">{yearSleepAvg > 0 ? `${yearSleepAvg.toFixed(1)} 小时` : "无"}</div>
+				</div>
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">失眠次数</div>
+					<div class="mt-1 text-lg font-semibold">{insomniaCount}</div>
+				</div>
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">最近睡眠</div>
+					<div class="mt-1 text-lg font-semibold">{latestSleep ? `${latestSleep.sleepHours} 小时` : "无"}</div>
+				</div>
+			</div>
+			<div class="mt-4 space-y-3">
+				{sortedSleep.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无睡眠记录，在 `life/health/sleep/` 下新建 md 即可添加。
+					</div>
+				) : (
+					sortedSleep.map((record) => (
+						<article class="life-data-item rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4">
+							<div class="flex items-center justify-between">
+								<span class="font-semibold">{record.data.date}</span>
+								<span class="text-sm text-[var(--content-meta)]">质量 {record.data.sleepQuality || 3}/5</span>
+							</div>
+							<div class="mt-1 text-sm text-[var(--content-meta)]">睡眠 {record.data.sleepHours || 0} 小时</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<span class="text-xl">🍽️</span>饮食记录
+			</h2>
+			<div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">本月能吃</div>
+					<div class="mt-1 text-lg font-semibold">{monthAllowedFoods} 次</div>
+				</div>
+				<div class="rounded-xl bg-[var(--card-bg)] p-3">
+					<div class="text-xs text-[var(--content-meta)]">本月戒口</div>
+					<div class="mt-1 text-lg font-semibold">{monthAvoidFoods} 次</div>
+				</div>
+			</div>
+			<div class="mt-4 space-y-3">
+				{sortedFood.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无饮食记录，在 `life/health/food/` 下新建 md 即可添加。
+					</div>
+				) : (
+					sortedFood.map((record) => (
+						<article class="life-data-item rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4">
+							<div class="mb-2 flex items-center justify-between">
+								<span class="font-semibold">{record.data.date}</span>
+							</div>
+							<div class="space-y-1 text-sm">
+								{(record.data.allowedFoods || []).length > 0 && (
+									<div class="text-emerald-600 dark:text-emerald-400">
+										<span class="font-medium">✓</span> {(record.data.allowedFoods || []).join("、")}
+									</div>
+								)}
+								{(record.data.avoidFoods || []).length > 0 && (
+									<div class="text-red-500 dark:text-red-400">
+										<span class="font-medium">✗</span> {(record.data.avoidFoods || []).join("、")}
+									</div>
+								)}
+								{(!record.data.allowedFoods?.length && !record.data.avoidFoods?.length) && (
+									<div class="text-[var(--content-meta)]">无饮食记录</div>
+								)}
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<style>
+	.life-page {
+		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
+	}
+
+	.life-section {
+		border: 1px solid var(--life-border);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
+		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+	}
+
+	.life-stat-card {
+		border: 1px solid var(--life-border);
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 45%),
+			var(--card-bg);
+		padding: 0.75rem;
+		border-radius: var(--radius-base);
+	}
+
+	.life-stat-card > div:first-child {
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
+
+	.life-data-item {
+		border-color: var(--life-border);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.life-data-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 7%);
+	}
+
+	:global(html.dark) .life-section {
+		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	}
+
+	:global(html.dark) .life-stat-card {
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 46%),
+			color-mix(in srgb, var(--card-bg) 84%, #000);
+	}
+</style>

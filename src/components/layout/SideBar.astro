@@ -11,6 +11,8 @@ import SidebarTOC from "@/components/widget/SidebarTOC.astro";
 import SiteStats from "@/components/widget/SiteStats.astro";
 import Tags from "@/components/widget/Tags.astro";
 import RelationshipTimer from "@/components/widget/RelationshipTimer.astro";
+import LifeStats from "@/components/widget/LifeStats.astro";
+import SiteHeatmap from "@/components/widget/SiteHeatmap.astro";
 import { sidebarLayoutConfig } from "@/config";
 import type {
 	MobileBottomComponentConfig,
@@ -53,6 +55,8 @@ const componentMap = {
 	music: Music,
 	relationship: RelationshipTimer,
 	recentItems: RecentItems,
+	lifeStats: LifeStats,
+	siteHeatmap: SiteHeatmap,
 } satisfies Record<WidgetComponentType, any>;
 
 // 获取侧边栏位置

@@ -1,0 +1,169 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+
+const notebookEntries = await getCollection("notebooks");
+const notebookGrowthEntries = await getCollection("notebookGrowth");
+const notebookStudyEntries = await getCollection("notebookStudy");
+const notebookIdeasEntries = await getCollection("notebookIdeas");
+
+const entriesMap: Record<string, typeof notebookGrowthEntries> = {
+	growth: notebookGrowthEntries,
+	study: notebookStudyEntries,
+	ideas: notebookIdeasEntries,
+};
+
+const sortByDateDesc = <T extends Record<string, unknown>>(list: T[], field: keyof T) =>
+	[...list].sort((a, b) =>
+		String(b[field] || "").localeCompare(String(a[field] || "")),
+	);
+
+const notebooks = notebookEntries.map((entry) => {
+	const fullPath = entry.id.replace(/\\/g, "/").replace("/_index.md", "");
+	const parts = fullPath.split("/");
+	const folderName = parts[parts.length - 2] || parts[parts.length - 1] || "";
+	const folderEntries = entriesMap[folderName] || [];
+	const sortedEntries = sortByDateDesc(folderEntries.map((e) => e.data), "date");
+	return {
+		id: entry.id,
+		name: entry.data.name,
+		cover: entry.data.cover,
+		summary: entry.data.summary,
+		entries: folderEntries.length,
+		updatedAt: sortedEntries[0]?.date || "",
+		selfPath: `/life/notebooks/${folderName}/`,
+	};
+});
+
+const sortedNotebooks = sortByDateDesc(notebooks, "updatedAt");
+const totalNotebookEntries = sortedNotebooks.reduce((acc, book) => acc + book.entries, 0);
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth();
+const isSameMonth = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+};
+const thisMonthUpdates = sortedNotebooks.filter((item) => isSameMonth(item.updatedAt)).length;
+---
+
+<MainGridLayout title="笔记本" description="成长日记、学习复盘、灵感随笔">
+	<div class="flex w-full flex-col gap-5">
+		<section class="card-base rounded-[var(--radius-large)] p-6">
+			<div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+				<div>
+					<h1 class="mb-2 text-3xl font-bold text-[var(--text-color)]">📚 笔记本</h1>
+					<p class="text-sm text-[var(--content-meta)]">成长日记、学习复盘、灵感随笔。按 `_index.md` 同名文件夹组织，每个笔记本是一个子分类。</p>
+				</div>
+				<div class="flex flex-wrap gap-4">
+					<div class="text-center">
+						<div class="text-2xl font-bold text-[var(--primary)]">{sortedNotebooks.length}</div>
+						<div class="text-xs text-[var(--content-meta)]">笔记本</div>
+					</div>
+					<div class="text-center">
+						<div class="text-2xl font-bold text-[var(--primary)]">{totalNotebookEntries}</div>
+						<div class="text-xs text-[var(--content-meta)]">总条目</div>
+					</div>
+					<div class="text-center">
+						<div class="text-2xl font-bold text-[var(--primary)]">{thisMonthUpdates}</div>
+						<div class="text-xs text-[var(--content-meta)]">本月更新</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 text-xl font-bold text-[var(--text-color)]">笔记本列表</h2>
+			<div class="space-y-4">
+				{sortedNotebooks.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无笔记本，在 `life/notebooks/` 下按 `_index.md` 组织即可创建。
+					</div>
+				) : (
+					sortedNotebooks.map((book) => (
+						<a
+							href={book.selfPath}
+							class="notebook-card group flex flex-col-reverse md:flex-row rounded-[var(--radius-large)] overflow-hidden border border-transparent transition hover:border-[var(--primary)] hover:shadow-lg md:relative"
+						>
+							<div class="notebook-content flex flex-1 flex-col p-6">
+								<h3 class="notebook-title mb-2 text-2xl font-bold text-[var(--text-color)] transition group-hover:text-[var(--primary)]">
+									{book.name}
+								</h3>
+								<p class="mb-3 text-sm text-[var(--content-meta)]">
+									{book.summary || "暂无描述"}
+								</p>
+								<div class="mt-auto flex flex-wrap items-center gap-3 text-xs text-[var(--content-meta)]">
+									<span class="flex items-center gap-1">
+										<Icon name="material-symbols:article-outline" class="text-sm" />
+										{book.entries} 条记录
+									</span>
+									<span class="flex items-center gap-1">
+										<Icon name="material-symbols:schedule-outline" class="text-sm" />
+										最近更新：{book.updatedAt || "未更新"}
+									</span>
+								</div>
+							</div>
+							{book.cover && (
+								<div class="notebook-cover w-full md:w-48 aspect-video md:aspect-auto relative overflow-hidden">
+									<img
+										src={book.cover}
+										alt=""
+										class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+										loading="lazy"
+									/>
+									<div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
+								</div>
+							)}
+							{!book.cover && (
+								<div class="notebook-enter hidden md:flex btn-regular w-13 absolute right-3 top-3 bottom-3 rounded-xl bg-[var(--enter-btn-bg)] items-center justify-center hover:bg-[var(--enter-btn-bg-hover)] active:scale-95">
+									<Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-4xl" />
+								</div>
+							)}
+						</a>
+					))
+				)}
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<style>
+	.notebook-card {
+		background: var(--card-bg);
+	}
+
+	.notebook-title {
+		position: relative;
+	}
+
+	.notebook-title::before {
+		content: "";
+		position: absolute;
+		left: -1rem;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 0.25rem;
+		height: 1.5rem;
+		border-radius: 9999px;
+		background: var(--primary);
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	.notebook-card:hover .notebook-title::before {
+		opacity: 1;
+	}
+
+	.notebook-cover {
+		border-radius: 0;
+	}
+
+	@media (min-width: 768px) {
+		.notebook-cover {
+			border-radius: 0 var(--radius-large) var(--radius-large) 0;
+		}
+	}
+</style>

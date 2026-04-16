@@ -1,0 +1,179 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+
+const lifeEntries = await getCollection("life");
+
+const isIn = (entryId: string, folder: string) =>
+	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
+
+const now = new Date();
+const daysElapsed = now.getDate();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth();
+
+const isSameMonth = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+};
+
+const isSameYear = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear;
+};
+
+const sum = (arr: number[]) => arr.reduce((acc, num) => acc + num, 0);
+
+const plans = lifeEntries
+	.filter((entry) => isIn(entry.id, "plans"))
+	.map((entry) => entry.data);
+
+const totalMonthCheckins = sum(
+	plans.map((plan) => (plan.checkins || []).filter((date) => isSameMonth(date)).length),
+);
+const totalYearCheckins = sum(
+	plans.map((plan) => (plan.checkins || []).filter((date) => isSameYear(date)).length),
+);
+const dailyBase = Math.max(1, daysElapsed * Math.max(plans.length, 1));
+const monthDailyRate = Math.min(100, Math.round((totalMonthCheckins / dailyBase) * 100));
+const monthTargetTotal = sum(plans.map((plan) => plan.monthlyTarget || 0));
+const monthPlanRate =
+	monthTargetTotal > 0 ? Math.min(100, Math.round((totalMonthCheckins / monthTargetTotal) * 100)) : 0;
+
+const planCards = plans.map((plan) => {
+	const monthCount = (plan.checkins || []).filter((date) => isSameMonth(date)).length;
+	const yearCount = (plan.checkins || []).filter((date) => isSameYear(date)).length;
+	const monthlyTarget = plan.monthlyTarget || 0;
+	const progress =
+		monthlyTarget > 0 ? Math.min(100, Math.round((monthCount / monthlyTarget) * 100)) : 0;
+	return {
+		name: plan.planName || plan.name || "未命名规划",
+		targetDesc: plan.targetDesc || plan.description || "暂无规划说明",
+		dailyTarget: plan.dailyTarget || 1,
+		monthlyTarget,
+		monthCount,
+		yearCount,
+		progress,
+		checkins: plan.checkins || [],
+	};
+});
+
+const sortedPlanCards = [...planCards].sort((a, b) => b.progress - a.progress);
+---
+
+<MainGridLayout title="规划打卡" description="每日习惯目标与打卡统计">
+	<div class="life-page flex w-full flex-col gap-5">
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h1 class="mb-2 text-3xl font-bold text-[var(--primary)]">✅ 规划打卡</h1>
+			<p class="text-sm text-[var(--content-meta)]">每日习惯目标与打卡统计。在 `life/plans/` 下新建 md 即可添加。</p>
+
+			<div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">日打卡完成度</div>
+					<div class="mt-1 text-xl font-bold">{monthDailyRate}%</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">月打卡完成度</div>
+					<div class="mt-1 text-xl font-bold">{monthPlanRate}%</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">本月打卡</div>
+					<div class="mt-1 text-xl font-bold">{totalMonthCheckins}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">今年打卡</div>
+					<div class="mt-1 text-xl font-bold">{totalYearCheckins}</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 text-xl font-bold text-[var(--text-color)]">规划列表</h2>
+			<div class="space-y-4">
+				{planCards.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无规划，在 `life/plans/` 下新建 md 即可添加。
+					</div>
+				) : (
+					planCards.map((plan) => (
+						<article class="life-data-item rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-5">
+							<div class="mb-3 flex items-start justify-between">
+								<div>
+									<h3 class="text-lg font-semibold">{plan.name}</h3>
+									<p class="mt-1 text-sm text-[var(--content-meta)]">{plan.targetDesc}</p>
+								</div>
+								<div class="text-right">
+									<div class="text-2xl font-bold text-[var(--primary)]">{plan.progress}%</div>
+									<div class="text-xs text-[var(--content-meta)]">本月 {plan.monthCount}/{plan.monthlyTarget}</div>
+								</div>
+							</div>
+							<div class="h-2 w-full overflow-hidden rounded-full bg-[var(--line-divider)]">
+								<div
+									class="h-full rounded-full bg-[var(--primary)] transition-all duration-500"
+									style={`width: ${plan.progress}%`}
+								/>
+							</div>
+							<div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--content-meta)]">
+								<span>日目标 {plan.dailyTarget} 次</span>
+								<span>今年累计 {plan.yearCount} 次</span>
+								<span>{plan.checkins.length} 次打卡记录</span>
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<style>
+	.life-page {
+		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
+	}
+
+	.life-section {
+		border: 1px solid var(--life-border);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
+		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+	}
+
+	.life-stat-card {
+		border: 1px solid var(--life-border);
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 45%),
+			var(--card-bg);
+		padding: 0.75rem;
+		border-radius: var(--radius-base);
+	}
+
+	.life-stat-card > div:first-child {
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
+
+	.life-data-item {
+		border-color: var(--life-border);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.life-data-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 7%);
+	}
+
+	:global(html.dark) .life-section {
+		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	}
+
+	:global(html.dark) .life-stat-card {
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 46%),
+			color-mix(in srgb, var(--card-bg) 84%, #000);
+	}
+</style>

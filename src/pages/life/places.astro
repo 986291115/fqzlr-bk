@@ -1,0 +1,265 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+
+const lifeEntries = await getCollection("life");
+
+const isIn = (entryId: string, folder: string) =>
+	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
+
+const now = new Date();
+const currentYear = now.getFullYear();
+
+const isSameYear = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear;
+};
+
+const sum = (arr: number[]) => arr.reduce((acc, num) => acc + num, 0);
+
+const visitedPlaces = lifeEntries
+	.filter((entry) => isIn(entry.id, "places"))
+	.map((entry) => entry.data);
+
+const sortedPlaces = [...visitedPlaces].sort((a, b) =>
+	(b.date || "").localeCompare(a.date || ""),
+);
+
+const visitedProvincesCount = new Set(sortedPlaces.map((p) => p.province).filter(Boolean)).size;
+const totalVisitCount = sum(sortedPlaces.map((p) => p.visitCount || 1));
+const thisYearVisitCount = sortedPlaces.filter((p) => isSameYear(p.date)).length;
+---
+
+<MainGridLayout title="去过的地方" description="足迹地图与旅行记录">
+	<div class="life-page flex w-full flex-col gap-5">
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h1 class="mb-2 text-3xl font-bold text-[var(--primary)]">🗺️ 去过的地方</h1>
+			<p class="text-sm text-[var(--content-meta)]">足迹地图与旅行记录。地图仅展示中国，去过次数越多颜色越深。在 `life/places/` 下新建 md 即可添加。</p>
+
+			<div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">去过省份</div>
+					<div class="mt-1 text-xl font-bold">{visitedProvincesCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">总到访次数</div>
+					<div class="mt-1 text-xl font-bold">{totalVisitCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">今年出行</div>
+					<div class="mt-1 text-xl font-bold">{thisYearVisitCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">总地点</div>
+					<div class="mt-1 text-xl font-bold">{sortedPlaces.length}</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 text-xl font-bold text-[var(--text-color)]">足迹地图</h2>
+			<div id="life-map" class="h-[400px] w-full rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)]">
+				<div id="life-map-loading" class="h-full w-full flex items-center justify-center text-sm text-[var(--content-meta)]">地图加载中...</div>
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 text-xl font-bold text-[var(--text-color)]">地点列表</h2>
+			<div class="grid gap-3 md:grid-cols-2">
+				{sortedPlaces.length === 0 ? (
+					<div class="col-span-2 rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无地点记录，在 `life/places/` 下新建 md 即可添加。
+					</div>
+				) : (
+					sortedPlaces.map((place) => (
+						<article class="life-data-item rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4">
+							<div class="flex items-start justify-between">
+								<div>
+									<h3 class="font-semibold">
+										{place.province || "未知省份"}
+										{place.city ? ` - ${place.city}` : ""}
+									</h3>
+									<p class="mt-1 text-sm text-[var(--content-meta)]">
+										{place.experience || "暂无体验记录"}
+									</p>
+								</div>
+								<div class="text-right text-sm text-[var(--content-meta)]">
+									<div class="font-medium">到访 {place.visitCount || 1} 次</div>
+									<div class="text-xs">{place.date || "未填写日期"}</div>
+								</div>
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<script is:inline define:vars={{ visitedPlaces }}>
+	// @ts-nocheck
+	const initLifeMap = () => {
+		const container = document.getElementById("life-map");
+		if (!container) return;
+		if (container.dataset.mounted === "true") return;
+
+		const provinceNameMap = {
+			北京: "北京市",
+			天津: "天津市",
+			上海: "上海市",
+			重庆: "重庆市",
+			内蒙古: "内蒙古自治区",
+			广西: "广西壮族自治区",
+			西藏: "西藏自治区",
+			宁夏: "宁夏回族自治区",
+			新疆: "新疆维吾尔自治区",
+			香港: "香港特别行政区",
+			澳门: "澳门特别行政区",
+		};
+		const normalizeProvinceName = (name) => provinceNameMap[name] || (name.endsWith("省") || name.endsWith("市") || name.endsWith("自治区") || name.endsWith("特别行政区") ? name : `${name}省`);
+
+		const provinceCounts = visitedPlaces.reduce((acc, item) => {
+			if (!item.province) return acc;
+			const normalizedProvince = normalizeProvinceName(item.province);
+			const count = Number(item.visitCount || 1);
+			acc[normalizedProvince] = (acc[normalizedProvince] || 0) + count;
+			return acc;
+		}, {});
+
+		Promise.all([
+			import("https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.esm.min.js"),
+			(async () => {
+				const mapUrls = [
+					"https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
+					"https://geo.datav.aliyun.com/areas_v3/bound/100000.json",
+				];
+				for (const mapUrl of mapUrls) {
+					try {
+						const res = await fetch(mapUrl);
+						if (!res.ok) continue;
+						const json = await res.json();
+						if (json?.features?.length) return json;
+					} catch (_) {
+						// try next source
+					}
+				}
+				throw new Error("china map fetch failed from all sources");
+			})(),
+		])
+			.then(([echarts, chinaGeoJson]) => {
+				echarts.registerMap("china", chinaGeoJson);
+				const chart = echarts.init(container);
+				const loadingEl = document.getElementById("life-map-loading");
+				if (loadingEl) loadingEl.style.display = "none";
+				const mapData = Object.entries(provinceCounts).map(([name, value]) => ({ name, value }));
+				const maxVal = mapData.length > 0 ? Math.max(...mapData.map((item) => item.value)) : 1;
+
+				chart.setOption({
+					tooltip: {
+						trigger: "item",
+						formatter: (params) => `${params.name}<br/>到访次数：${params.value || 0}`,
+					},
+					visualMap: {
+						min: 0,
+						max: maxVal,
+						left: "left",
+						bottom: 10,
+						text: ["多", "少"],
+						inRange: {
+							color: ["#ffe4e6", "#fda4af", "#fb7185", "#e11d48"],
+						},
+						calculable: true,
+					},
+					series: [
+						{
+							name: "去过的地方",
+							type: "map",
+							map: "china",
+							roam: true,
+							label: { show: false },
+							data: mapData,
+							emphasis: {
+								label: { show: true, color: "#111827" },
+							},
+						},
+					],
+				});
+
+				container.dataset.mounted = "true";
+				window.addEventListener(
+					"resize",
+					() => {
+						chart.resize();
+					},
+					{ passive: true },
+				);
+			})
+			.catch((err) => {
+				console.error("[life-map] init failed:", err);
+				container.innerHTML =
+					'<div class="h-full w-full flex items-center justify-center text-sm text-[var(--content-meta)]">地图加载失败，请刷新重试</div>';
+			});
+	};
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", () => {
+			initLifeMap();
+		});
+	} else {
+		initLifeMap();
+	}
+
+	document.addEventListener("swup:contentReplaced", () => {
+		initLifeMap();
+	});
+</script>
+
+<style>
+	.life-page {
+		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
+	}
+
+	.life-section {
+		border: 1px solid var(--life-border);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
+		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+	}
+
+	.life-stat-card {
+		border: 1px solid var(--life-border);
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 45%),
+			var(--card-bg);
+		padding: 0.75rem;
+		border-radius: var(--radius-base);
+	}
+
+	.life-stat-card > div:first-child {
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
+
+	.life-data-item {
+		border-color: var(--life-border);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.life-data-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 7%);
+	}
+
+	:global(html.dark) .life-section {
+		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	}
+
+	:global(html.dark) .life-stat-card {
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 46%),
+			color-mix(in srgb, var(--card-bg) 84%, #000);
+	}
+</style>

@@ -1,0 +1,163 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+
+const lifeEntries = await getCollection("life");
+
+const isIn = (entryId: string, folder: string) =>
+	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
+
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth();
+
+const isSameMonth = (dateText?: string) => {
+	if (!dateText) return false;
+	const d = new Date(dateText);
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+};
+
+const ideas = lifeEntries
+	.filter((entry) => isIn(entry.id, "ideas"))
+	.map((entry) => entry.data);
+
+const ideasDone = ideas
+	.filter((item) => item.status === "done")
+	.sort((a, b) => (b.completedAt || "").localeCompare(a.completedAt || ""));
+
+const ideasTodo = ideas
+	.filter((item) => item.status !== "done")
+	.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+
+const thisMonthIdeasDone = ideasDone.filter((item) => isSameMonth(item.completedAt)).length;
+const ideasCount = ideas.length;
+const doneCount = ideasDone.length;
+const todoCount = ideasTodo.length;
+---
+
+<MainGridLayout title="奇思妙想" description="随手记录的灵感与创意">
+	<div class="life-page flex w-full flex-col gap-5">
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h1 class="mb-2 text-3xl font-bold text-[var(--primary)]">💡 奇思妙想</h1>
+			<p class="text-sm text-[var(--content-meta)]">随手记录灵感、短句和可执行的创意想法。在 `life/ideas/` 下新建 md 即可添加。</p>
+
+			<div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">总想法</div>
+					<div class="mt-1 text-xl font-bold">{ideasCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">已完成</div>
+					<div class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">{doneCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">待完成</div>
+					<div class="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">{todoCount}</div>
+				</div>
+				<div class="life-stat-card">
+					<div class="text-xs text-[var(--content-meta)]">本月完成</div>
+					<div class="mt-1 text-xl font-bold">{thisMonthIdeasDone}</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<span class="rounded-lg bg-emerald-100 px-2 py-1 text-base dark:bg-emerald-900/30">✓</span>
+				已完成
+			</h2>
+			<div class="space-y-3">
+				{ideasDone.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无已完成的灵感
+					</div>
+				) : (
+					ideasDone.map((item) => (
+						<article class="life-data-item rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+							<div class="font-medium leading-relaxed">{item.content}</div>
+							<div class="mt-2 flex flex-wrap gap-3 text-xs text-[var(--content-meta)]">
+								<span>记录：{item.createdAt || "未填写"}</span>
+								<span>完成：{item.completedAt || "-"}</span>
+								{item.label && <span>标签：{item.label}</span>}
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+
+		<section class="life-section card-base rounded-[var(--radius-large)] p-6">
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
+				<span class="rounded-lg bg-amber-100 px-2 py-1 text-base dark:bg-amber-900/30">○</span>
+				待完成
+			</h2>
+			<div class="space-y-3">
+				{ideasTodo.length === 0 ? (
+					<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+						暂无待完成的灵感，继续保持思考！
+					</div>
+				) : (
+					ideasTodo.map((item) => (
+						<article class="life-data-item rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+							<div class="font-medium leading-relaxed">{item.content}</div>
+							<div class="mt-2 flex flex-wrap gap-3 text-xs text-[var(--content-meta)]">
+								<span>记录：{item.createdAt || "未填写"}</span>
+								<span>状态：待完成</span>
+								{item.label && <span>标签：{item.label}</span>}
+							</div>
+						</article>
+					))
+				)}
+			</div>
+		</section>
+	</div>
+</MainGridLayout>
+
+<style>
+	.life-page {
+		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
+	}
+
+	.life-section {
+		border: 1px solid var(--life-border);
+		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
+		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+	}
+
+	.life-stat-card {
+		border: 1px solid var(--life-border);
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 45%),
+			var(--card-bg);
+		padding: 0.75rem;
+		border-radius: var(--radius-base);
+	}
+
+	.life-stat-card > div:first-child {
+		font-size: 0.75rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
+
+	.life-data-item {
+		border-color: var(--life-border);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.life-data-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 7%);
+	}
+
+	:global(html.dark) .life-section {
+		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	}
+
+	:global(html.dark) .life-stat-card {
+		background:
+			linear-gradient(140deg, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 46%),
+			color-mix(in srgb, var(--card-bg) 84%, #000);
+	}
+</style>

@@ -239,6 +239,7 @@ enum I18nKey {
 	siteStatsLastUpdate = "siteStatsLastUpdate",
 	siteStatsDaysAgo = "siteStatsDaysAgo",
 	siteStatsDays = "siteStatsDays",
+	siteHeatmap = "siteHeatmap",
 	today = "today",
 
 	// 日历组件

@@ -78,11 +78,11 @@ export const zh_CN: Translation = {
 	[Key.updatedAt]: "更新于",
 	[Key.readTime]: "阅读时长",
 	[Key.license]: "许可协议",
-	[Key.bangumi]: "生活",
+	[Key.bangumi]: "记录",
 	[Key.moments]: "动态",
 
 	[Key.recentMoments]: "最新动态",
-	[Key.recentLife]: "最新生活",
+	[Key.recentLife]: "最新记录",
 	[Key.recentItems]: "最近更新",
 	// 番组计划筛选和状态文本
 	[Key.bangumiTitle]: "我的生活记录",
@@ -244,6 +244,7 @@ export const zh_CN: Translation = {
 	[Key.siteStatsLastUpdate]: "最后活动",
 	[Key.siteStatsDaysAgo]: "{days} 天前",
 	[Key.siteStatsDays]: "{days} 天",
+	[Key.siteHeatmap]: "更新热力图",
 	[Key.today]: "今天",
 
 	// 日历组件

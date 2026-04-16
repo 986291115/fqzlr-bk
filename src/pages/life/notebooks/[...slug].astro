@@ -1,0 +1,214 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+
+export async function getStaticPaths() {
+	const notebooks = await getCollection("notebooks");
+	const notebookGrowthEntries = await getCollection("notebookGrowth");
+	const notebookStudyEntries = await getCollection("notebookStudy");
+	const notebookIdeasEntries = await getCollection("notebookIdeas");
+
+	const entriesMap: Record<string, typeof notebookGrowthEntries> = {
+		growth: notebookGrowthEntries,
+		study: notebookStudyEntries,
+		ideas: notebookIdeasEntries,
+	};
+
+	const paths = [];
+
+	for (const entry of notebooks) {
+		const fullPath = entry.id.replace(/\\/g, "/").replace("/_index.md", "");
+		const parts = fullPath.split("/");
+		const folderName = parts[parts.length - 2] || parts[parts.length - 1] || "";
+		const folderEntries = (entriesMap[folderName] || []).filter(
+			(item) => !item.id.replace(/\\/g, "/").includes("_index"),
+		);
+		const sortedEntries = [...folderEntries].sort((a, b) =>
+			(b.data.date || "").localeCompare(a.data.date || ""),
+		);
+
+		// 笔记本索引页路径
+		paths.push({
+			params: { slug: folderName },
+			props: {
+				entry,
+				entries: folderEntries,
+				sortedEntries,
+				isNotebookIndex: true,
+			},
+		});
+
+		// 每个条目的详情页路径
+		for (const item of folderEntries) {
+			const itemSlug = item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "";
+			paths.push({
+				params: { slug: `${folderName}/${itemSlug}` },
+				props: {
+					entry,
+					item,
+					isNotebookIndex: false,
+				},
+			});
+		}
+	}
+
+	return paths;
+}
+
+const { entry, entries, sortedEntries, item, isNotebookIndex } = Astro.props;
+const slug = Astro.params.slug as string;
+const folderName = entry.id.replace(/\\/g, "/").replace("/_index.md", "").split("/").pop() || "";
+---
+
+{isNotebookIndex ? (
+	// 笔记本索引页
+	<MainGridLayout title={entry.data.name || "笔记本"} description={entry.data.summary || "笔记本记录"}>
+		<div class="flex w-full flex-col gap-5">
+			<a
+				href="/life/notebooks/"
+				class="inline-flex items-center gap-1 text-sm text-[var(--content-meta)] transition hover:text-[var(--primary)]"
+			>
+				<Icon name="material-symbols:arrow-back-rounded" class="text-lg" />
+				返回笔记本列表
+			</a>
+
+			<section class="card-base rounded-[var(--radius-large)] p-6">
+				<div class="flex flex-col md:flex-row md:items-start gap-4">
+					{entry.data.cover && (
+						<img
+							src={entry.data.cover}
+							alt=""
+							class="w-full md:w-32 h-32 rounded-xl object-cover"
+							loading="lazy"
+						/>
+					)}
+					<div class="flex-1">
+						<h1 class="mb-2 text-3xl font-bold text-[var(--text-color)]">{entry.data.name || "笔记本"}</h1>
+						<p class="mb-3 text-sm text-[var(--content-meta)]">
+							{entry.data.summary || "暂无描述"}
+						</p>
+						<div class="flex flex-wrap items-center gap-3 text-xs text-[var(--content-meta)]">
+							<span class="flex items-center gap-1">
+								<Icon name="material-symbols:article-outline" class="text-sm" />
+								{entries.length} 条记录
+							</span>
+							<span class="flex items-center gap-1">
+								<Icon name="material-symbols:schedule-outline" class="text-sm" />
+								最近更新：{sortedEntries[0]?.data.date || "暂无"}
+							</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="card-base rounded-[var(--radius-large)] p-6">
+				<h2 class="mb-4 text-xl font-bold text-[var(--text-color)]">笔记条目</h2>
+				<div class="space-y-4">
+					{sortedEntries.length === 0 ? (
+						<div class="rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-6 text-center text-sm text-[var(--content-meta)]">
+							暂无记录，在 `life/notebooks/{folderName}/` 文件夹下添加 md 文件即可创建新条目
+						</div>
+					) : (
+						sortedEntries.map((noteItem, index) => {
+							const fileName = noteItem.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "未命名";
+							const itemSlug = noteItem.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "";
+							const content = noteItem.body ? noteItem.body.split("\n").filter(line => !line.trim().startsWith("---")).join("\n").trim() : "";
+							return (
+								<a
+									href={`/life/notebooks/${folderName}/${itemSlug}/`}
+									class="notebook-entry group rounded-[var(--radius-large)] border border-transparent transition hover:border-[var(--primary)] hover:shadow-md overflow-hidden block"
+								>
+									<div class="notebook-entry-content flex flex-col p-5 md:relative">
+										<div class="flex items-center justify-between mb-2">
+											<span class="text-sm font-medium text-[var(--content-meta)]">
+												{noteItem.data.date || "未填写日期"}
+											</span>
+											<span class="text-xs text-[var(--content-meta)] md:hidden">
+												#{index + 1}
+											</span>
+										</div>
+										<h3 class="notebook-entry-title mb-2 text-xl font-bold text-[var(--text-color)] transition group-hover:text-[var(--primary)]">
+											{fileName}
+										</h3>
+								<div class="prose-sm prose-neutral dark:prose-invert max-w-none text-[var(--content)]">
+										{content || "（无内容）"}
+									</div>
+								</div>
+								</a>
+							);
+						})
+					)}
+				</div>
+			</section>
+		</div>
+	</MainGridLayout>
+) : (
+	// 单条笔记详情页
+	<MainGridLayout title={item.data.title || item.data.date || "笔记"}>
+		<div class="flex w-full flex-col gap-5">
+			<a
+				href={`/life/notebooks/${folderName}/`}
+				class="inline-flex items-center gap-1 text-sm text-[var(--content-meta)] transition hover:text-[var(--primary)]"
+			>
+				<Icon name="material-symbols:arrow-back-rounded" class="text-lg" />
+				返回 {entry.data.name || "笔记本"}
+			</a>
+
+			<article class="card-base rounded-[var(--radius-large)] p-6 md:p-8">
+				<header class="mb-6 border-b border-[var(--line-divider)] pb-4">
+					<div class="flex items-center gap-3 text-sm text-[var(--content-meta)] mb-3">
+						<span class="flex items-center gap-1">
+							<Icon name="material-symbols:schedule-outline" class="text-sm" />
+							{item.data.date || "未填写日期"}
+						</span>
+						{item.data.tags && item.data.tags.length > 0 && (
+							<span class="flex items-center gap-1">
+								<Icon name="material-symbols:label-outline" class="text-sm" />
+								{item.data.tags.map((tag: string) => `#${tag}`).join(" ")}
+							</span>
+						)}
+					</div>
+					<h1 class="text-2xl md:text-3xl font-bold text-[var(--text-color)]">
+						{item.data.title || item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "未命名"}
+					</h1>
+				</header>
+
+				<div class="prose prose-neutral dark:prose-invert max-w-none">
+					{item.body ? (
+						item.body.split("\n").filter(line => !line.trim().startsWith("---")).join("\n").trim()
+					) : "（无内容）"}
+				</div>
+			</article>
+		</div>
+	</MainGridLayout>
+)}
+
+<style>
+	.notebook-entry {
+		background: var(--card-bg);
+	}
+
+	.notebook-entry-title {
+		position: relative;
+	}
+
+	.notebook-entry-title::before {
+		content: "";
+		position: absolute;
+		left: -1rem;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 0.25rem;
+		height: 1.25rem;
+		border-radius: 9999px;
+		background: var(--primary);
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	.notebook-entry:hover .notebook-entry-title::before {
+		opacity: 1;
+	}
+
+</style>

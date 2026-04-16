@@ -346,7 +346,9 @@ export type WidgetComponentType =
 	| "calendar"
 	| "music"
 	| "relationship"
-	| "recentItems";
+	| "recentItems"
+	| "lifeStats"
+	| "siteHeatmap";
 
 // 恋爱计时小组件配置
 export type RelationshipConfig = {

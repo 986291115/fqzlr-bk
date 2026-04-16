@@ -241,6 +241,7 @@ export const zh_TW: Translation = {
 	[Key.siteStatsLastUpdate]: "最後活動",
 	[Key.siteStatsDaysAgo]: "{days} 天前",
 	[Key.siteStatsDays]: "{days} 天",
+	[Key.siteHeatmap]: "更新熱力圖",
 	[Key.today]: "今天",
 
 	// 日曆組件

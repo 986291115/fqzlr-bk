@@ -58,7 +58,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：音乐播放器
 			type: "music",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -106,6 +106,16 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 配置ID：使用第一个广告配置
 			configId: "ad1",
 		},
+		{
+			// 组件类型：生活统计小组件
+			type: "lifeStats",
+			// 是否启用该组件
+			enable: true,
+			// 组件位置
+			position: "sticky",
+			// 是否在文章详情页显示
+			showOnPostPage: true,
+		},
 	],
 
 	// 右侧边栏组件配置列表
@@ -113,6 +123,16 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：恋爱计时小组件
 			type: "relationship",
+			// 是否启用该组件
+			enable: true,
+			// 组件位置
+			position: "top",
+			// 是否在文章详情页显示
+			showOnPostPage: true,
+		},
+		{
+			// 组件类型：网站更新热力图
+			type: "siteHeatmap",
 			// 是否启用该组件
 			enable: true,
 			// 组件位置
@@ -215,7 +235,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：音乐播放器
 			type: "music",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
