@@ -186,19 +186,21 @@ export async function getArchiveList(): Promise<ArchiveItem[]> {
 		});
 	});
 
-	// 笔记本记录
-	notebooksEntries.forEach((n) => {
-		lifeItems.push({
-			id: n.id,
-			type: "life",
-			data: {
-				title: n.data.name || "笔记本",
-				published: n.data.date || new Date(),
-				tags: ["笔记本"],
-				link: "/life/notebooks/",
-			},
+	// 笔记本记录（排除 _index 元数据条目）
+	notebooksEntries
+		.filter((n) => !n.id.includes("_index"))
+		.forEach((n) => {
+			lifeItems.push({
+				id: n.id,
+				type: "life",
+				data: {
+					title: n.data.name || "笔记本",
+					published: n.data.date || new Date(),
+					tags: ["笔记本"],
+					link: "/life/notebooks/",
+				},
+			});
 		});
-	});
 
 	// 打卡记录
 	checkinEntries.forEach((c) => {

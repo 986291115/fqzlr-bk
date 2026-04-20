@@ -75,8 +75,11 @@ const allItems = [
 				: (b.data.image as any).src,
 		id: b.id,
 	})),
-	// 生活动态 - 运动
-	...workoutEntries.slice(0, 2).map((w) => ({
+	// 生活动态 - 运动（按日期排序取前2个）
+	...workoutEntries
+		.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+		.slice(0, 2)
+		.map((w) => ({
 		type: "life-workout",
 		title: `运动: ${w.data.workoutType || "锻炼"} - ${w.data.runKm || 0}km`,
 		date: w.data.date,
@@ -84,8 +87,11 @@ const allItems = [
 		image: "https://re.tsh520.cn/zl/life-workout.webp",
 		id: w.id,
 	})),
-	// 生活动态 - 睡眠
-	...sleepEntries.slice(0, 2).map((s) => ({
+	// 生活动态 - 睡眠（按日期排序取前2个）
+	...sleepEntries
+		.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+		.slice(0, 2)
+		.map((s) => ({
 		type: "life-sleep",
 		title: `睡眠: ${s.data.sleepHours || 0}小时`,
 		date: s.data.date,
@@ -93,8 +99,11 @@ const allItems = [
 		image: "https://re.tsh520.cn/zl/life-sleep.webp",
 		id: s.id,
 	})),
-	// 生活动态 - 饮食
-	...foodEntries.slice(0, 2).map((f) => ({
+	// 生活动态 - 饮食（按日期排序取前2个）
+	...foodEntries
+		.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+		.slice(0, 2)
+		.map((f) => ({
 		type: "life-food",
 		title: `饮食记录`,
 		date: f.data.date,
@@ -102,8 +111,15 @@ const allItems = [
 		image: "https://re.tsh520.cn/zl/life-food.webp",
 		id: f.id,
 	})),
-	// 生活动态 - 想法
-	...completedIdeas.slice(0, 2).map((i) => ({
+	// 生活动态 - 想法（按完成日期排序取前2个）
+	...completedIdeas
+		.sort((a, b) => {
+			const dateA = a.data.completedAt ? new Date(a.data.completedAt).getTime() : 0;
+			const dateB = b.data.completedAt ? new Date(b.data.completedAt).getTime() : 0;
+			return dateB - dateA;
+		})
+		.slice(0, 2)
+		.map((i) => ({
 		type: "life-idea",
 		title: `想法: ${(i.data.content || "").slice(0, 20)}...`,
 		date: i.data.completedAt || i.data.createdAt || new Date(),
@@ -111,17 +127,32 @@ const allItems = [
 		image: "https://re.tsh520.cn/zl/life-idea.webp",
 		id: i.id,
 	})),
-	// 生活动态 - 日记
-	...notebooksEntries.slice(0, 2).map((n) => ({
-		type: "life-notebook",
-		title: `日记: ${n.data.name || "未命名"}`,
-		date: n.data.date || new Date(),
-		url: "/life/notebooks/",
-		image: "https://re.tsh520.cn/zl/life-notebook.webp",
-		id: n.id,
-	})),
-	// 生活动态 - 打卡
-	...checkinEntries.slice(0, 2).map((c) => ({
+	// 生活动态 - 日记（排除 _index 元数据条目，按日期排序取前2个）
+	...notebooksEntries
+		.filter((n) => !n.id.includes("_index"))
+		.sort((a, b) => {
+			const dateA = a.data.date ? new Date(a.data.date).getTime() : 0;
+			const dateB = b.data.date ? new Date(b.data.date).getTime() : 0;
+			return dateB - dateA; // 按日期降序排序
+		})
+		.slice(0, 2)
+		.map((n) => ({
+			type: "life-notebook",
+			title: `日记: ${n.data.name || "未命名"}`,
+			date: n.data.date || new Date(),
+			url: "/life/notebooks/",
+			image: "https://re.tsh520.cn/zl/life-notebook.webp",
+			id: n.id,
+		})),
+	// 生活动态 - 打卡（按最后一次打卡日期排序取前2个）
+	...checkinEntries
+		.sort((a, b) => {
+			const dateA = a.data.checkins?.length ? new Date(a.data.checkins[a.data.checkins.length - 1]).getTime() : 0;
+			const dateB = b.data.checkins?.length ? new Date(b.data.checkins[b.data.checkins.length - 1]).getTime() : 0;
+			return dateB - dateA;
+		})
+		.slice(0, 2)
+		.map((c) => ({
 		type: "life-checkin",
 		title: `打卡: ${c.data.name}`,
 		date: c.data.checkins?.[c.data.checkins.length - 1] || new Date(),
@@ -129,8 +160,15 @@ const allItems = [
 		image: "https://re.tsh520.cn/zl/life-checkin.webp",
 		id: c.id,
 	})),
-	// 生活动态 - 规划
-	...routinesEntries.slice(0, 2).map((r) => ({
+	// 生活动态 - 规划（按更新日期排序取前2个）
+	...routinesEntries
+		.sort((a, b) => {
+			const dateA = a.data.updatedAt instanceof Date ? a.data.updatedAt.getTime() : 0;
+			const dateB = b.data.updatedAt instanceof Date ? b.data.updatedAt.getTime() : 0;
+			return dateB - dateA;
+		})
+		.slice(0, 2)
+		.map((r) => ({
 		type: "life-routine",
 		title: `规划: ${r.data.name}`,
 		date: r.data.updatedAt instanceof Date ? r.data.updatedAt : new Date(),

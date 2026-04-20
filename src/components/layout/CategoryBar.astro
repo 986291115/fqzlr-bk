@@ -11,7 +11,7 @@ const homeUrl = url("/");
 const archiveUrl = url("/archive/");
 ---
 
-<div class="card-base category-bar p-3 onload-animation" id="category-bar" data-home-path={homeUrl} data-archive-path={archiveUrl}>
+<div class="card-base category-bar p-3 onload-animation hidden" id="category-bar" data-home-path={homeUrl} data-archive-path={archiveUrl}>
   <div class="category-bar-inner flex gap-2">
     <a
       href={homeUrl}
@@ -57,6 +57,11 @@ const archiveUrl = url("/archive/");
 <style>
   .category-bar {
     margin-bottom: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+  }
+  .category-bar.visible {
+    opacity: 1;
   }
   .category-divider {
     width: 1px;
@@ -135,10 +140,12 @@ const archiveUrl = url("/archive/");
 
     // 只在首页和归档页显示
     if (!isHome && !isArchive) {
-      bar.style.display = "none";
+      bar.classList.add("hidden");
+      bar.classList.remove("visible");
       return;
     }
-    bar.style.display = "";
+    bar.classList.remove("hidden");
+    bar.classList.add("visible");
 
     // 高亮当前分类
     const pills = bar.querySelectorAll<HTMLAnchorElement>(".category-pill");

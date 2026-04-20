@@ -24,21 +24,18 @@ const momentAssets = import.meta.glob<{ default: ImageMetadata }>(
 
 // 解析图片路径，支持 frontmatter 中的 images 数组/字符串 (逗号分隔)
 const parseImages = (imagesData: any): (string | ImageMetadata)[] => {
-	// 1. 从 frontmatter 提取 (处理数组和字符串)
 	let rawPaths: string[] = [];
 	if (Array.isArray(imagesData)) {
 		rawPaths = imagesData.map((img) =>
 			typeof img === "string" ? img : img.src || img,
 		);
 	} else if (typeof imagesData === "string" && imagesData.trim()) {
-		// 支持逗号或分号分隔的路径字符串
 		rawPaths = imagesData
 			.split(/[,;]/)
 			.map((img) => img.trim())
 			.filter((img) => img);
 	}
 
-	// 处理本地相对路径，将其映射到经过 Astro 处理后的 URL 或 Metadata 对象
 	return Array.from(new Set(rawPaths))
 		.map((img) => {
 			if (
@@ -49,14 +46,11 @@ const parseImages = (imagesData: any): (string | ImageMetadata)[] => {
 				return img;
 			}
 
-			// 处理形如 assets/xxx.jpg 或 ./assets/xxx.jpg 的路径
 			const cleanPath = img.replace(/^\.\//, "");
 			if (cleanPath.startsWith("assets/")) {
 				const fileName = cleanPath.replace("assets/", "");
-				// 在 import.meta.glob 的结果中查找匹配的文件
 				for (const path in momentAssets) {
 					if (path.endsWith(fileName)) {
-						// 返回整个 Metadata 对象，供 Astro <Image /> 组件处理
 						return momentAssets[path].default;
 					}
 				}
@@ -73,187 +67,202 @@ const getGridCols = (count: number) => {
 	return "grid-cols-3";
 };
 
-// 唯一的ID用于点赞和评论状态管理
 const momentId = moment.id;
 
-// 图片展示逻辑
 const imagesArray = parseImages(images);
 const maxImages = 9;
 const displayImages = imagesArray.slice(0, maxImages);
 const remainingCount = imagesArray.length - maxImages;
 const hiddenImages = imagesArray.slice(maxImages);
 
-// 获取图片的 URL 字符串 (用于 Fancybox 等)
 const getImgSrc = (img: string | ImageMetadata): string => {
 	if (typeof img === "string") return img;
 	return img.src;
 };
+
+// 格式化时间戳为相对时间
+const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 30) return `${days}天前`;
+  return formatDateToYYYYMMDD(date);
+};
 ---
 
-<div id={moment.id} class="card-base w-full rounded-[var(--radius-large)] overflow-hidden relative p-5 md:p-6 mb-6 transition-all hover:-translate-y-1">
-  <div class="flex items-start gap-4 mb-3">
-    <!-- 头像 -->
-    <div class="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-black/5 dark:bg-white/5">
-      {avatar ? (
-        <img src={avatar} alt={author} class="w-full h-full object-cover" loading="lazy" />
-      ) : (
-        <Icon name="material-symbols:person" class="w-full h-full text-black/20 dark:text-white/20 p-2" />
-      )}
-    </div>
-
-    <!-- 作者和时间 -->
-    <div class="flex flex-col justify-center flex-grow">
-      <div class="font-bold text-[var(--primary)] text-lg leading-tight">
-        {author || "匿名"}
-      </div>
-      <div class="text-sm text-[var(--content-meta)] flex flex-wrap items-center gap-2 mt-1">
-        <div class="flex items-center gap-1">
-          <Icon name="material-symbols:schedule-outline-rounded" class="text-base" />
-          <time datetime={published.toISOString()}>{formatDateToYYYYMMDD(published)}</time>
-        </div>
-        
-        {location && (
-          <div class="flex items-center gap-1">
-            <Icon name="material-symbols:location-on-outline-rounded" class="text-base" />
-            <span>{location}</span>
-          </div>
-        )}
-
-        {device && (
-          <div class="flex items-center gap-1">
-            <Icon name="material-symbols:smartphone-outline" class="text-base" />
-            <span>{device}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-
-  <!-- 内容 -->
-  <div class="prose dark:prose-invert max-w-none mb-4 text-[var(--content-text)] text-base">
-    <Markdown class="moment-content">
-      <Content />
-    </Markdown>
-  </div>
-
-  <!-- 图片 -->
-  {imagesArray && imagesArray.length > 0 && (
-    <div class={`grid gap-2 mb-4 ${imagesArray.length === 1 ? 'grid-cols-1 w-[70%] sm:w-[50%] md:w-[45%] max-w-[300px]' : 'max-w-2xl ' + getGridCols(Math.min(imagesArray.length, 9))}`}>
-      {/* 如果图片数量大于9，第9张图（index=8）作为"更多"的入口 */}
-      {displayImages.map((img, index) => {
-        const imgSrc = getImgSrc(img);
-        // 是否是第9张图，并且还有更多图片
-        const isMoreTrigger = index === maxImages - 1 && remainingCount > 0;
-        
-        return (
-          <div class={`${imagesArray.length === 1 ? 'aspect-auto max-h-[300px] flex justify-start' : 'aspect-square'} rounded-xl overflow-hidden cursor-pointer group relative`}>
-            {typeof img === 'string' ? (
-              <img 
-                src={img} 
-                alt="Moment image" 
-                class={`${imagesArray.length === 1 ? 'w-auto h-auto max-w-full max-h-[300px] object-cover rounded-xl object-left' : 'w-full h-full object-cover'} transition-transform duration-300 group-hover:scale-105`} 
-                loading="lazy"
-                data-fancybox={`gallery-${moment.id}`}
-                data-src={imgSrc}
-              />
-            ) : (
-              <Image 
-                src={img} 
-                alt="Moment image" 
-                class={`${imagesArray.length === 1 ? 'w-auto h-auto max-w-full max-h-[300px] object-cover rounded-xl object-left' : 'w-full h-full object-cover'} transition-transform duration-300 group-hover:scale-105`} 
-                loading="lazy"
-                data-fancybox={`gallery-${moment.id}`}
-                data-src={imgSrc}
-              />
-            )}
-            
-            {/* 第9张图上的遮罩显示剩余数量 */}
-            {isMoreTrigger && (
-              <div 
-                class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-2xl backdrop-blur-[2px] transition-opacity hover:bg-black/40 pointer-events-none"
-              >
-                +{remainingCount + 1}
-              </div>
-            )}
-          </div>
-        );
-      })}
-      
-      {/* 隐藏的图片 (为了让 Fancybox 能检测到并展示在灯箱里) */}
-      {/* 注意：hiddenImages 是从第10张图开始切片的 */}
-      {hiddenImages.map((img) => {
-        const imgSrc = getImgSrc(img);
-        return typeof img === 'string' ? (
-          <img 
-            src={img} 
-            alt="Hidden moment image" 
-            class="hidden"
-            data-fancybox={`gallery-${moment.id}`}
-            data-src={imgSrc}
-          />
+<div id={moment.id} class="moment-card">
+  <!-- 卡片主体 -->
+  <div class="card-inner">
+    <!-- 顶部用户信息 -->
+    <div class="card-header">
+      <div class="user-avatar">
+        {avatar ? (
+          <img src={avatar} alt={author} class="avatar-img" loading="lazy" />
         ) : (
-          <Image 
-            src={img} 
-            alt="Hidden moment image" 
-            class="hidden"
-            data-fancybox={`gallery-${moment.id}`}
-            data-src={imgSrc}
-          />
-        );
-      })}
-    </div>
-  )}
+          <img src="/avatar.png" alt={author} class="avatar-img" loading="lazy" 
+            onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>'" />
+        )}
+      </div>
+      
+      <div class="user-info">
+        <div class="user-name-row">
+          <span class="user-name">{author || "匿名"}</span>
+          {device && (
+            <span class="device-tag">
+              <Icon name="material-symbols:smartphone" class="text-xs" />
+              {device}
+            </span>
+          )}
+        </div>
+        <div class="user-meta">
+          <time datetime={published.toISOString()} title={formatDateToYYYYMMDD(published)}>
+            {formatTimeAgo(published)}
+          </time>
+          {location && (
+            <>
+              <span class="meta-dot">·</span>
+              <span class="location">
+                <Icon name="material-symbols:location-on-outline" class="text-xs" />
+                {location}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
 
-  <!-- 标签 -->
-  {tags && tags.length > 0 && (
-    <div class="flex flex-wrap gap-2 mt-2 mb-4">
-      {tags.map((tag) => (
-        <a 
-          href={getTagUrl(tag)} 
-          aria-label={`View all posts with the ${tag.trim()} tag`}
-          class="btn-regular h-6 text-xs px-2 py-1 rounded-md text-[var(--content-meta)] hover:scale-105 active:scale-95 transition-all duration-200"
-        >
-          #{tag.trim()}
-        </a>
-      ))}
-    </div>
-  )}
-
-  <!-- 互动区：点赞和评论按钮 -->
-  <div class="flex items-center justify-between border-t border-[var(--line-divider)] pt-3 mt-2 text-[var(--content-meta)]">
-    <div class="flex gap-4">
-      <!-- 评论按钮 -->
-      <button 
-        class="moment-comment-btn flex items-center gap-1.5 hover:text-[var(--primary)] transition-colors"
-        aria-label="跳至评论区"
-        onclick="document.getElementById('waline-comment')?.scrollIntoView({behavior: 'smooth'})"
-      >
-        <Icon name="material-symbols:chat-bubble-outline-rounded" class="text-xl" />
-        <span class="text-sm font-medium">评论</span>
+      <!-- 更多按钮 -->
+      <button class="more-btn" title="更多">
+        <Icon name="material-symbols:more-horiz" class="text-xl" />
       </button>
     </div>
 
-    <!-- 点赞按钮 -->
-    <button 
-      class="moment-like-btn flex items-center gap-1.5 transition-all active:scale-90"
-      data-id={momentId}
-      aria-label="点赞"
-    >
-      <div class="relative flex items-center justify-center">
-        <!-- 未点赞图标 -->
-        <Icon name="material-symbols:favorite-outline-rounded" class="text-xl icon-outline transition-all duration-300" />
-        <!-- 已点赞图标 (初始隐藏) -->
-        <Icon name="material-symbols:favorite-rounded" class="text-xl icon-filled text-red-500 absolute inset-0 opacity-0 scale-50 transition-all duration-300" />
+    <!-- 内容区域 -->
+    <div class="card-content">
+      <div class="prose dark:prose-invert max-w-none text-[var(--content-text)] text-[15px] leading-[1.7]">
+        <Markdown class="moment-markdown">
+          <Content />
+        </Markdown>
       </div>
-      <span class="text-sm font-medium like-count">点赞</span>
-    </button>
+    </div>
+
+    <!-- 图片网格 -->
+    {imagesArray && imagesArray.length > 0 && (
+      <div class={`card-images ${imagesArray.length === 1 ? 'single-image' : ''}`}>
+        <div class={`image-grid ${imagesArray.length === 1 ? 'grid-cols-1' : getGridCols(Math.min(imagesArray.length, 9))}`}>
+          {displayImages.map((img, index) => {
+            const imgSrc = getImgSrc(img);
+            const isMoreTrigger = index === maxImages - 1 && remainingCount > 0;
+            
+            return (
+              <div class={`image-item ${imagesArray.length === 1 ? 'single' : ''} ${isMoreTrigger ? 'has-more' : ''}`}>
+                {typeof img === 'string' ? (
+                  <img 
+                    src={img} 
+                    alt="Moment image" 
+                    class="image-img"
+                    loading="lazy"
+                    data-fancybox={`gallery-${moment.id}`}
+                    data-src={imgSrc}
+                  />
+                ) : (
+                  <Image 
+                    src={img} 
+                    alt="Moment image" 
+                    class="image-img"
+                    loading="lazy"
+                    data-fancybox={`gallery-${moment.id}`}
+                    data-src={imgSrc}
+                  />
+                )}
+                
+                {isMoreTrigger && (
+                  <div class="more-overlay">
+                    <span class="more-text">+{remainingCount + 1}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {hiddenImages.map((img) => {
+          const imgSrc = getImgSrc(img);
+          return typeof img === 'string' ? (
+            <img 
+              src={img} 
+              alt="Hidden moment image" 
+              class="hidden"
+              data-fancybox={`gallery-${moment.id}`}
+              data-src={imgSrc}
+            />
+          ) : (
+            <Image 
+              src={img} 
+              alt="Hidden moment image" 
+              class="hidden"
+              data-fancybox={`gallery-${moment.id}`}
+              data-src={imgSrc}
+            />
+          );
+        })}
+      </div>
+    )}
+
+    <!-- 标签 -->
+    {tags && tags.length > 0 && (
+      <div class="card-tags">
+        {tags.map((tag) => (
+          <a 
+            href={getTagUrl(tag)} 
+            class="tag-item"
+          >
+            #{tag.trim()}
+          </a>
+        ))}
+      </div>
+    )}
+
+    <!-- 底部互动栏 -->
+    <div class="card-actions">
+      <!-- 评论 -->
+      <button 
+        class="action-btn comment-btn"
+        onclick="document.getElementById('waline-comment')?.scrollIntoView({behavior: 'smooth'})"
+      >
+        <Icon name="material-symbols:chat-bubble-outline-rounded" class="action-icon" />
+        <span class="action-label">评论</span>
+      </button>
+
+      <!-- 点赞 -->
+      <button 
+        class="action-btn like-btn"
+        data-id={momentId}
+      >
+        <div class="like-icons">
+          <Icon name="material-symbols:favorite-outline-rounded" class="action-icon icon-outline" />
+          <Icon name="material-symbols:favorite-rounded" class="action-icon icon-filled" />
+        </div>
+        <span class="action-label like-count">点赞</span>
+      </button>
+
+      <!-- 分享 -->
+      <button class="action-btn share-btn" title="分享">
+        <Icon name="material-symbols:share" class="action-icon" />
+        <span class="action-label">分享</span>
+      </button>
+    </div>
   </div>
 </div>
 
 <script>
-  // 客户端点赞逻辑 (使用 localStorage 模拟)
   document.addEventListener("DOMContentLoaded", () => {
-    const likeBtns = document.querySelectorAll(".moment-like-btn");
+    const likeBtns = document.querySelectorAll(".like-btn");
     
     likeBtns.forEach(btn => {
       const id = btn.getAttribute("data-id");
@@ -263,53 +272,69 @@ const getImgSrc = (img: string | ImageMetadata): string => {
       const countKey = `moment_like_count_${id}`;
       
       const isLiked = localStorage.getItem(storageKey) === "true";
-      // 模拟一些初始点赞数，或者从 localStorage 读取
-      let likeCount = parseInt(localStorage.getItem(countKey) || String(Math.floor(Math.random() * 10) + 1));
+      let likeCount = parseInt(localStorage.getItem(countKey) || String(Math.floor(Math.random() * 20) + 5));
       
       const outlineIcon = btn.querySelector(".icon-outline");
       const filledIcon = btn.querySelector(".icon-filled");
       const countSpan = btn.querySelector(".like-count");
       
-      // 初始化状态
       if (isLiked) {
-        outlineIcon?.classList.add("opacity-0", "scale-50");
-        filledIcon?.classList.remove("opacity-0", "scale-50");
+        outlineIcon?.classList.add("hidden");
+        filledIcon?.classList.remove("hidden");
+        filledIcon?.classList.add("active");
         if(countSpan) countSpan.textContent = String(likeCount);
-        countSpan?.classList.add("text-red-500");
+        btn.classList.add("liked");
       } else {
-        if(countSpan) countSpan.textContent = "点赞"; // 未点赞时显示文字，或者也可以显示数字
+        if(countSpan) countSpan.textContent = "点赞";
       }
 
-      // 点击事件
       btn.addEventListener("click", () => {
         const currentlyLiked = localStorage.getItem(storageKey) === "true";
         
         if (currentlyLiked) {
-          // 取消点赞
           localStorage.setItem(storageKey, "false");
           likeCount = Math.max(0, likeCount - 1);
           localStorage.setItem(countKey, String(likeCount));
           
-          outlineIcon?.classList.remove("opacity-0", "scale-50");
-          filledIcon?.classList.add("opacity-0", "scale-50");
+          outlineIcon?.classList.remove("hidden");
+          filledIcon?.classList.add("hidden");
+          filledIcon?.classList.remove("active");
           if(countSpan) countSpan.textContent = "点赞";
-          countSpan?.classList.remove("text-red-500");
+          btn.classList.remove("liked");
         } else {
-          // 点赞
           localStorage.setItem(storageKey, "true");
           likeCount += 1;
           localStorage.setItem(countKey, String(likeCount));
           
-          outlineIcon?.classList.add("opacity-0", "scale-50");
-          filledIcon?.classList.remove("opacity-0", "scale-50");
+          outlineIcon?.classList.add("hidden");
+          filledIcon?.classList.remove("hidden");
+          filledIcon?.classList.add("active");
           if(countSpan) countSpan.textContent = String(likeCount);
-          countSpan?.classList.add("text-red-500");
+          btn.classList.add("liked");
           
-          // 添加一个小特效类
-          filledIcon?.classList.add("animate-ping-once");
+          // 点赞动画
+          btn.classList.add("popping");
           setTimeout(() => {
-            filledIcon?.classList.remove("animate-ping-once");
+            btn.classList.remove("popping");
           }, 300);
+        }
+      });
+    });
+
+    // 分享功能
+    const shareBtns = document.querySelectorAll(".share-btn");
+    shareBtns.forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const url = window.location.href;
+        const title = document.title;
+        
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, url });
+          } catch (e) {}
+        } else {
+          await navigator.clipboard.writeText(url);
+          // 可以添加一个 toast 提示
         }
       });
     });
@@ -317,12 +342,354 @@ const getImgSrc = (img: string | ImageMetadata): string => {
 </script>
 
 <style>
-  @keyframes ping-once {
-    0% { transform: scale(1); }
+  /* 卡片容器 */
+  .moment-card {
+    width: 100%;
+  }
+
+  .card-inner {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .card-inner:hover {
+    border-color: var(--primary)/30;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 用户信息头部 */
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .user-avatar {
+    flex-shrink: 0;
+  }
+
+  .avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary)/10;
+    transition: border-color 0.3s;
+  }
+
+  .card-inner:hover .avatar-img {
+    border-color: var(--primary)/30;
+  }
+
+  .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .user-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .device-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--primary)/8;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--primary);
+  }
+
+  .user-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--content-meta);
+  }
+
+  .meta-dot {
+    opacity: 0.5;
+  }
+
+  .location {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .more-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--content-meta);
+    transition: all 0.2s;
+  }
+
+  .more-btn:hover {
+    background: var(--primary)/10;
+    color: var(--primary);
+  }
+
+  /* 内容区域 */
+  .card-content {
+    margin-bottom: 16px;
+  }
+
+  .moment-markdown :global(p) {
+    margin-bottom: 0.75rem;
+  }
+
+  .moment-markdown :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .moment-markdown :global(img) {
+    border-radius: 12px;
+    margin: 0.75rem 0;
+  }
+
+  /* 图片网格 */
+  .card-images {
+    margin-bottom: 16px;
+  }
+
+  .single-image .image-grid {
+    max-width: 400px;
+  }
+
+  .image-grid {
+    display: grid;
+    gap: 6px;
+  }
+
+  .image-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--border);
+  }
+
+  .image-item.single {
+    border-radius: 16px;
+  }
+
+  .image-item:not(.single) {
+    aspect-ratio: 1;
+  }
+
+  .image-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .image-item:hover .image-img {
+    transform: scale(1.05);
+  }
+
+  .has-more .image-img {
+    filter: brightness(0.6);
+  }
+
+  .more-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .more-text {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 标签 */
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tag-item {
+    padding: 4px 12px;
+    background: var(--primary)/8;
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--primary);
+    transition: all 0.2s;
+  }
+
+  .tag-item:hover {
+    background: var(--primary)/15;
+    transform: translateY(-1px);
+  }
+
+  /* 互动栏 */
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    color: var(--content-meta);
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .action-icon {
+    font-size: 20px;
+    transition: transform 0.2s;
+  }
+
+  .action-label {
+    font-weight: 500;
+  }
+
+  /* 评论按钮 */
+  .comment-btn:hover {
+    background: var(--primary)/10;
+    color: var(--primary);
+  }
+
+  .comment-btn:hover .action-icon {
+    transform: scale(1.1);
+  }
+
+  /* 点赞按钮 */
+  .like-btn {
+    position: relative;
+  }
+
+  .like-icons {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+
+  .icon-outline {
+    position: absolute;
+    inset: 0;
+    transition: all 0.2s;
+  }
+
+  .icon-filled {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s;
+    color: #ef4444;
+  }
+
+  .icon-filled.active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .like-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .like-btn.liked {
+    color: #ef4444;
+  }
+
+  .like-btn.liked .icon-outline {
+    opacity: 0;
+  }
+
+  .like-btn.popping .icon-filled {
+    animation: like-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes like-pop {
+    0% { transform: scale(0.5); }
     50% { transform: scale(1.3); }
     100% { transform: scale(1); }
   }
-  .animate-ping-once {
-    animation: ping-once 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* 分享按钮 */
+  .share-btn:hover {
+    background: var(--primary)/10;
+    color: var(--primary);
+  }
+
+  .share-btn:hover .action-icon {
+    transform: scale(1.1) rotate(-15deg);
+  }
+
+  /* 响应式 */
+  @media (max-width: 640px) {
+    .card-inner {
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .avatar-img {
+      width: 42px;
+      height: 42px;
+    }
+
+    .user-name {
+      font-size: 14px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .action-icon {
+      font-size: 18px;
+    }
+
+    .action-label {
+      display: none;
+    }
+
+    .action-btn {
+      padding: 8px;
+    }
+
+    .image-grid {
+      gap: 4px;
+    }
   }
 </style>

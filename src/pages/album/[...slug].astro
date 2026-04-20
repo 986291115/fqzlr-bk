@@ -1,0 +1,693 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+
+export async function getStaticPaths() {
+	const albums = await getCollection("album");
+	return albums.map((album) => ({
+		params: { slug: album.id },
+		props: { album },
+	}));
+}
+
+const { album } = Astro.props;
+
+// 处理图片数组，提取数据
+const photos = (album.data.photos || []).map((photo: any, index: number) => {
+	let src, alt, caption, width, height;
+	
+	if (typeof photo === 'string') {
+		src = photo;
+		alt = '';
+		caption = '';
+		width = 1920;
+		height = 1080;
+	} else {
+		src = photo.src || photo;
+		alt = photo.alt || `${album.data.title} - 照片 ${index + 1}`;
+		caption = photo.caption || '';
+		width = photo.width || 1920;
+		height = photo.height || 1080;
+	}
+	
+	// 计算宽高比
+	const aspectRatio = width / height;
+	
+	return { src, alt, caption, width, height, aspectRatio };
+});
+
+// 计算创建时间
+function getTimeAgo(date: Date): string {
+	const now = new Date();
+	const diff = now.getTime() - date.getTime();
+	const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
+	
+	if (months < 1) return '创建不到1个月前';
+	if (months === 1) return '创建1个月前';
+	if (months < 12) return `创建${months}个月前`;
+	const years = Math.floor(months / 12);
+	return years === 1 ? '创建1年前' : `创建${years}年前`;
+}
+---
+
+<MainGridLayout title={album.data.title} description={album.data.subtitle || `${album.data.title} - 相册`}>
+	<div class="flex flex-col w-full relative min-h-[50vh]">
+		<!-- 顶部导航 -->
+		<div class="page-nav mb-6">
+			<a href="/album/" class="nav-back">
+				<Icon name="material-symbols:arrow-left-rounded" class="text-2xl" />
+			</a>
+		</div>
+
+		<!-- 相册头部信息 - 居中简洁风格 -->
+		<div class="album-header">
+			<h1 class="album-title">{album.data.title}</h1>
+			{album.data.subtitle && (
+				<p class="album-subtitle">{album.data.subtitle}</p>
+			)}
+			
+			<!-- 底部信息 -->
+			<div class="album-meta">
+				<span class="meta-item">
+					<Icon name="material-symbols:imagesmode" class="text-lg" />
+					{photos.length} 照片
+				</span>
+				<span class="meta-divider"></span>
+				<span class="meta-item">
+					<Icon name="material-symbols:calendar-today" class="text-lg" />
+					{album.data.date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+				</span>
+				<span class="meta-divider"></span>
+				<span class="meta-item">
+					<Icon name="material-symbols:search" class="text-lg" />
+					{getTimeAgo(album.data.date)}
+				</span>
+			</div>
+		</div>
+
+		<!-- 照片网格 -->
+		<div class="photo-section">
+			{photos.length > 0 ? (
+				<>
+					<!-- CSS 瀑布流布局 -->
+					<div class="photo-masonry" id="photo-masonry">
+						{photos.map((photo: any, index: number) => (
+							<div 
+								class="photo-item"
+								data-index={index}
+								data-src={photo.src}
+								data-alt={photo.alt}
+								data-caption={photo.caption}
+								data-width={photo.width}
+								data-height={photo.height}
+								data-aspect={photo.aspectRatio.toFixed(3)}
+							>
+								<img 
+									src={photo.src} 
+									alt={photo.alt}
+									class="photo-img"
+									loading="lazy"
+								/>
+								<div class="photo-overlay">
+									<Icon name="material-symbols:zoom-in" class="text-2xl" />
+								</div>
+								{photo.caption && (
+									<div class="photo-caption">{photo.caption}</div>
+								)}
+							</div>
+						))}
+					</div>
+				</>
+			) : (
+				<div class="empty-state">
+					<Icon name="material-symbols:photo-album-outline" class="text-6xl text-[var(--content-meta)]/50 mx-auto mb-4" />
+					<p class="text-[var(--content-meta)]">这个相册还没有照片哦~</p>
+				</div>
+			)}
+		</div>
+	</div>
+</MainGridLayout>
+
+<!-- 图片预览灯箱 -->
+<div id="photo-lightbox" class="lightbox" aria-hidden="true">
+	<!-- 顶部工具栏 -->
+	<div class="lightbox-toolbar">
+		<div class="toolbar-left">
+			<span id="lightbox-counter" class="counter-text">1 / 1</span>
+		</div>
+		<div class="toolbar-right">
+			<button id="lightbox-info-toggle" class="toolbar-btn" title="显示详情">
+				<Icon name="material-symbols:info-outline" class="text-xl" />
+			</button>
+			<button id="lightbox-close" class="toolbar-btn" title="关闭 (Esc)">
+				<Icon name="material-symbols:close" class="text-2xl" />
+			</button>
+		</div>
+	</div>
+	
+	<!-- 导航按钮 -->
+	<button id="lightbox-prev" class="nav-btn nav-prev" aria-label="上一张">
+		<Icon name="material-symbols:chevron-left" class="text-4xl" />
+	</button>
+	<button id="lightbox-next" class="nav-btn nav-next" aria-label="下一张">
+		<Icon name="material-symbols:chevron-right" class="text-4xl" />
+	</button>
+	
+	<!-- 主图区域 -->
+	<div class="lightbox-content">
+		<img id="lightbox-image" src="" alt="" class="lightbox-img" />
+	</div>
+	
+	<!-- 底部信息栏 -->
+	<div id="lightbox-info" class="lightbox-info">
+		<div class="info-main">
+			<span id="lightbox-caption" class="caption-text"></span>
+			<span id="lightbox-dimensions" class="dimensions-text"></span>
+		</div>
+		<div class="info-actions">
+			<button id="lightbox-download" class="action-btn" title="下载原图">
+				<Icon name="material-symbols:download" class="text-xl" />
+			</button>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* 顶部导航 */
+	.page-nav {
+		display: flex;
+		align-items: center;
+	}
+
+	.nav-back {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-color);
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		border-radius: 50%;
+		transition: all 0.3s;
+	}
+
+	.nav-back:hover {
+		background: var(--primary);
+		color: white;
+		border-color: var(--primary);
+		transform: scale(1.05);
+	}
+
+	/* 相册头部 - 左侧对齐透明背景 */
+	.album-header {
+		text-align: left;
+		padding: 0 0 24px 0;
+		margin-bottom: 24px;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.album-title {
+		font-size: 28px;
+		font-weight: 700;
+		color: var(--text-color);
+		margin-bottom: 8px;
+		letter-spacing: -0.5px;
+	}
+
+	.album-subtitle {
+		font-size: 15px;
+		color: var(--content-meta);
+		margin-bottom: 16px;
+		line-height: 1.6;
+	}
+
+	/* 底部元信息 */
+	.album-meta {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+
+	.meta-item {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 14px;
+		color: var(--content-meta);
+	}
+
+	.meta-item :global(svg) {
+		color: var(--primary);
+	}
+
+	.meta-divider {
+		width: 4px;
+		height: 4px;
+		background: var(--border);
+		border-radius: 50%;
+	}
+
+	/* 照片区域 */
+	.photo-section {
+		animation: fadeIn 0.5s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(10px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	/* CSS 瀑布流布局 - 多列网格 */
+	.photo-masonry {
+		column-count: 5;
+		column-gap: 10px;
+	}
+
+	@media (max-width: 1400px) {
+		.photo-masonry {
+			column-count: 4;
+		}
+	}
+
+	@media (max-width: 1024px) {
+		.photo-masonry {
+			column-count: 3;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.photo-masonry {
+			column-count: 2;
+			column-gap: 8px;
+		}
+	}
+
+	/* 照片项 */
+	.photo-item {
+		position: relative;
+		border-radius: 8px;
+		overflow: hidden;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		break-inside: avoid;
+		margin-bottom: 10px;
+	}
+
+	.photo-item:hover {
+		transform: scale(1.02);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+	}
+
+	.photo-img {
+		width: 100%;
+		height: auto;
+		display: block;
+		transition: transform 0.4s ease;
+	}
+
+	.photo-item:hover .photo-img {
+		transform: scale(1.05);
+	}
+
+	/* 悬浮遮罩 */
+	.photo-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.3s;
+		color: white;
+	}
+
+	.photo-item:hover .photo-overlay {
+		opacity: 1;
+	}
+
+	/* 照片说明 */
+	.photo-caption {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 10px;
+		background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+		color: white;
+		font-size: 12px;
+		opacity: 0;
+		transform: translateY(5px);
+		transition: all 0.3s;
+	}
+
+	.photo-item:hover .photo-caption {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	/* 空状态 */
+	.empty-state {
+		text-align: center;
+		padding: 60px 20px;
+	}
+
+	/* 灯箱样式 */
+	.lightbox {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		background: rgba(0, 0, 0, 0.95);
+		display: flex;
+		flex-direction: column;
+		opacity: 0;
+		visibility: hidden;
+		transition: all 0.3s ease;
+	}
+
+	.lightbox.active {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	/* 工具栏 */
+	.lightbox-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 20px;
+		background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 10;
+	}
+
+	.counter-text {
+		color: white;
+		font-size: 14px;
+		font-weight: 500;
+		padding: 6px 14px;
+		background: rgba(255,255,255,0.1);
+		border-radius: 20px;
+		backdrop-filter: blur(8px);
+	}
+
+	.toolbar-right {
+		display: flex;
+		gap: 8px;
+	}
+
+	.toolbar-btn {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		background: rgba(255,255,255,0.1);
+		border-radius: 50%;
+		transition: all 0.2s;
+		backdrop-filter: blur(8px);
+	}
+
+	.toolbar-btn:hover {
+		background: rgba(255,255,255,0.2);
+		transform: scale(1.05);
+	}
+
+	/* 导航按钮 */
+	.nav-btn {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 56px;
+		height: 56px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		background: rgba(255,255,255,0.1);
+		border-radius: 50%;
+		transition: all 0.3s;
+		backdrop-filter: blur(8px);
+		z-index: 10;
+	}
+
+	.nav-btn:hover {
+		background: rgba(255,255,255,0.2);
+		transform: translateY(-50%) scale(1.1);
+	}
+
+	.nav-prev {
+		left: 20px;
+	}
+
+	.nav-next {
+		right: 20px;
+	}
+
+	/* 内容区域 */
+	.lightbox-content {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 80px 100px;
+		min-height: 0;
+	}
+
+	.lightbox-img {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+		border-radius: 8px;
+		box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+		transition: transform 0.3s ease;
+	}
+
+	/* 底部信息栏 */
+	.lightbox-info {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		padding: 20px;
+		background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		z-index: 10;
+	}
+
+	.info-main {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.caption-text {
+		color: white;
+		font-size: 15px;
+		max-width: 600px;
+	}
+
+	.dimensions-text {
+		color: rgba(255,255,255,0.6);
+		font-size: 12px;
+	}
+
+	.info-actions {
+		display: flex;
+		gap: 8px;
+	}
+
+	.action-btn {
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		background: rgba(255,255,255,0.15);
+		border-radius: 50%;
+		transition: all 0.2s;
+	}
+
+	.action-btn:hover {
+		background: rgba(255,255,255,0.25);
+		transform: scale(1.05);
+	}
+
+	/* 响应式 */
+	@media (max-width: 768px) {
+		.album-title {
+			font-size: 26px;
+		}
+
+		.album-header {
+			padding: 30px 16px;
+		}
+
+		.album-meta {
+			gap: 12px;
+		}
+
+		.meta-item {
+			font-size: 13px;
+		}
+
+		.lightbox-content {
+			padding: 60px 60px;
+		}
+
+		.nav-btn {
+			width: 44px;
+			height: 44px;
+		}
+
+		.nav-prev {
+			left: 8px;
+		}
+
+		.nav-next {
+			right: 8px;
+		}
+	}
+</style>
+
+<script>
+	// 灯箱功能
+	const lightbox = document.getElementById('photo-lightbox');
+	const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+	const lightboxCaption = document.getElementById('lightbox-caption');
+	const lightboxDimensions = document.getElementById('lightbox-dimensions');
+	const lightboxCounter = document.getElementById('lightbox-counter');
+	const lightboxClose = document.getElementById('lightbox-close');
+	const lightboxPrev = document.getElementById('lightbox-prev');
+	const lightboxNext = document.getElementById('lightbox-next');
+	const lightboxDownload = document.getElementById('lightbox-download');
+	const lightboxInfoToggle = document.getElementById('lightbox-info-toggle');
+	const lightboxInfo = document.getElementById('lightbox-info');
+
+	const photoItems = document.querySelectorAll('.photo-item');
+	let currentIndex = 0;
+	let isInfoVisible = true;
+
+	// 打开灯箱
+	function openLightbox(index: number) {
+		currentIndex = index;
+		updateLightbox();
+		lightbox?.classList.add('active');
+		lightbox?.setAttribute('aria-hidden', 'false');
+		document.body.style.overflow = 'hidden';
+	}
+
+	// 关闭灯箱
+	function closeLightbox() {
+		lightbox?.classList.remove('active');
+		lightbox?.setAttribute('aria-hidden', 'true');
+		document.body.style.overflow = '';
+	}
+
+	// 更新灯箱内容
+	function updateLightbox() {
+		const photo = photoItems[currentIndex];
+		if (!photo) return;
+
+		const src = photo.getAttribute('data-src') || '';
+		const alt = photo.getAttribute('data-alt') || '';
+		const caption = photo.getAttribute('data-caption') || '';
+		const width = photo.getAttribute('data-width') || '';
+		const height = photo.getAttribute('data-height') || '';
+
+		lightboxImage.src = src;
+		lightboxImage.alt = alt;
+		
+		if (lightboxCaption) {
+			lightboxCaption.textContent = caption;
+			(lightboxCaption as HTMLElement).style.display = caption ? 'block' : 'none';
+		}
+
+		if (lightboxDimensions) {
+			if (width && height) {
+				lightboxDimensions.textContent = `${width} × ${height}`;
+			} else {
+				(lightboxDimensions as HTMLElement).style.display = 'none';
+			}
+		}
+		
+		if (lightboxCounter) {
+			lightboxCounter.textContent = `${currentIndex + 1} / ${photoItems.length}`;
+		}
+
+		// 更新下载链接
+		if (lightboxDownload) {
+			(lightboxDownload as HTMLButtonElement).onclick = () => {
+				const link = document.createElement('a');
+				link.href = src;
+				link.download = alt || `photo-${currentIndex + 1}`;
+				link.target = '_blank';
+				link.click();
+			};
+		}
+	}
+
+	// 切换信息显示
+	function toggleInfo() {
+		isInfoVisible = !isInfoVisible;
+		if (lightboxInfo) {
+			lightboxInfo.style.opacity = isInfoVisible ? '1' : '0';
+			lightboxInfo.style.pointerEvents = isInfoVisible ? 'auto' : 'none';
+		}
+	}
+
+	// 绑定事件
+	photoItems.forEach((item, index) => {
+		item.addEventListener('click', () => openLightbox(index));
+	});
+
+	lightboxClose?.addEventListener('click', closeLightbox);
+	lightboxPrev?.addEventListener('click', () => {
+		currentIndex = (currentIndex - 1 + photoItems.length) % photoItems.length;
+		updateLightbox();
+	});
+	lightboxNext?.addEventListener('click', () => {
+		currentIndex = (currentIndex + 1) % photoItems.length;
+		updateLightbox();
+	});
+	lightboxInfoToggle?.addEventListener('click', toggleInfo);
+
+	// 点击背景关闭
+	lightbox?.addEventListener('click', (e) => {
+		if (e.target === lightbox) closeLightbox();
+	});
+
+	// 键盘导航
+	document.addEventListener('keydown', (e) => {
+		if (!lightbox?.classList.contains('active')) return;
+		
+		switch (e.key) {
+			case 'Escape':
+				closeLightbox();
+				break;
+			case 'ArrowLeft':
+				currentIndex = (currentIndex - 1 + photoItems.length) % photoItems.length;
+				updateLightbox();
+				break;
+			case 'ArrowRight':
+				currentIndex = (currentIndex + 1) % photoItems.length;
+				updateLightbox();
+				break;
+			case 'i':
+				toggleInfo();
+				break;
+		}
+	});
+</script>

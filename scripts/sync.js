@@ -37,7 +37,7 @@ function parseArgs() {
     } else if (arg === '--type' || arg === '-t') {
       result.types.push(args[++i]);
     } else if (arg === '--all' || arg === '-a') {
-      result.types = ['文章', '动态', '记录', '生活'];
+      result.types = ['文章', '动态', '记录', '生活', '相册', '弹幕', '导航'];
     } else if (arg === '--force' || arg === '-f') {
       result.strategy = 'force';
     } else if (arg === '--help' || arg === '-h') {
@@ -57,7 +57,7 @@ function printHelp() {
 
 选项:
   -s, --strategy <策略>    同步策略: skip(默认) | incremental | force
-  -t, --type <类型>       指定同步类型: 文章 | 动态 | 记录 | 生活
+  -t, --type <类型>       指定同步类型: 文章 | 动态 | 记录 | 生活 | 相册 | 弹幕 | 导航
   -a, --all               同步全部类型
   -f, --force             强制覆盖所有文件（等同于 --strategy force）
   -h, --help              显示帮助信息
@@ -71,8 +71,10 @@ function printHelp() {
   node sync.js                                    # 交互模式（默认 skip 策略）
   node sync.js --strategy incremental             # 增量同步
   node sync.js --type 文章                        # 仅同步文章
+  node sync.js --type 相册                        # 仅同步相册
   node sync.js --all --strategy force            # 强制同步全部
   node sync.js -t 文章 -t 动态 -s incremental     # 增量同步文章和动态
+  node sync.js -t 导航                            # 仅同步导航网站
 `);
 }
 
@@ -457,8 +459,11 @@ async function main() {
     { id: 2, name: '同步动态', mappings: ['动态'] },
     { id: 3, name: '同步记录', mappings: ['记录'] },
     { id: 4, name: '同步生活', mappings: ['生活'] },
-    { id: 5, name: '同步全部', mappings: null },
-    { id: 6, name: '返回上级', type: 'back' },
+    { id: 5, name: '同步相册', mappings: ['相册'] },
+    { id: 6, name: '同步弹幕', mappings: ['弹幕'] },
+    { id: 7, name: '同步导航', mappings: ['导航'] },
+    { id: 8, name: '同步全部', mappings: null },
+    { id: 9, name: '返回上级', type: 'back' },
   ];
 
   let currentStrategy = defaultStrategy;
@@ -500,7 +505,7 @@ async function main() {
     });
     console.log('');
 
-    const choice = await askQuestion('请输入选项 (1-6): ', rl);
+    const choice = await askQuestion('请输入选项 (1-9): ', rl);
     const selected = typeOptions.find(opt => opt.id === parseInt(choice));
 
     if (!selected) {

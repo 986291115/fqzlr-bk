@@ -17,11 +17,11 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 归档
 		LinkPreset.Archive,
 
-		// 项目推荐
+		// 网站导航
 		{
-			name: "常用网站",
+			name: "网站导航",
 			url: "/projects/",
-			icon: "material-symbols:star",
+			icon: "material-symbols:public",
 		},
 	];
 
@@ -47,38 +47,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		name: "生活",
 		url: "/life/",
 		icon: "material-symbols:favorite",
-		children: [
-			{
-				name: "健康",
-				url: "/life/health/",
-				icon: "material-symbols:favorite-outline",
-			},
-			{
-				name: "想法",
-				url: "/life/ideas/",
-				icon: "material-symbols:lightbulb-outline",
-			},
-			{
-				name: "打卡",
-				url: "/life/checkin/",
-				icon: "material-symbols:check-circle-outline",
-			},
-			{
-				name: "规划",
-				url: "/life/routines/",
-				icon: "material-symbols:schedule-outline",
-			},
-			{
-				name: "地点",
-				url: "/life/places/",
-				icon: "material-symbols:location-on-outline",
-			},
-			{
-				name: "笔记本",
-				url: "/life/notebooks/",
-				icon: "material-symbols:book-outline",
-			},
-		],
 	};
 
 	// 找到记录(link)的索引，在其后插入生活
@@ -88,33 +56,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	} else {
 		links.push(lifeLink);
 	}
-
-	// 我的网站
-	links.push({
-		name: "我的网站",
-		url: "#",
-		icon: "material-symbols:public",
-		children: [
-			{
-				name: "跑步步数",
-				url: "https://ze.tsh520.cn/",
-				external: true,
-				icon: "material-symbols:directions-run",
-			},
-			{
-				name: "临时邮箱",
-				url: "https://email.0824.uk/",
-				external: true,
-				icon: "material-symbols:mail",
-			},
-			{
-				name: "评论管理",
-				url: "https://co.tsh520.cn/",
-				external: true,
-				icon: "material-symbols:comment",
-			},
-		],
-	});
 
 	// 关于及其子菜单
 	links.push({
@@ -127,9 +68,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 友链
 			LinkPreset.Friends,
-
-			// 留言板
-			...(siteConfig.pages.guestbook ? [LinkPreset.Guestbook] : []),
 
 			// 赞助
 			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),

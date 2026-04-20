@@ -10,7 +10,6 @@ const isIn = (entryId: string, folder: string) =>
 
 // 获取所有生活相关数据
 const allLifeEntries = await getCollection("life");
-// 从 life 集合中过滤出 ideas 和 places
 const ideas = allLifeEntries.filter((entry) =>
 	isIn(entry.id, "ideas") && !entry.id.toLowerCase().includes("readme")
 );
@@ -20,8 +19,6 @@ const foodEntries = await getCollection("lifeFood");
 const notebooks = await getCollection("notebooks");
 const checkinEntries = await getCollection("checkin");
 const routinesEntries = await getCollection("routines");
-
-// 从 life 集合中过滤出 places
 const places = allLifeEntries.filter((entry) =>
 	isIn(entry.id, "places") && !entry.id.toLowerCase().includes("readme")
 );
@@ -29,9 +26,7 @@ const places = allLifeEntries.filter((entry) =>
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth();
-const currentWeek = Math.ceil(now.getDate() / 7);
 
-// 辅助函数
 const isSameMonth = (date?: Date) => {
 	if (!date) return false;
 	return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
@@ -42,11 +37,9 @@ const isSameYear = (date?: Date) => {
 	return date.getFullYear() === currentYear;
 };
 
-// ========== 想法统计 ==========
-const ideasCount = ideas.length;
+// ========== 想法 ==========
 const ideasDone = ideas.filter((item) => item.data.completedAt);
-const ideasDoneCount = ideasDone.length;
-const ideasTodoCount = ideas.length - ideasDoneCount;
+const ideasTodoCount = ideas.length - ideasDone.length;
 const thisMonthDoneIdeas = ideasDone.filter((item) => isSameMonth(item.data.completedAt)).length;
 const recentIdeas = [...ideas].sort((a, b) => {
 	const aTime = a.data.completedAt?.getTime() || a.data.createdAt?.getTime() || 0;
@@ -54,22 +47,18 @@ const recentIdeas = [...ideas].sort((a, b) => {
 	return bTime - aTime;
 }).slice(0, 3);
 
-// ========== 运动统计 ==========
+// ========== 运动 ==========
 const sortedWorkouts = [...workoutEntries].sort((a, b) => {
 	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
 	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
 	return bTime - aTime;
 });
 const monthWorkout = sortedWorkouts.filter((item) => isSameMonth(item.data.date));
-const yearWorkout = sortedWorkouts.filter((item) => isSameYear(item.data.date));
-const workoutCount = sortedWorkouts.length;
-const monthWorkoutDays = monthWorkout.length;
 const totalRunKm = sortedWorkouts.reduce((acc, item) => acc + (item.data.runKm || 0), 0);
 const monthRunKm = monthWorkout.reduce((acc, item) => acc + (item.data.runKm || 0), 0);
-const yearRunKm = yearWorkout.reduce((acc, item) => acc + (item.data.runKm || 0), 0);
 const recentWorkout = sortedWorkouts[0];
 
-// ========== 睡眠统计 ==========
+// ========== 睡眠 ==========
 const sortedSleep = [...sleepEntries].sort((a, b) => {
 	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
 	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
@@ -83,102 +72,29 @@ const avgSleepHours = sleepCount > 0
 const thisMonthAvgSleep = monthSleep.length > 0
 	? monthSleep.reduce((acc, item) => acc + (item.data.sleepHours || 0), 0) / monthSleep.length
 	: 0;
-const thisMonthSleepDays = monthSleep.length;
 
-// ========== 饮食统计 ==========
+// ========== 饮食 ==========
 const sortedFood = [...foodEntries].sort((a, b) => {
 	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
 	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
 	return bTime - aTime;
 });
-const monthFood = sortedFood.filter((item) => isSameMonth(item.data.date));
-const foodCount = sortedFood.length;
-const thisMonthFoodDays = monthFood.length;
 
-// ========== 地点统计 ==========
+// ========== 地点 ==========
 const sortedPlaces = [...places].sort((a, b) => {
 	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
 	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
 	return bTime - aTime;
 });
-const placesCount = places.length;
-const uniqueProvinces = new Set(places.map(p => p.data.province).filter(Boolean)).size;
-const totalVisitCount = places.reduce((acc, p) => acc + (p.data.visitCount || 1), 0);
 const recentPlace = sortedPlaces[0];
 
-// ========== 打卡统计 ==========
+// ========== 打卡 ==========
 const checkinTotalCount = checkinEntries.reduce((acc, item) => acc + (item.data.checkins?.length || 0), 0);
-const checkinCount = checkinEntries.length;
-const checkinItems = checkinEntries.slice(0, 3);
 
-// ========== 规划统计 ==========
+// ========== 规划 ==========
 const routinesCount = routinesEntries.length;
-const routinesByTime = routinesEntries.reduce((acc, item) => {
-	const time = item.data.time || "";
-	let period = "其他";
-	if (time.includes("早晨") || time.includes("早上")) period = "早晨";
-	else if (time.includes("上午")) period = "上午";
-	else if (time.includes("中午")) period = "中午";
-	else if (time.includes("下午")) period = "下午";
-	else if (time.includes("傍晚")) period = "傍晚";
-	else if (time.includes("晚上")) period = "晚上";
-	acc[period] = (acc[period] || 0) + 1;
-	return acc;
-}, {} as Record<string, number>);
 
-// ========== 笔记本统计（排除 _index 文件）==========
-const notebookFolders = new Map<string, { count: number; latestDate: Date | null }>();
-notebooks.forEach((entry) => {
-	const id = entry.id.replace(/\\/g, "/");
-	// 跳过 _index 文件
-	if (id.endsWith("/_index") || id.endsWith("/_index.md") || id.endsWith("/_index.json")) {
-		return;
-	}
-	// 提取文件夹名
-	const match = id.match(/^([^/]+)\//);
-	if (match) {
-		const folderName = match[1];
-		if (!notebookFolders.has(folderName)) {
-			notebookFolders.set(folderName, { count: 0, latestDate: null });
-		}
-		const info = notebookFolders.get(folderName)!;
-		info.count++;
-		const entryDate = entry.data.date instanceof Date ? entry.data.date : null;
-		if (entryDate && (!info.latestDate || entryDate.getTime() > info.latestDate.getTime())) {
-			info.latestDate = entryDate;
-		}
-	}
-});
-const notebookCount = notebookFolders.size;
-const totalNotebookEntries = Array.from(notebookFolders.values()).reduce((acc, info) => acc + info.count, 0);
-// 找到最新更新的笔记本
-const recentNotebook = Array.from(notebookFolders.entries())
-	.map(([name, info]) => {
-		// 找到这个文件夹中最近更新的条目
-		const folderEntries = notebooks.filter((e) => {
-			const id = e.id.replace(/\\/g, "/");
-			return id.startsWith(`${name}/`) && !id.endsWith("/_index") && !id.endsWith("/_index.md") && !id.endsWith("/_index.json");
-		});
-		const sortedByDate = folderEntries.sort((a, b) => {
-			const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
-			const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
-			return bTime - aTime;
-		})[0];
-		return {
-			name,
-			latestDate: info.latestDate,
-			data: {
-				name: sortedByDate?.data.name || name,
-				entries: { length: info.count },
-				updatedAt: info.latestDate
-			}
-		};
-	})
-	.filter((item) => item.latestDate)
-	.sort((a, b) => (b.latestDate?.getTime() || 0) - (a.latestDate?.getTime() || 0))[0];
-
-// ========== 最近动态 ==========
-// 获取笔记本条目（排除 _index）
+// ========== 笔记本 ==========
 const notebookEntriesList = notebooks
 	.filter((e) => {
 		const id = e.id.replace(/\\/g, "/");
@@ -189,502 +105,928 @@ const notebookEntriesList = notebooks
 		const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
 		return bTime - aTime;
 	});
+const recentNotebook = notebookEntriesList[0];
 
+// ========== 最近动态时间线 ==========
 const recentUpdates = [
-	...(sortedWorkouts.slice(0, 2).map(e => ({ date: e.data.date, type: "运动", detail: e.data.workoutType || "锻炼", icon: "💪" }))),
-	...(sortedSleep.slice(0, 2).map(e => ({ date: e.data.date, type: "睡眠", detail: `${e.data.sleepHours}小时`, icon: "😴" }))),
-	...(sortedFood.slice(0, 1).map(e => ({ date: e.data.date, type: "饮食", detail: e.data.allowedFoods?.length || 0 + "种食物", icon: "🍎" }))),
-	...(ideasDone.slice(0, 1).map(e => ({ date: e.data.completedAt, type: "想法", detail: e.data.content?.slice(0, 15) + "...", icon: "✨" }))),
-	...(notebookEntriesList.slice(0, 2).map(e => ({ date: e.data.date, type: "笔记", detail: e.data.name || "未命名", icon: "📔" }))),
-	...(sortedPlaces.slice(0, 1).map(e => ({ date: e.data.date, type: "足迹", detail: `${e.data.city || "未知"}${e.data.district ? " " + e.data.district : ""}`, icon: "📍" }))),
-	...(routinesEntries.slice(0, 1).map(e => ({ date: e.data.updatedAt, type: "规划", detail: e.data.name || "日常安排", icon: "📋" }))),
-	...(checkinEntries.slice(0, 1).map(e => ({ date: e.data.updatedAt, type: "打卡", detail: e.data.name || "打卡项", icon: "✅" }))),
+	...(sortedWorkouts.slice(0, 2).map(e => ({ date: e.data.date, type: "运动", detail: e.data.workoutType || "锻炼", icon: "💪", color: "#3b82f6" }))),
+	...(sortedSleep.slice(0, 2).map(e => ({ date: e.data.date, type: "睡眠", detail: `${e.data.sleepHours}小时`, icon: "😴", color: "#8b5cf6" }))),
+	...(ideasDone.slice(0, 1).map(e => ({ date: e.data.completedAt, type: "想法", detail: e.data.content?.slice(0, 20) + (e.data.content?.length > 20 ? "..." : ""), icon: "💡", color: "#f59e0b" }))),
+	...(notebookEntriesList.slice(0, 2).map(e => ({ date: e.data.date, type: "笔记", detail: e.data.name || "未命名", icon: "📔", color: "#ec4899" }))),
+	...(sortedPlaces.slice(0, 1).map(e => ({ date: e.data.date, type: "足迹", detail: `${e.data.city || "未知"}${e.data.district ? " " + e.data.district : ""}`, icon: "📍", color: "#10b981" }))),
+	...(routinesEntries.slice(0, 1).map(e => ({ date: e.data.updatedAt, type: "规划", detail: e.data.name || "日常安排", icon: "📋", color: "#06b6d4" }))),
+	...(checkinEntries.slice(0, 1).map(e => ({ date: e.data.updatedAt, type: "打卡", detail: e.data.name || "打卡项", icon: "✅", color: "#84cc16" }))),
 ].sort((a, b) => {
 	const aTime = a.date instanceof Date ? a.date.getTime() : 0;
 	const bTime = b.date instanceof Date ? b.date.getTime() : 0;
 	return bTime - aTime;
-}).slice(0, 5);
+}).slice(0, 6);
+
+// 导航卡片配置
+const navCards = [
+	{
+		title: "健康",
+		desc: "运动、睡眠、饮食",
+		icon: "material-symbols:favorite-outline",
+		href: "/life/health/",
+		color: "#3b82f6",
+		bgGradient: "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)",
+		darkBgGradient: "linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 100%)",
+		stats: [
+			{ label: "本月跑步", value: `${monthRunKm.toFixed(1)} km` },
+			{ label: "平均睡眠", value: `${avgSleepHours.toFixed(1)} h` },
+		],
+	},
+	{
+		title: "想法",
+		desc: "灵感与创意记录",
+		icon: "material-symbols:lightbulb-outline",
+		href: "/life/ideas/",
+		color: "#f59e0b",
+		bgGradient: "linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)",
+		darkBgGradient: "linear-gradient(135deg, #451a03 0%, #451a03 100%)",
+		stats: [
+			{ label: "待完成", value: String(ideasTodoCount) },
+			{ label: "本月完成", value: String(thisMonthDoneIdeas) },
+		],
+	},
+	{
+		title: "打卡",
+		desc: "记录完成次数",
+		icon: "material-symbols:check-circle-outline",
+		href: "/life/checkin/",
+		color: "#84cc16",
+		bgGradient: "linear-gradient(135deg, #ecfccb 0%, #f7fee7 100%)",
+		darkBgGradient: "linear-gradient(135deg, #1a2e05 0%, #1a2e05 100%)",
+		stats: [
+			{ label: "总打卡", value: String(checkinTotalCount) },
+			{ label: "项目", value: String(checkinEntries.length) },
+		],
+	},
+	{
+		title: "规划",
+		desc: "日常作息与安排",
+		icon: "material-symbols:schedule-outline",
+		href: "/life/routines/",
+		color: "#06b6d4",
+		bgGradient: "linear-gradient(135deg, #cffafe 0%, #ecfeff 100%)",
+		darkBgGradient: "linear-gradient(135deg, #164e63 0%, #164e63 100%)",
+		stats: [
+			{ label: "规划数", value: String(routinesCount) },
+		],
+	},
+	{
+		title: "足迹",
+		desc: "到过的地方",
+		icon: "material-symbols:location-on-outline",
+		href: "/life/places/",
+		color: "#10b981",
+		bgGradient: "linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%)",
+		darkBgGradient: "linear-gradient(135deg, #064e3b 0%, #064e3b 100%)",
+		stats: [
+			{ label: "城市", value: String(sortedPlaces.length) },
+			{ label: "最近", value: recentPlace?.data.city || "-" },
+		],
+	},
+	{
+		title: "笔记本",
+		desc: "日记与随笔",
+		icon: "material-symbols:book-outline",
+		href: "/life/notebooks/",
+		color: "#ec4899",
+		bgGradient: "linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%)",
+		darkBgGradient: "linear-gradient(135deg, #500724 0%, #500724 100%)",
+		stats: [
+			{ label: "条目", value: String(notebookEntriesList.length) },
+			{ label: "最近", value: recentNotebook?.data.name?.slice(0, 6) || "-" },
+		],
+	},
+];
 ---
 
-<MainGridLayout title="生活" description="生活记录总览">
-	<div class="life-page flex w-full flex-col gap-6">
-		{/* 头部概览 */}
-		<section class="hero-section card-base relative overflow-hidden rounded-[var(--radius-large)] p-6 md:p-8">
-			<div class="absolute -right-8 -top-8 h-48 w-48 rounded-full bg-[var(--primary)]/5 blur-3xl"></div>
-			<div class="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/5 blur-3xl"></div>
-			<h1 class="mb-2 text-3xl font-bold text-[var(--primary)] md:text-4xl">🌿 生活总览</h1>
-			<p class="max-w-2xl text-sm text-[var(--content-meta)] md:text-base">
-				记录 {workoutCount} 次运动、{sleepCount} 晚睡眠、{ideasCount} 个想法、{placesCount} 个足迹。
-				本月已完成 {thisMonthDoneIdeas} 个想法，跑了 {monthRunKm.toFixed(1)} 公里。
-			</p>
+<MainGridLayout title="生活" description="记录生活中的点点滴滴">
+	<div class="life-container">
+		<!-- 侧边装饰光晕 -->
+		<div class="sidebar-glow left"></div>
+		<div class="sidebar-glow right"></div>
 
-			{/* 核心指标卡片 */}
-			<div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-				<a href={url("/life/health/")} class="stat-card group relative overflow-hidden rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/10">
-					<div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-blue-900/20"></div>
-					<div class="relative">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-2xl">💪</span>
-							<span class="text-xs font-medium text-[var(--content-meta)]">运动</span>
-						</div>
-						<div class="text-2xl font-bold text-[var(--text-color)]">{workoutCount}</div>
-						<div class="mt-1 text-xs text-[var(--content-meta)]">本月 {monthWorkoutDays} 天</div>
-						<div class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">累计 {totalRunKm.toFixed(0)} km</div>
-					</div>
-				</a>
+		<!-- 顶部用户卡片 -->
+		<div class="profile-card">
+			<div class="profile-bg"></div>
+			<div class="profile-content">
+				<!-- 用户信息 -->
+				<div class="profile-info">
+					<p class="profile-bio">用心记录每一天，发现生活的美好</p>
+				</div>
 
-				<a href={url("/life/health/")} class="stat-card group relative overflow-hidden rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/10">
-					<div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-purple-900/20"></div>
-					<div class="relative">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-2xl">😴</span>
-							<span class="text-xs font-medium text-[var(--content-meta)]">睡眠</span>
-						</div>
-						<div class="text-2xl font-bold text-[var(--text-color)]">{sleepCount}</div>
-						<div class="mt-1 text-xs text-[var(--content-meta)]">平均 {avgSleepHours.toFixed(1)}h</div>
-						<div class="mt-1 text-xs text-purple-600 dark:text-purple-400">本月 {thisMonthSleepDays} 天</div>
+				<!-- 快速统计 -->
+				<div class="profile-stats">
+					<div class="stat-item">
+						<span class="stat-value">{workoutEntries.length}</span>
+						<span class="stat-label">运动</span>
 					</div>
-				</a>
-
-				<a href={url("/life/ideas/")} class="stat-card group relative overflow-hidden rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/10">
-					<div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-amber-900/20"></div>
-					<div class="relative">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-2xl">💡</span>
-							<span class="text-xs font-medium text-[var(--content-meta)]">想法</span>
-						</div>
-						<div class="text-2xl font-bold text-[var(--text-color)]">{ideasCount}</div>
-						<div class="mt-1 text-xs text-[var(--content-meta)]">完成 {ideasDoneCount} 个</div>
-						<div class="mt-1 text-xs text-rose-600 dark:text-rose-400">待办 {ideasTodoCount} 个</div>
+					<div class="stat-divider"></div>
+					<div class="stat-item">
+						<span class="stat-value">{ideas.length}</span>
+						<span class="stat-label">想法</span>
 					</div>
-				</a>
-
-				<a href={url("/life/checkin/")} class="stat-card group relative overflow-hidden rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/10">
-					<div class="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-emerald-900/20"></div>
-					<div class="relative">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-2xl">✅</span>
-							<span class="text-xs font-medium text-[var(--content-meta)]">打卡</span>
-						</div>
-						<div class="text-2xl font-bold text-[var(--text-color)]">{checkinTotalCount}</div>
-						<div class="mt-1 text-xs text-[var(--content-meta)]">{checkinCount} 个项目</div>
-						<div class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">记录完成</div>
+					<div class="stat-divider"></div>
+					<div class="stat-item">
+						<span class="stat-value">{checkinTotalCount}</span>
+						<span class="stat-label">打卡</span>
 					</div>
-				</a>
-
-				<a href={url("/life/routines/")} class="stat-card group relative overflow-hidden rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/10">
-					<div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-amber-900/20"></div>
-					<div class="relative">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-2xl">📅</span>
-							<span class="text-xs font-medium text-[var(--content-meta)]">规划</span>
-						</div>
-						<div class="text-2xl font-bold text-[var(--text-color)]">{routinesCount}</div>
-						<div class="mt-1 text-xs text-[var(--content-meta)]">个日常安排</div>
-						<div class="mt-1 text-xs text-amber-600 dark:text-amber-400">作息规划</div>
+					<div class="stat-divider"></div>
+					<div class="stat-item">
+						<span class="stat-value">{totalRunKm.toFixed(0)}</span>
+						<span class="stat-label">km</span>
 					</div>
-				</a>
+				</div>
 			</div>
-		</section>
-
-		{/* 详细信息网格 */}
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{/* 最近想法 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>💡</span> 最近想法
-					</h2>
-					<a href={url("/life/ideas/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-2">
-					{recentIdeas.map((idea) => (
-						<div class="rounded-lg border border-[var(--line-divider)] bg-[var(--card-bg)] p-3 transition-colors hover:border-[var(--primary)]/30">
-							<div class="flex items-start gap-2">
-								<span class={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${idea.data.completedAt ? "bg-emerald-500" : "bg-amber-500"}`}></span>
-								<div class="flex-1">
-									<p class="text-sm leading-relaxed text-[var(--text-color)] line-clamp-2">
-										{idea.data.content}
-									</p>
-									<div class="mt-2 flex items-center gap-2 text-xs text-[var(--content-meta)]">
-										{idea.data.completedAt && (
-											<span class="flex items-center gap-1">
-												<Icon name="material-symbols:check-circle-outline" class="text-xs" />
-												{idea.data.completedAt.toISOString().split("T")[0]}
-											</span>
-										)}
-										{!idea.data.completedAt && idea.data.createdAt && (
-											<span class="flex items-center gap-1">
-												<Icon name="material-symbols:schedule-outline" class="text-xs" />
-												{idea.data.createdAt.toISOString().split("T")[0]}
-											</span>
-										)}
-									</div>
-								</div>
-							</div>
-						</div>
-					))}
-				</div>
-			</section>
-
-			{/* 运动详情 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>💪</span> 运动详情
-					</h2>
-					<a href={url("/life/health/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-4">
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-50 to-transparent p-3 dark:from-blue-900/20">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">累计跑量</div>
-							<div class="text-xs text-[var(--content-meta)]">所有记录</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-blue-600 dark:text-blue-400">{totalRunKm.toFixed(1)} <span class="text-sm font-normal">km</span></div>
-							<div class="text-xs text-[var(--content-meta)]">共 {workoutCount} 次</div>
-						</div>
-					</div>
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-emerald-50 to-transparent p-3 dark:from-emerald-900/20">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">本月跑量</div>
-							<div class="text-xs text-[var(--content-meta)]">{currentMonth + 1}月</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-emerald-600 dark:text-emerald-400">{monthRunKm.toFixed(1)} <span class="text-sm font-normal">km</span></div>
-							<div class="text-xs text-[var(--content-meta)]">{monthWorkoutDays} 次</div>
-						</div>
-					</div>
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-amber-50 to-transparent p-3 dark:from-amber-900/20">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">今年跑量</div>
-							<div class="text-xs text-[var(--content-meta)]">{currentYear}年</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-amber-600 dark:text-amber-400">{yearRunKm.toFixed(1)} <span class="text-sm font-normal">km</span></div>
-							<div class="text-xs text-[var(--content-meta)]">{yearWorkout.length} 次</div>
-						</div>
-					</div>
-				</div>
-				{recentWorkout && (
-					<div class="mt-4 border-t border-[var(--line-divider)] pt-3">
-						<div class="flex items-center justify-between text-xs text-[var(--content-meta)]">
-							<span>最近运动：{recentWorkout.data.workoutType}</span>
-							<span>{recentWorkout.data.date.toISOString().split("T")[0]}</span>
-						</div>
-					</div>
-				)}
-			</section>
-
-			{/* 睡眠趋势 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>😴</span> 睡眠质量
-					</h2>
-					<a href={url("/life/health/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-4">
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-transparent p-3 dark:from-purple-900/20">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">平均睡眠</div>
-							<div class="text-xs text-[var(--content-meta)]">所有记录</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-purple-600 dark:text-purple-400">{avgSleepHours.toFixed(1)} <span class="text-sm font-normal">h</span></div>
-							<div class="text-xs text-[var(--content-meta)]">{sleepCount} 个夜晚</div>
-						</div>
-					</div>
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-pink-50 to-transparent p-3 dark:from-pink-900/20">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">本月平均</div>
-							<div class="text-xs text-[var(--content-meta)]">{currentMonth + 1}月</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-pink-600 dark:text-pink-400">{thisMonthAvgSleep.toFixed(1)} <span class="text-sm font-normal">h</span></div>
-							<div class="text-xs text-[var(--content-meta)]">{thisMonthSleepDays} 晚</div>
-						</div>
-					</div>
-					{sortedSleep.length >= 2 && (
-						<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-50 to-transparent p-3 dark:from-blue-900/20">
-							<div>
-								<div class="text-sm font-medium text-[var(--text-color)]">最近睡眠</div>
-								<div class="text-xs text-[var(--content-meta)]">last entry</div>
-							</div>
-							<div class="text-right">
-								<div class="text-xl font-bold text-blue-600 dark:text-blue-400">{sortedSleep[0].data.sleepHours.toFixed(1)} <span class="text-sm font-normal">h</span></div>
-								<div class="text-xs text-[var(--content-meta)]">质量 {sortedSleep[0].data.sleepQuality || "N/A"}</div>
-							</div>
-						</div>
-					)}
-				</div>
-			</section>
-
-			{/* 打卡记录 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>✅</span> 打卡记录
-					</h2>
-					<a href={url("/life/checkin/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				{checkinEntries.length === 0 ? (
-					<div class="rounded-lg bg-gradient-to-r from-emerald-50 to-transparent p-4 text-center dark:from-emerald-900/20">
-						<div class="text-sm text-[var(--content-meta)]">暂无打卡记录</div>
-						<div class="mt-2 text-xs text-[var(--content-meta)] opacity-70">在 life/checkin/ 下创建 md 文件即可添加</div>
-					</div>
-				) : (
-					<div class="space-y-3">
-						<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-emerald-50 to-transparent p-3 dark:from-emerald-900/20">
-							<div>
-								<div class="text-sm font-medium text-[var(--text-color)]">总完成次数</div>
-								<div class="text-xs text-[var(--content-meta)]">{checkinCount} 个项目</div>
-							</div>
-							<div class="text-xl font-bold text-emerald-600 dark:text-emerald-400">{checkinTotalCount}</div>
-						</div>
-						{checkinItems.map((item) => (
-							<div class="flex items-center justify-between rounded-lg border border-[var(--line-divider)] bg-[var(--card-bg)] p-3">
-								<div>
-									<div class="text-sm font-medium text-[var(--text-color)]">{item.data.name}</div>
-									<div class="text-xs text-[var(--content-meta)]">{item.data.description}</div>
-								</div>
-								<div class="text-lg font-bold text-[var(--primary)]">{item.data.checkins?.length || 0}</div>
-							</div>
-						))}
-					</div>
-				)}
-			</section>
-
-			{/* 日常规划 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>📅</span> 日常规划
-					</h2>
-					<a href={url("/life/routines/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				{routinesEntries.length === 0 ? (
-					<div class="rounded-lg bg-gradient-to-r from-amber-50 to-transparent p-4 text-center dark:from-amber-900/20">
-						<div class="text-sm text-[var(--content-meta)]">暂无日常规划</div>
-						<div class="mt-2 text-xs text-[var(--content-meta)] opacity-70">在 life/routines/ 下创建 md 文件即可添加</div>
-					</div>
-				) : (
-					<div class="space-y-3">
-						<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-amber-50 to-transparent p-3 dark:from-amber-900/20">
-							<div>
-								<div class="text-sm font-medium text-[var(--text-color)]">规划项目</div>
-								<div class="text-xs text-[var(--content-meta)]">{Object.keys(routinesByTime).length} 个时间段</div>
-							</div>
-							<div class="text-xl font-bold text-amber-600 dark:text-amber-400">{routinesCount}</div>
-						</div>
-						{Object.entries(routinesByTime).slice(0, 3).map(([period, count]) => (
-							<div class="flex items-center justify-between rounded-lg border border-[var(--line-divider)] bg-[var(--card-bg)] p-3">
-								<span class="text-sm text-[var(--text-color)]">{period}</span>
-								<span class="text-lg font-bold text-[var(--primary)]">{count}</span>
-							</div>
-						))}
-					</div>
-				)}
-			</section>
-
-			{/* 足迹地图 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>🗺️</span> 足迹地图
-					</h2>
-					<a href={url("/life/places/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-4">
-					<div class="flex items-center justify-between">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">到访城市</div>
-							<div class="text-xs text-[var(--content-meta)]">去过的地方</div>
-						</div>
-						<div class="text-right">
-							<div class="text-xl font-bold text-blue-600 dark:text-blue-400">{placesCount} <span class="text-sm font-normal">个</span></div>
-							<div class="text-xs text-[var(--content-meta)]">覆盖 {uniqueProvinces} 省</div>
-						</div>
-					</div>
-					{recentPlace && (
-						<div class="rounded-lg border border-[var(--line-divider)] bg-gradient-to-r from-blue-50 to-transparent p-3 dark:from-blue-900/20">
-							<div class="text-sm font-medium text-[var(--text-color)]">最近到访</div>
-							<div class="mt-1 flex items-center justify-between">
-								<div>
-									<span class="font-bold">{recentPlace.data.city}</span>
-									<span class="text-xs text-[var(--content-meta)]"> ({recentPlace.data.province})</span>
-								</div>
-								<div class="text-xs text-[var(--content-meta)]">
-									{recentPlace.data.visitCount} 次到访
-								</div>
-							</div>
-							{recentPlace.data.experience && (
-								<p class="mt-2 text-xs leading-relaxed text-[var(--content-meta)] line-clamp-2">
-									{recentPlace.data.experience}
-								</p>
-							)}
-						</div>
-					)}
-				</div>
-			</section>
-
-			{/* 笔记本 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>📔</span> 笔记本
-					</h2>
-					<a href={url("/life/notebooks/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-3">
-					<div class="flex items-center justify-between rounded-lg bg-gradient-to-r from-amber-50 to-transparent p-3 dark:from-amber-900/20">
-						<div class="flex items-center gap-3">
-							<span class="text-xl">📝</span>
-							<div>
-								<div class="text-sm font-medium text-[var(--text-color)]">总笔记数</div>
-								<div class="text-xs text-[var(--content-meta)]">{notebookCount} 个笔记本</div>
-							</div>
-						</div>
-						<div class="text-xl font-bold text-amber-600 dark:text-amber-400">{totalNotebookEntries}</div>
-					</div>
-					<div class="space-y-2">
-						{notebookEntriesList.slice(0, 3).map((entry) => (
-							<div class="flex items-center justify-between rounded-lg border border-[var(--line-divider)] bg-[var(--card-bg)] p-3">
-								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium text-[var(--text-color)] truncate">{entry.data.name || "未命名"}</div>
-									<div class="mt-0.5 text-xs text-[var(--content-meta)]">{entry.data.date?.toISOString().split("T")[0]}</div>
-								</div>
-							</div>
-						))}
-						{notebookEntriesList.length === 0 && (
-							<div class="text-sm text-[var(--content-meta)] text-center py-2">暂无笔记</div>
-						)}
-					</div>
-				</div>
-			</section>
-
-			{/* 饮食记录 */}
-			<section class="card-base rounded-[var(--radius-large)] p-6">
-				<div class="mb-4 flex items-center justify-between">
-					<h2 class="flex items-center gap-2 text-lg font-bold text-[var(--text-color)]">
-						<span>🍎</span> 饮食记录
-					</h2>
-					<a href={url("/life/health/")} class="text-xs text-[var(--primary)] hover:underline">全部 →</a>
-				</div>
-				<div class="space-y-3">
-					<div class="flex items-center justify-between">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">记录天数</div>
-							<div class="text-xs text-[var(--content-meta)]">持续记录</div>
-						</div>
-						<div class="text-xl font-bold text-orange-600 dark:text-orange-400">{foodCount} <span class="text-sm font-normal">天</span></div>
-					</div>
-					<div class="flex items-center justify-between">
-						<div>
-							<div class="text-sm font-medium text-[var(--text-color)]">本月记录</div>
-							<div class="text-xs text-[var(--content-meta)]">饮食追踪</div>
-						</div>
-						<div class="text-xl font-bold text-orange-500">{thisMonthFoodDays} <span class="text-sm font-normal">天</span></div>
-					</div>
-					{sortedFood[0] && (
-						<div class="mt-3 rounded-lg border border-[var(--line-divider)] bg-gradient-to-r from-orange-50 to-transparent p-3 dark:from-orange-900/20">
-							<div class="text-xs font-medium text-[var(--text-color)]">最新记录</div>
-							<div class="mt-2 text-xs text-[var(--content-meta)]">
-								{sortedFood[0].data.allowedFoods?.length || 0} 种推荐食物，
-								{sortedFood[0].data.avoidFoods?.length || 0} 种避免食物
-							</div>
-						</div>
-					)}
-				</div>
-			</section>
 		</div>
 
-		{/* 最近动态时间线 */}
-		<section class="card-base rounded-[var(--radius-large)] p-6">
-			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-[var(--text-color)]">
-				<span class="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">🕐</span>
-				最近动态
-			</h2>
-			<div class="space-y-3">
+		<!-- 导航网格 -->
+		<div class="nav-grid">
+			{navCards.map((card) => (
+				<a href={url(card.href)} class="nav-card group">
+					<div
+						class="card-accent"
+						style={`background: ${card.color};`}
+					></div>
+					<div class="card-inner">
+						<div class="card-icon-wrap">
+							<Icon name={card.icon} class="card-icon" />
+						</div>
+						<div class="card-text">
+							<h3 class="card-title">{card.title}</h3>
+							<p class="card-desc">{card.desc}</p>
+						</div>
+						<div class="card-stats">
+							{card.stats.map((stat) => (
+								<div class="mini-stat">
+									<span class="mini-stat-value">{stat.value}</span>
+									<span class="mini-stat-label">{stat.label}</span>
+								</div>
+							))}
+						</div>
+						<div class="card-arrow">
+							<Icon name="material-symbols:chevron-right-rounded" class="arrow-icon" />
+						</div>
+					</div>
+				</a>
+			))}
+		</div>
+
+		<!-- 最近动态时间线 -->
+		<div class="timeline-section">
+			<div class="timeline-header">
+				<div class="timeline-title-wrap">
+					<Icon name="material-symbols:history" class="timeline-icon" />
+					<h2 class="timeline-title">最近动态</h2>
+				</div>
+			</div>
+
+			<div class="timeline-container">
+				<div class="timeline-line"></div>
+
 				{recentUpdates.length === 0 ? (
-					<div class="py-8 text-center text-sm text-[var(--content-meta)]">
-						暂无动态，开始记录你的生活吧！
+					<div class="empty-state">
+						<div class="empty-icon">
+							<Icon name="material-symbols:sentiment-neutral-outline" class="text-5xl" />
+						</div>
+						<h3 class="empty-title">还没有任何生活记录</h3>
+						<p class="empty-desc">选择一个模块，开始记录你的生活吧！</p>
 					</div>
 				) : (
-					<div class="relative">
-						{/* 时间线竖线 */}
-						<div class="absolute left-[1.125rem] top-2 bottom-2 w-0.5 bg-gradient-to-b from-[var(--primary)]/30 via-[var(--primary)]/20 to-transparent"></div>
+					<div class="timeline-feed">
 						{recentUpdates.map((update, index) => (
-							<div class="relative flex gap-3">
-								<div class="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--card-bg)] shadow-lg ring-2 ring-[var(--primary)]/20 text-base">
-									{update.icon}
+							<div class="timeline-item" style={`--delay: ${index * 60}ms`}>
+								<div class="timeline-dot" style={`background: ${update.color}; box-shadow: 0 0 0 4px ${update.color}20;`}>
+									<span class="dot-icon">{update.icon}</span>
 								</div>
-								<div class="flex-1 rounded-lg border border-[var(--line-divider)] bg-[var(--card-bg)] p-4 transition-all hover:border-[var(--primary)]/30 hover:shadow-md">
-									<div class="mb-1 flex items-center justify-between">
-										<span class="text-sm font-bold text-[var(--primary)]">{update.type}</span>
-										<span class="text-xs text-[var(--content-meta)]">
+								<div class="timeline-card">
+									<div class="timeline-card-header">
+										<span class="timeline-type" style={`color: ${update.color};`}>{update.type}</span>
+										<span class="timeline-date">
 											{update.date instanceof Date ? update.date.toISOString().split("T")[0] : "未知日期"}
 										</span>
 									</div>
-									<p class="text-sm leading-relaxed text-[var(--text-color)]">{update.detail}</p>
+									<p class="timeline-detail">{update.detail}</p>
 								</div>
 							</div>
 						))}
 					</div>
 				)}
 			</div>
-		</section>
+		</div>
+
+		<!-- 健康快速概览（精简版） -->
+		{(workoutEntries.length > 0 || sleepEntries.length > 0 || foodEntries.length > 0) && (
+			<div class="quick-overview">
+				<div class="overview-header">
+					<Icon name="material-symbols:widgets-outline" class="overview-icon" />
+					<h2 class="overview-title">本月概览</h2>
+				</div>
+				<div class="overview-grid">
+					{workoutEntries.length > 0 && (
+						<div class="overview-card workout">
+							<div class="overview-card-icon">
+								<Icon name="material-symbols:directions-run" class="text-2xl" />
+							</div>
+							<div class="overview-card-content">
+								<div class="overview-card-value">{monthRunKm.toFixed(1)} <span>km</span></div>
+								<div class="overview-card-label">本月跑步</div>
+							</div>
+							<div class="overview-card-sub">
+								共 {monthWorkout.length} 次 · {totalRunKm.toFixed(0)} km 累计
+							</div>
+						</div>
+					)}
+					{sleepEntries.length > 0 && (
+						<div class="overview-card sleep">
+							<div class="overview-card-icon">
+								<Icon name="material-symbols:bedtime-outline" class="text-2xl" />
+							</div>
+							<div class="overview-card-content">
+								<div class="overview-card-value">{thisMonthAvgSleep > 0 ? thisMonthAvgSleep.toFixed(1) : avgSleepHours.toFixed(1)} <span>h</span></div>
+								<div class="overview-card-label">平均睡眠</div>
+							</div>
+							<div class="overview-card-sub">
+								{sleepEntries.length} 夜记录
+							</div>
+						</div>
+					)}
+					{foodEntries.length > 0 && (
+						<div class="overview-card food">
+							<div class="overview-card-icon">
+								<Icon name="material-symbols:lunch-dining" class="text-2xl" />
+							</div>
+							<div class="overview-card-content">
+								<div class="overview-card-value">{sortedFood.length}</div>
+								<div class="overview-card-label">饮食记录</div>
+							</div>
+							<div class="overview-card-sub">
+								本月 {sortedFood.filter(f => isSameMonth(f.data.date)).length} 条
+							</div>
+						</div>
+					)}
+					{recentWorkout && (
+						<div class="overview-card recent">
+							<div class="overview-card-icon">
+								<Icon name="material-symbols:fitness-center" class="text-2xl" />
+							</div>
+							<div class="overview-card-content">
+								<div class="overview-card-value" style="font-size: 1rem;">{recentWorkout.data.workoutType || "锻炼"}</div>
+								<div class="overview-card-label">最近运动</div>
+							</div>
+							<div class="overview-card-sub">
+								{recentWorkout.data.date instanceof Date ? recentWorkout.data.date.toISOString().split("T")[0] : ""}
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
+		)}
 	</div>
 </MainGridLayout>
 
+<script>
+	// 滚动动画
+	function initPage() {
+		const observerOptions = {
+			threshold: 0,
+			rootMargin: '0px 0px -40px 0px'
+		};
+
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					entry.target.classList.add('visible');
+					observer.unobserve(entry.target);
+				}
+			});
+		}, observerOptions);
+
+		function triggerVisible() {
+			const items = document.querySelectorAll('.nav-card:not(.visible), .timeline-item:not(.visible)');
+			items.forEach(item => {
+				const rect = item.getBoundingClientRect();
+				if (rect.top < window.innerHeight + 100) {
+					item.classList.add('visible');
+				} else {
+					observer.observe(item);
+				}
+			});
+		}
+
+		triggerVisible();
+		window.addEventListener('scroll', triggerVisible, { passive: true });
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(initPage));
+	} else {
+		requestAnimationFrame(initPage);
+	}
+</script>
+
 <style>
-	.life-page {
-		--life-border: color-mix(in srgb, var(--line-divider) 86%, transparent);
-	}
-
-	.life-section {
-		border: 1px solid var(--life-border);
-		box-shadow: 0 10px 30px rgb(0 0 0 / 6%);
-		background: color-mix(in srgb, var(--card-bg) 92%, transparent);
-	}
-
-	.stat-card {
+	.life-container {
 		position: relative;
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 0 16px 40px;
+	}
+
+	/* 侧边装饰光晕 */
+	.sidebar-glow {
+		position: fixed;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 400px;
+		height: 400px;
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.sidebar-glow.left {
+		left: -200px;
+		background: radial-gradient(circle, #10b981 0%, transparent 70%);
+		opacity: 0.12;
+	}
+
+	.sidebar-glow.right {
+		right: -200px;
+		background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+		opacity: 0.08;
+	}
+
+	/* 用户卡片 */
+	.profile-card {
+		position: relative;
+		background: transparent;
+		border: none;
+		border-radius: 24px;
+		overflow: visible;
+		margin-bottom: 20px;
+		z-index: 1;
+	}
+
+	.profile-bg {
+		display: none;
+	}
+
+	.profile-content {
+		position: relative;
+		padding: 28px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.avatar-wrapper {
+		margin-bottom: 14px;
+	}
+
+	.avatar-img {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		object-fit: cover;
+		border: 3px solid var(--card-bg);
+		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.avatar-img:hover {
+		transform: scale(1.05);
+		box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+	}
+
+	.profile-info {
+		margin-bottom: 18px;
+	}
+
+	.profile-name {
+		font-size: 22px;
+		font-weight: 700;
+		color: var(--text-color);
+		margin-bottom: 6px;
+	}
+
+	.profile-bio {
+		font-size: 14px;
+		color: var(--content-meta);
+	}
+
+	.profile-stats {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 20px;
+		padding: 14px 24px;
+		background: var(--bg-color);
+		border-radius: 16px;
+		border: 1px solid var(--border);
+	}
+
+	.stat-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+	}
+
+	.stat-value {
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--primary);
+	}
+
+	.stat-label {
+		font-size: 11px;
+		color: var(--content-meta);
+	}
+
+	.stat-divider {
+		width: 1px;
+		height: 28px;
+		background: var(--border);
+	}
+
+	/* 导航网格 */
+	.nav-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 12px;
+		margin-bottom: 20px;
+		z-index: 1;
+		position: relative;
+	}
+
+	.nav-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		border-radius: 20px;
 		overflow: hidden;
-		transition: all 0.2s ease-out;
+		text-decoration: none;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		opacity: 0;
+		transform: translateY(12px);
 	}
 
-	.stat-card:hover {
-		transform: translateY(-2px);
-	}
-
-	.stat-card:hover .absolute {
+	.nav-card.visible {
 		opacity: 1;
+		transform: translateY(0);
 	}
 
-	.plan-item {
-		margin-bottom: 0.75rem;
+	.nav-card:hover {
+		border-color: transparent;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+		transform: translateY(-3px);
 	}
 
-	.plan-item:last-child {
+	.card-accent {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		opacity: 0.8;
+	}
+
+	.card-inner {
+		padding: 18px 16px 16px;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.card-icon-wrap {
+		width: 42px;
+		height: 42px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg-color);
+		border-radius: 12px;
+		margin-bottom: 12px;
+		border: 1px solid var(--border);
+		transition: all 0.3s ease;
+	}
+
+	.card-icon {
+		font-size: 22px;
+		color: var(--text-color);
+		transition: color 0.3s;
+	}
+
+	.nav-card:hover .card-icon-wrap {
+		background: var(--card-bg);
+		border-color: transparent;
+	}
+
+	.card-text {
+		margin-bottom: 12px;
+	}
+
+	.card-title {
+		font-size: 15px;
+		font-weight: 700;
+		color: var(--text-color);
+		margin-bottom: 3px;
+		transition: color 0.3s;
+	}
+
+	.nav-card:hover .card-title {
+		color: var(--primary);
+	}
+
+	.card-desc {
+		font-size: 11px;
+		color: var(--content-meta);
+	}
+
+	.card-stats {
+		display: flex;
+		gap: 12px;
+		margin-bottom: 8px;
+	}
+
+	.mini-stat {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+
+	.mini-stat-value {
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--text-color);
+		line-height: 1;
+	}
+
+	.mini-stat-label {
+		font-size: 10px;
+		color: var(--content-meta);
+	}
+
+	.card-arrow {
+		align-self: flex-end;
+		margin-top: auto;
+	}
+
+	.arrow-icon {
+		font-size: 18px;
+		color: var(--content-meta);
+		transition: all 0.3s ease;
+	}
+
+	.nav-card:hover .arrow-icon {
+		transform: translateX(3px);
+		color: var(--primary);
+	}
+
+	/* 时间线区域 */
+	.timeline-section {
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		border-radius: 20px;
+		padding: 24px;
+		margin-bottom: 20px;
+		z-index: 1;
+		position: relative;
+	}
+
+	.timeline-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 20px;
+	}
+
+	.timeline-title-wrap {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.timeline-icon {
+		font-size: 22px;
+		color: var(--primary);
+	}
+
+	.timeline-title {
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--text-color);
+	}
+
+	.timeline-container {
+		position: relative;
+		padding-left: 28px;
+	}
+
+	.timeline-line {
+		position: absolute;
+		left: 7px;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: linear-gradient(
+			to bottom,
+			var(--primary) 0%,
+			var(--primary)/15 60%,
+			transparent 100%
+		);
+		border-radius: 1px;
+	}
+
+	.timeline-feed {
+		position: relative;
+	}
+
+	.timeline-item {
+		position: relative;
+		margin-bottom: 16px;
+		opacity: 0;
+		transform: translateX(-8px);
+		transition: all 0.4s ease;
+	}
+
+	.timeline-item.visible {
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	.timeline-item:last-child {
 		margin-bottom: 0;
 	}
 
-	/* 隐藏滚动条但保持滚动功能 */
-	.line-clamp-2 {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
+	.timeline-dot {
+		position: absolute;
+		left: -28px;
+		top: 14px;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1;
 	}
 
-	/* 深色模式优化 */
-	:global(html.dark) .life-section {
-		box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
+	.dot-icon {
+		font-size: 13px;
 	}
 
-	:global(html.dark) .stat-card {
-		background: color-mix(in srgb, var(--card-bg) 84%, #000);
+	.timeline-card {
+		background: var(--bg-color);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		padding: 14px 16px;
+		transition: all 0.25s ease;
+	}
+
+	.timeline-card:hover {
+		border-color: var(--primary)/30;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+	}
+
+	.timeline-card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 6px;
+	}
+
+	.timeline-type {
+		font-size: 12px;
+		font-weight: 700;
+	}
+
+	.timeline-date {
+		font-size: 11px;
+		color: var(--content-meta);
+	}
+
+	.timeline-detail {
+		font-size: 13px;
+		color: var(--text-color);
+		line-height: 1.5;
+	}
+
+	/* 空状态 */
+	.empty-state {
+		text-align: center;
+		padding: 40px 20px;
+	}
+
+	.empty-icon {
+		width: 64px;
+		height: 64px;
+		margin: 0 auto 16px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg-color);
+		border-radius: 50%;
+		color: var(--content-meta);
+		opacity: 0.5;
+	}
+
+	.empty-title {
+		font-size: 16px;
+		font-weight: 600;
+		color: var(--text-color);
+		margin-bottom: 6px;
+	}
+
+	.empty-desc {
+		font-size: 13px;
+		color: var(--content-meta);
+	}
+
+	/* 快速概览 */
+	.quick-overview {
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		border-radius: 20px;
+		padding: 20px 24px;
+		z-index: 1;
+		position: relative;
+	}
+
+	.overview-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 16px;
+	}
+
+	.overview-icon {
+		font-size: 20px;
+		color: var(--primary);
+	}
+
+	.overview-title {
+		font-size: 16px;
+		font-weight: 700;
+		color: var(--text-color);
+	}
+
+	.overview-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 12px;
+	}
+
+	.overview-card {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 14px;
+		background: var(--bg-color);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		transition: all 0.25s ease;
+	}
+
+	.overview-card:hover {
+		border-color: var(--primary)/30;
+	}
+
+	.overview-card-icon {
+		width: 42px;
+		height: 42px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 12px;
+		flex-shrink: 0;
+	}
+
+	.overview-card.workout .overview-card-icon {
+		background: rgba(59, 130, 246, 0.1);
+		color: #3b82f6;
+	}
+
+	.overview-card.sleep .overview-card-icon {
+		background: rgba(139, 92, 246, 0.1);
+		color: #8b5cf6;
+	}
+
+	.overview-card.food .overview-card-icon {
+		background: rgba(249, 115, 22, 0.1);
+		color: #f97316;
+	}
+
+	.overview-card.recent .overview-card-icon {
+		background: rgba(16, 185, 129, 0.1);
+		color: #10b981;
+	}
+
+	.overview-card-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.overview-card-value {
+		font-size: 20px;
+		font-weight: 800;
+		color: var(--text-color);
+		line-height: 1.2;
+	}
+
+	.overview-card-value span {
+		font-size: 12px;
+		font-weight: 500;
+		color: var(--content-meta);
+	}
+
+	.overview-card-label {
+		font-size: 11px;
+		color: var(--content-meta);
+		margin-top: 1px;
+	}
+
+	.overview-card-sub {
+		font-size: 10px;
+		color: var(--content-meta);
+		white-space: nowrap;
+	}
+
+	/* 响应式 */
+	@media (max-width: 640px) {
+		.nav-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 10px;
+		}
+
+		.card-stats {
+			display: none;
+		}
+
+		.profile-content {
+			padding: 20px;
+		}
+
+		.avatar-img {
+			width: 64px;
+			height: 64px;
+		}
+
+		.profile-name {
+			font-size: 20px;
+		}
+
+		.profile-stats {
+			gap: 14px;
+			padding: 12px 18px;
+		}
+
+		.stat-value {
+			font-size: 16px;
+		}
+
+		.timeline-section,
+		.quick-overview {
+			padding: 18px;
+			border-radius: 18px;
+		}
+
+		.overview-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.overview-card {
+			padding: 12px;
+		}
+
+		.overview-card-value {
+			font-size: 18px;
+		}
+
+		.overview-card-sub {
+			display: none;
+		}
+	}
+
+	@media (max-width: 400px) {
+		.nav-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.card-inner {
+			padding: 14px 12px 12px;
+		}
+
+		.card-title {
+			font-size: 14px;
+		}
 	}
 </style>

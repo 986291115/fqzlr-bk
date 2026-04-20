@@ -60,5 +60,23 @@ export default {
       targetFolder: 'life',         // 项目中对应的文件夹
       datePrefix: false,
     },
+    {
+      type: '相册',
+      obsidianFolder: 'album',      // Obsidian 中存放相册的文件夹
+      targetFolder: 'album',        // 项目中对应的文件夹
+      datePrefix: false,
+    },
+    {
+      type: '弹幕',
+      obsidianFolder: 'danmu',     // Obsidian 中存放弹幕的文件夹
+      targetFolder: 'danmu',       // 项目中对应的文件夹
+      datePrefix: false,
+    },
+    {
+      type: '导航',
+      obsidianFolder: 'daohang',   // Obsidian 中存放导航的文件夹
+      targetFolder: 'daohang',     // 项目中对应的文件夹
+      datePrefix: false,
+    },
   ],
 };

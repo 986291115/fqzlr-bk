@@ -191,6 +191,49 @@ const routinesCollection = defineCollection({
 	}),
 });
 
+const albumCollection = defineCollection({
+	loader: glob({ pattern: "**/*.{md,mdx,json}", base: "./src/content/album" }),
+	schema: ({ image }) =>
+		z.object({
+			title: z.string(),
+			subtitle: z.string().optional().default(""),
+			cover: image().or(z.string()).optional(),
+			date: z.coerce.date(),
+			location: z.string().optional().default(""),
+			photos: z
+				.array(image().or(z.string()).or(z.object({ src: z.string(), alt: z.string().optional(), caption: z.string().optional() })))
+				.optional()
+				.default([]),
+			tags: z.array(z.string()).optional().default([]),
+			draft: z.boolean().optional().default(false),
+		}),
+});
+
+const danmuCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/danmu" }),
+	schema: z.object({
+		nickname: z.string(),
+		avatar: z.string().optional().default(""),
+		time: z.string().optional().default(""),
+	}),
+});
+
+const daohangCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/daohang" }),
+	schema: z.object({
+		name: z.string(),
+		url: z.string(),
+		icon: z.string().optional().default(""),
+		description: z.string().optional().default(""),
+		category: z.string().default("未分类"),
+		tags: z.array(z.string()).optional().default([]),
+		color: z.string().optional().default(""),
+		image: z.string().optional().default(""),
+		featured: z.boolean().optional().default(false),
+		order: z.number().optional().default(0),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
@@ -203,4 +246,7 @@ export const collections = {
 	notebooks: notebooksCollection,
 	checkin: checkinCollection,
 	routines: routinesCollection,
+	album: albumCollection,
+	danmu: danmuCollection,
+	daohang: daohangCollection,
 };
