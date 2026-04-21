@@ -120,13 +120,44 @@ const walineConfig = commentConfig.waline;
   // 初始化 Waline
   import { init } from 'https://unpkg.com/@waline/client@v3/dist/waline.js';
   
-  init({
-    el: '#waline',
-    serverURL: 'https://co.tsh520.cn',
-    path: '/moments/',
-    dark: 'html.dark',
-    wordLimit: [2, 300],
-    pageview: true,
+  function initWaline() {
+    const walineEl = document.getElementById('waline');
+    if (!walineEl) return;
+    
+    // 避免重复初始化
+    if (walineEl.querySelector('.wlpanels')) return;
+    
+    init({
+      el: '#waline',
+      serverURL: 'https://co.tsh520.cn',
+      path: '/moments/',
+      dark: 'html.dark',
+      wordLimit: [2, 300],
+      pageview: true,
+    });
+  }
+
+  // 页面加载时初始化
+  document.addEventListener('DOMContentLoaded', initWaline);
+
+  // Swup 页面切换后重新初始化
+  if (window.swup && window.swup.hooks) {
+    window.swup.hooks.on('content:replace', function () {
+      setTimeout(initWaline, 200);
+    });
+  } else {
+    document.addEventListener('swup:enable', function () {
+      if (window.swup && window.swup.hooks) {
+        window.swup.hooks.on('content:replace', function () {
+          setTimeout(initWaline, 200);
+        });
+      }
+    });
+  }
+
+  // 兼容 swup:contentReplaced 事件
+  document.addEventListener('swup:contentReplaced', function () {
+    setTimeout(initWaline, 200);
   });
 </script>
 
