@@ -124,6 +124,8 @@ const clientSortedPlaces = sortedPlaces.map(p => ({
 		return;
 	}
 
+	var chartInstance = null;
+
 	function loadECharts() {
 		return new Promise(function(resolve, reject) {
 			if (window.echarts) {
@@ -147,16 +149,20 @@ const clientSortedPlaces = sortedPlaces.map(p => ({
 	}
 
 	function initMap() {
-		// 再次检查容器是否存在
-		var containerCheck = document.getElementById('life-map');
-		if (!containerCheck) return;
+		var currentContainer = document.getElementById('life-map');
+		if (!currentContainer) return;
+
+		// 如果已经初始化过，先销毁
+		if (chartInstance) {
+			chartInstance.dispose();
+			chartInstance = null;
+		}
 
 		Promise.all([loadECharts(), loadChinaMap()]).then(function(results) {
 			var echartsLib = results[0];
 			var chinaMapData = results[1];
 
-			// 再次检查容器
-			var currentContainer = document.getElementById('life-map');
+			currentContainer = document.getElementById('life-map');
 			if (!currentContainer || !chinaMapData) {
 				if (currentContainer) {
 					currentContainer.innerHTML = '<div class="h-full flex items-center justify-center text-[var(--content-meta)]">地图数据加载失败</div>';
@@ -165,7 +171,10 @@ const clientSortedPlaces = sortedPlaces.map(p => ({
 			}
 
 			echartsLib.registerMap('china', chinaMapData);
-			var chart = echartsLib.init(currentContainer);
+			chartInstance = echartsLib.init(currentContainer);
+
+			// 强制触发一次 resize 确保尺寸正确
+			currentContainer.offsetHeight; // 触发 reflow
 
 			// 统计各省份到访次数
 			var provinceVisitCount = {};
@@ -252,23 +261,10 @@ const clientSortedPlaces = sortedPlaces.map(p => ({
 				}]
 			};
 
-			chart.setOption(option);
+			chartInstance.setOption(option);
 
-			// 点击事件
-			chart.on('click', function(params) {
-				if (params.value && params.value > 0) {
-					var places = params.data && params.data.places ? params.data.places : [];
-					if (places.length > 0) {
-						var list = places.map(function(p, idx) {
-							var city = p.city || '未知';
-							return (idx + 1) + '. ' + city + '-到访' + (p.visitCount || 1) + '次' + (p.experience ? '\n   ' + p.experience : '');
-						}).join('\n\n');
-						alert(params.name + '去过' + places.length + '处：\n\n' + list);
-					}
-				}
-			});
-
-			window.addEventListener('resize', function() { chart.resize(); });
+			// 初始化后触发 resize
+			setTimeout(function() { chartInstance.resize(); }, 100);
 		}).catch(function(err) {
 			var failContainer = document.getElementById('life-map');
 			if (failContainer) {
@@ -288,7 +284,34 @@ const clientSortedPlaces = sortedPlaces.map(p => ({
 		}
 	}
 
+	// 初始化地图
 	whenReady(initMap);
+
+	// 监听窗口大小变化
+	window.addEventListener('resize', function() {
+		if (chartInstance) {
+			chartInstance.resize();
+		}
+	});
+
+	// 监听暗色/亮色模式切换
+	var prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+	function handleThemeChange() {
+		if (chartInstance) {
+			chartInstance.dispose();
+			chartInstance = null;
+		}
+		initMap();
+	}
+	prefersDark.addEventListener('change', handleThemeChange);
+
+	// 监听 ASTRO 页面切换事件（SPA 导航时重新初始化）
+	document.addEventListener('astro:after-swap', function() {
+		var newContainer = document.getElementById('life-map');
+		if (newContainer && !chartInstance) {
+			whenReady(initMap);
+		}
+	});
 })();
 </script>
 <style>
