@@ -279,3 +279,26 @@ body.wallpaper-transparent .float-panel {
         display: none !important;
     }
 }
+
+/* ============================================
+ * 响应式导航栏文字大小 - 窗口变小时缩小文字
+ * ============================================ */
+@media (max-width: 1400px) {
+    #navbar .dropdown-container > a,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a,
+    #navbar .hidden.lg\:flex a {
+        font-size: 0.875rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    #navbar .dropdown-container > a,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a,
+    #navbar .hidden.lg\:flex a {
+        font-size: 0.8rem !important;
+        padding-left: 0.625rem !important;
+        padding-right: 0.625rem !important;
+    }
+}
