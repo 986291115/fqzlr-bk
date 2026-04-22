@@ -250,6 +250,19 @@ const ziyuanCollection = defineCollection({
 	]),
 });
 
+const friendsCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/friends" }),
+	schema: z.object({
+		title: z.string(),
+		imgurl: z.string(),
+		desc: z.string(),
+		siteurl: z.string(),
+		tags: z.array(z.string()).optional().default([]),
+		weight: z.number().optional().default(0),
+		enabled: z.boolean().optional().default(true),
+	}),
+});
+
 const daohangCollection = defineCollection({
 	loader: glob({ pattern: "**/*.md", base: "./src/content/daohang" }),
 	schema: z.object({
@@ -282,4 +295,5 @@ export const collections = {
 	danmu: danmuCollection,
 	daohang: daohangCollection,
 	ziyuan: ziyuanCollection,
+	friends: friendsCollection,
 };

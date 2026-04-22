@@ -78,5 +78,17 @@ export default {
       targetFolder: 'daohang',     // 项目中对应的文件夹
       datePrefix: false,
     },
+    {
+      type: '友链',
+      obsidianFolder: 'friends',    // Obsidian 中存放友链的文件夹
+      targetFolder: 'friends',     // 项目中对应的文件夹
+      datePrefix: false,
+    },
+    {
+      type: '资源',
+      obsidianFolder: 'ziyuan',    // Obsidian 中存放资源的文件夹
+      targetFolder: 'ziyuan',     // 项目中对应的文件夹
+      datePrefix: false,
+    },
   ],
 };

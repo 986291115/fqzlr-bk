@@ -1,4 +1,4 @@
-import type { FriendLink, FriendsPageConfig } from "../types/config";
+import type { FriendsPageConfig } from "../types/config";
 
 // 可以在src/content/spec/friends.md中编写友链页面下方的自定义内容
 
@@ -8,40 +8,12 @@ export const friendsPageConfig: FriendsPageConfig = {
 	columns: 2,
 };
 
-// 友链配置
-export const friendsConfig: FriendLink[] = [
-	{
-		title: "团子和蛋糕",
-		imgurl: "https://re.tsh520.cn/zl/tx.webp",
-		desc: "飞萤之火自无梦的长夜亮起，绽放在终竟的明天。",
-		siteurl: "https://blog.tsh520.cn",
-		tags: ["Blog"],
-		weight: 10, // 权重，数字越大排序越靠前
-		enabled: true, // 是否启用
-	},
-	{
-		title: "Firefly Docs",
-		imgurl: "https://docs-firefly.cuteleaf.cn/logo.png",
-		desc: "Firefly主题模板文档",
-		siteurl: "https://docs-firefly.cuteleaf.cn",
-		tags: ["Docs"],
-		weight: 9,
-		enabled: true,
-	},
-	{
-		title: "Astro",
-		imgurl: "https://avatars.githubusercontent.com/u/44914786?v=4&s=640",
-		desc: "The web framework for content-driven websites. ⭐️ Star to support our work!",
-		siteurl: "https://github.com/withastro/astro",
-		tags: ["Framework"],
-		weight: 8,
-		enabled: true,
-	},
-];
-
-// 获取启用的友链并按权重排序
-export const getEnabledFriends = (): FriendLink[] => {
-	return friendsConfig
-		.filter((friend) => friend.enabled)
-		.sort((a, b) => b.weight - a.weight);
-};
+// 提示：友链数据已迁移到 src/content/friends/ 目录下
+// 每个 .md 文件代表一个友链，通过 frontmatter 配置：
+// - title: 友链标题
+// - imgurl: 头像图片URL
+// - desc: 友链描述
+// - siteurl: 友链地址
+// - tags: 标签数组（可选）
+// - weight: 权重，数字越大排序越靠前（可选，默认0）
+// - enabled: 是否启用（可选，默认true）
