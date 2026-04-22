@@ -159,11 +159,11 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
         </div>
       </div>
     </div>
-    <div class="nav-tabs-wrapper">
-      <div class="nav-tabs">
+    <div class="nav-tabs-wrapper" id="life-nav-wrapper">
+      <div class="nav-tabs" id="life-nav-tabs">
         {navItems.map(item => (
-          <a href={url(item.href)} class="nav-tab">
-            <Icon name={item.icon} class="tab-icon" style={`color: ${item.color}`} />
+          <a href={url(item.href)} class="nav-tab" style={`--btn-color: ${item.color}`}>
+            <Icon name={item.icon} class="tab-icon" />
             <span class="tab-label">{item.label}</span>
           </a>
         ))}
@@ -193,13 +193,6 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
           const showSummary = "summary" in item && !("province" in item);
           return (
             <div class="life-card">
-              <div class="card-icon" style={iconStyle}>
-                {item.emoji ? (
-                  <span class="emoji-icon">{item.emoji}</span>
-                ) : (
-                  <Icon name={item.icon} style={iconColorStyle} />
-                )}
-              </div>
               <div class="card-body">
                 <div class="card-header">
                   <span class="card-type" style={cardStyle}>{item.type}</span>
@@ -342,15 +335,77 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
   .stat-value { font-size: 18px; font-weight: 700; color: var(--primary); }
   .stat-label { font-size: 11px; color: var(--content-meta); }
   .stat-divider { width: 1px; height: 28px; background: var(--border); }
-  .nav-tabs-wrapper { margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
-  .nav-tabs { display: flex; gap: 8px; padding: 4px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; }
-  .nav-tab { flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 10px; color: var(--content-meta); font-size: 14px; font-weight: 500; text-decoration: none; transition: all 0.2s; white-space: nowrap; }
-  .nav-tab:hover { background: var(--bg-color); color: var(--text-color); }
+  .nav-tabs-wrapper { 
+    margin-bottom: 16px; 
+    overflow: hidden; 
+    position: relative;
+  }
+  .nav-tabs-wrapper::before,
+  .nav-tabs-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nav-tabs-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, var(--card-bg), transparent);
+  }
+  .nav-tabs-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, var(--card-bg), transparent);
+  }
+  .nav-tabs-wrapper.show-left::before { opacity: 1; }
+  .nav-tabs-wrapper.show-right::after { opacity: 1; }
+  
+  .nav-tabs { 
+    display: flex; 
+    gap: 8px; 
+    padding: 4px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  
+  .nav-tab {
+    flex-shrink: 0; 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    padding: 10px 18px; 
+    border-radius: 10px; 
+    color: var(--btn-color); 
+    font-size: 14px; 
+    font-weight: 500; 
+    text-decoration: none; 
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+    white-space: nowrap;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+  }
+  .nav-tab:hover { 
+    background: var(--btn-color);
+    color: white;
+    border-color: var(--btn-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--btn-color) 30%, transparent);
+  }
+  .nav-tab:active {
+    transform: translateY(0) scale(0.98);
+  }
   .tab-icon { font-size: 18px; }
   .life-feed { display: flex; flex-direction: column; gap: 12px; }
-  .life-card { display: flex; align-items: flex-start; gap: 16px; padding: 18px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; transition: all 0.2s ease; }
-  .card-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0; font-size: 24px; }
-  .emoji-icon { font-size: 24px; }
+  .life-card { padding: 18px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; transition: all 0.2s ease; }
   .card-body { flex: 1; min-width: 0; }
   .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .card-type { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
@@ -391,6 +446,23 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
   .empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; background: var(--bg-color); border-radius: 50%; color: var(--content-meta); font-size: 32px; opacity: 0.5; }
   .empty-title { font-size: 16px; font-weight: 600; color: var(--text-color); margin-bottom: 6px; }
   .empty-desc { font-size: 14px; color: var(--content-meta); }
+  
+  /* 导航按钮滚动功能 */
+  .nav-tabs-wrapper {
+    position: relative;
+  }
+  
+  /* 移动端样式优化 */
+  @media (max-width: 768px) {
+    .nav-tab {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+    .tab-icon {
+      font-size: 16px;
+    }
+  }
+  
   @media (max-width: 480px) {
     .life-container { padding: 0 12px 32px; }
     .profile-card { padding: 16px; border-radius: 12px; margin-bottom: 12px; }
@@ -398,8 +470,92 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
     .profile-name { font-size: 16px; }
     .profile-stats { gap: 14px; padding: 12px; }
     .stat-value { font-size: 16px; }
-    .life-card { padding: 14px; border-radius: 12px; gap: 12px; }
-    .card-icon { width: 42px; height: 42px; font-size: 20px; border-radius: 10px; }
+    .life-card { padding: 14px; border-radius: 12px; }
     .content-grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-tab {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+    .tab-icon {
+      font-size: 15px;
+    }
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('life-nav-wrapper');
+    const tabs = document.getElementById('life-nav-tabs');
+    
+    if (!wrapper || !tabs) return;
+    
+    // 更新滚动阴影指示器
+    function updateScrollIndicators() {
+      const scrollLeft = tabs.scrollLeft;
+      const scrollWidth = tabs.scrollWidth;
+      const clientWidth = tabs.clientWidth;
+      
+      wrapper.classList.toggle('show-left', scrollLeft > 10);
+      wrapper.classList.toggle('show-right', scrollLeft < scrollWidth - clientWidth - 10);
+    }
+    
+    // 监听滚动
+    tabs.addEventListener('scroll', updateScrollIndicators);
+    window.addEventListener('resize', updateScrollIndicators);
+    
+    // 初始化
+    updateScrollIndicators();
+    
+    // 桌面端：鼠标悬停时滚轮滚动
+    wrapper.addEventListener('mouseenter', () => {
+      if (window.innerWidth > 768) {
+        tabs.style.scrollbarWidth = 'none';
+        tabs.style.msOverflowStyle = 'none';
+        tabs.style.scrollbarColor = 'transparent transparent';
+      }
+    });
+    
+    wrapper.addEventListener('mouseleave', () => {
+      tabs.style.scrollbarWidth = 'none';
+      tabs.style.msOverflowStyle = 'none';
+    });
+    
+    // 桌面端：鼠标悬停时滚轮水平滚动
+    let isHovering = false;
+    
+    wrapper.addEventListener('mouseenter', () => {
+      if (window.innerWidth > 768) {
+        isHovering = true;
+      }
+    });
+    
+    wrapper.addEventListener('mouseleave', () => {
+      isHovering = false;
+    });
+    
+    wrapper.addEventListener('wheel', (e) => {
+      if (window.innerWidth > 768 && tabs.scrollWidth > tabs.clientWidth) {
+        e.preventDefault();
+        tabs.scrollLeft += e.deltaY * 2;
+        updateScrollIndicators();
+      }
+    }, { passive: false });
+    
+    // 移动端：触摸滑动
+    let touchStartX = 0;
+    let touchScrollLeft = 0;
+    
+    tabs.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].pageX;
+      touchScrollLeft = tabs.scrollLeft;
+    }, { passive: true });
+    
+    tabs.addEventListener('touchmove', (e) => {
+      const touchX = e.touches[0].pageX;
+      const walk = (touchStartX - touchX) * 1.5;
+      tabs.scrollLeft = touchScrollLeft + walk;
+      updateScrollIndicators();
+    }, { passive: true });
+  });
+</script>
