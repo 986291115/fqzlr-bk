@@ -3,10 +3,9 @@ title: Obsidian 笔记同步指南
 published: 2026-04-21
 description: 如何使用 Obsidian 笔记同步工具将笔记同步到博客
 tags:
-  - Obsidian
-  - 同步
   - 工具
-category: 使用文档
+  - 使用文档
+category: 技术分享
 ---
 
 # Obsidian 笔记同步指南
