@@ -1,5 +1,5 @@
 ---
-title: 微信运动步数同步完整教程（Zepp Life 实操指南
+title: ZeppLife刷步数全教程
 published: 2026-04-24
 tags:
   - 教程
