@@ -1,6 +1,10 @@
 @reference "tailwindcss";
 
 .custom-md {
+  :where(p, li, td) {
+    letter-spacing: 0.08em;
+  }
+
   h1 {
     @apply text-3xl;
   }
