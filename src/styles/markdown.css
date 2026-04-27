@@ -2,7 +2,7 @@
 
 .custom-md {
   :where(p, li, td) {
-    letter-spacing: 0.08em;
+    letter-spacing: normal;
   }
 
   h1 {
