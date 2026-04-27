@@ -98,30 +98,6 @@ const getCategoryIcon = (cat: string) => {
 		<div class="sidebar-glow left"></div>
 		<div class="sidebar-glow right"></div>
 
-		<!-- 顶部标题卡片 -->
-		<div class="header-card">
-			<div class="header-bg-deco"></div>
-			<div class="header-content">
-				<div class="header-icon-wrap">
-					<Icon name="material-symbols:trip-origin" class="header-icon" />
-				</div>
-				<div class="header-text">
-					<h1 class="header-title">网站导航</h1>
-					<p class="header-desc">收录个人网站、常用工具与收藏网站</p>
-				</div>
-				<div class="header-stats">
-					<div class="header-stat">
-						<span class="stat-num">{allEntries.length}</span>
-						<span class="stat-txt">个网站</span>
-					</div>
-					<div class="header-stat">
-						<span class="stat-num">{sortedCategories.length}</span>
-						<span class="stat-txt">个分类</span>
-					</div>
-				</div>
-			</div>
-		</div>
-
 		<!-- 精选网站 -->
 		{featuredSites.length > 0 && (
 			<div class="featured-section">
@@ -322,7 +298,6 @@ const getCategoryIcon = (cat: string) => {
 <style>
 	.daohang-container {
 		position: relative;
-		max-width: 760px;
 		margin: 0 auto;
 		padding: 0 16px 40px;
 	}

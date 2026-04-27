@@ -96,92 +96,88 @@ const formatTimeAgo = (date: Date): string => {
 ---
 
 <div id={moment.id} class="moment-card">
-  <div class="card-avatar">
-    {avatar ? (
-      <img src={avatar} alt={author} class="avatar-img" loading="lazy" />
-    ) : (
-      <img src="/avatar.png" alt={author} class="avatar-img" loading="lazy" 
-        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>'" />
-    )}
+  <!-- 卡片头部：头像 + 用户信息 -->
+  <div class="card-header">
+    <div class="card-avatar">
+      {avatar ? (
+        <img src={avatar} alt={author} class="avatar-img" loading="lazy" />
+      ) : (
+        <img src="/avatar.png" alt={author} class="avatar-img" loading="lazy" 
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>'" />
+      )}
+    </div>
+    <div class="card-user-info">
+      <div class="user-row">
+        <span class="user-name">{author || "匿名"}</span>
+      </div>
+      <div class="meta-row">
+        <time datetime={published.toISOString()} title={formatDateToYYYYMMDD(published)}>
+          {formatTimeAgo(published)}
+        </time>
+        {location && (
+          <>
+            <span class="meta-dot">·</span>
+            <span class="location">
+              <Icon name="material-symbols:location-on-outline" class="location-icon" />
+              {location}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
   </div>
 
-  <div class="card-body">
-    <!-- 用户名和设备 -->
-    <div class="user-row">
-      <span class="user-name">{author || "匿名"}</span>
-      {device && (
-        <span class="device-tag">
-          <Icon name="material-symbols:smartphone" class="device-icon" />
-          <span class="device-name">{device}</span>
-        </span>
-      )}
+  <!-- 内容 -->
+  <div class="card-content">
+    <div class="prose dark:prose-invert max-w-none text-[var(--text-color)] text-[15px] leading-[1.8]">
+      <Markdown class="moment-markdown">
+        <Content />
+      </Markdown>
     </div>
+  </div>
 
-    <!-- 发布时间和位置 -->
-    <div class="meta-row">
-      <time datetime={published.toISOString()} title={formatDateToYYYYMMDD(published)}>
-        {formatTimeAgo(published)}
-      </time>
-      {location && (
-        <>
-          <span class="meta-dot">·</span>
-          <span class="location">
-            <Icon name="material-symbols:location-on-outline" class="location-icon" />
-            {location}
-          </span>
-        </>
-      )}
+  <!-- 图片 -->
+  {imagesArray && imagesArray.length > 0 && (
+    <div class={`card-images image-cols-${getGridCols(imagesArray.length)} ${imagesArray.length === 1 ? 'single-image' : ''}`}>
+      {displayImages.map((img, index) => {
+        const imgSrc = getImgSrc(img);
+        const isMoreTrigger = index === maxImages - 1 && remainingCount > 0;
+        
+        return (
+          <div class={`image-item ${isMoreTrigger ? 'has-more' : ''}`}>
+            {typeof img === 'string' ? (
+              <img 
+                src={img} 
+                alt="Moment image" 
+                class="image-img"
+                loading="lazy"
+                data-fancybox={`gallery-${moment.id}`}
+                data-src={imgSrc}
+              />
+            ) : (
+              <Image 
+                src={img} 
+                alt="Moment image" 
+                class="image-img"
+                loading="lazy"
+                data-fancybox={`gallery-${moment.id}`}
+                data-src={imgSrc}
+              />
+            )}
+            
+            {isMoreTrigger && (
+              <div class="more-overlay">
+                <span class="more-text">+{remainingCount + 1}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
+  )}
 
-    <!-- 内容 -->
-    <div class="card-content">
-      <div class="prose dark:prose-invert max-w-none text-[var(--text-color)] text-[15px] leading-[1.8]">
-        <Markdown class="moment-markdown">
-          <Content />
-        </Markdown>
-      </div>
-    </div>
-
-    <!-- 图片 -->
-    {imagesArray && imagesArray.length > 0 && (
-      <div class={`card-images image-cols-${getGridCols(imagesArray.length)} ${imagesArray.length === 1 ? 'single-image' : ''}`}>
-        {displayImages.map((img, index) => {
-          const imgSrc = getImgSrc(img);
-          const isMoreTrigger = index === maxImages - 1 && remainingCount > 0;
-          
-          return (
-            <div class={`image-item ${isMoreTrigger ? 'has-more' : ''}`}>
-              {typeof img === 'string' ? (
-                <img 
-                  src={img} 
-                  alt="Moment image" 
-                  class="image-img"
-                  loading="lazy"
-                  data-fancybox={`gallery-${moment.id}`}
-                  data-src={imgSrc}
-                />
-              ) : (
-                <Image 
-                  src={img} 
-                  alt="Moment image" 
-                  class="image-img"
-                  loading="lazy"
-                  data-fancybox={`gallery-${moment.id}`}
-                  data-src={imgSrc}
-                />
-              )}
-              
-              {isMoreTrigger && (
-                <div class="more-overlay">
-                  <span class="more-text">+{remainingCount + 1}</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    )}
-
+  <!-- 底部互动 -->
+  <div class="card-actions">
     <!-- 标签 -->
     {tags && tags.length > 0 && (
       <div class="card-tags">
@@ -192,94 +188,10 @@ const formatTimeAgo = (date: Date): string => {
         ))}
       </div>
     )}
-
-    <!-- 底部互动 -->
-    <div class="card-actions">
-      <!-- 点赞 -->
-      <button 
-        class="action-btn like-btn"
-        data-id={momentId}
-        title="点赞"
-      >
-        <Icon name="material-symbols:favorite" class="action-icon" />
-        <span class="like-count">赞</span>
-      </button>
-
-      <!-- 评论 -->
-      <button 
-        class="action-btn comment-btn"
-        data-moment-id={momentId}
-        title="评论"
-      >
-        <Icon name="material-symbols:chat-bubble-outline" class="action-icon" />
-        <span class="action-text">评论</span>
-      </button>
-
-      <!-- 分享 -->
-      <button class="action-btn share-btn" title="分享">
-        <Icon name="material-symbols:share" class="action-icon" />
-        <span class="action-text">分享</span>
-      </button>
-    </div>
   </div>
 </div>
 
 <script is:inline>
-  // 点赞功能
-  document.querySelectorAll(".like-btn").forEach(btn => {
-    const id = btn.getAttribute("data-id");
-    if (!id) return;
-    
-    const storageKey = `moment_like_${id}`;
-    const countKey = `moment_like_count_${id}`;
-    
-    const isLiked = localStorage.getItem(storageKey) === "true";
-    let likeCount = parseInt(localStorage.getItem(countKey) || String(Math.floor(Math.random() * 20) + 5));
-    
-    const countSpan = btn.querySelector(".like-count");
-    
-    if (isLiked) {
-      if(countSpan) countSpan.textContent = String(likeCount);
-      btn.classList.add("liked");
-    } else {
-      if(countSpan) countSpan.textContent = "赞";
-    }
-
-    btn.addEventListener("click", () => {
-      const currentlyLiked = localStorage.getItem(storageKey) === "true";
-      
-      if (currentlyLiked) {
-        localStorage.setItem(storageKey, "false");
-        likeCount = Math.max(0, likeCount - 1);
-        localStorage.setItem(countKey, String(likeCount));
-        
-        if(countSpan) countSpan.textContent = "赞";
-        btn.classList.remove("liked");
-      } else {
-        localStorage.setItem(storageKey, "true");
-        likeCount += 1;
-        localStorage.setItem(countKey, String(likeCount));
-        
-        if(countSpan) countSpan.textContent = String(likeCount);
-        btn.classList.add("liked");
-        
-        btn.classList.add("popping");
-        setTimeout(() => btn.classList.remove("popping"), 300);
-      }
-    });
-  });
-
-  // 评论按钮滚动到评论区
-  document.querySelectorAll(".comment-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const walineEl = document.getElementById("waline");
-      if (walineEl) {
-        walineEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-  });
-
   // 分享功能
   document.querySelectorAll(".share-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
@@ -292,28 +204,34 @@ const formatTimeAgo = (date: Date): string => {
         } catch (e) {}
       } else {
         await navigator.clipboard.writeText(url);
-        // 可以添加一个简单的提示
       }
     });
   });
 </script>
 
 <style>
-  /* 卡片主体 - QQ风格 */
+  /* 卡片主体 - 微博/朋友圈风格 */
   .moment-card {
-    display: flex;
-    gap: 12px;
     background: var(--card-bg);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     border: 1px solid var(--border);
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, transform 0.2s;
   }
 
   .moment-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* 卡片头部 */
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
   }
 
   /* 头像 */
@@ -326,12 +244,11 @@ const formatTimeAgo = (date: Date): string => {
     height: 44px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #4a9eff;
+    border: 2px solid var(--primary);
     box-sizing: border-box;
   }
 
-  /* 卡片内容 */
-  .card-body {
+  .card-user-info {
     flex: 1;
     min-width: 0;
   }
@@ -340,36 +257,14 @@ const formatTimeAgo = (date: Date): string => {
   .user-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 2px;
+    gap: 6px;
+    margin-bottom: 4px;
   }
 
   .user-name {
     font-size: 15px;
     font-weight: 600;
-    color: #4a9eff;
-  }
-
-  .device-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 1px 6px;
-    background: var(--bg-color);
-    border-radius: 10px;
-    font-size: 10px;
-    color: var(--content-meta);
-  }
-
-  .device-icon {
-    font-size: 12px;
-  }
-
-  .device-name {
-    max-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--primary);
   }
 
   /* 元信息行 */
@@ -379,7 +274,6 @@ const formatTimeAgo = (date: Date): string => {
     gap: 6px;
     font-size: 12px;
     color: var(--content-meta);
-    margin-bottom: 8px;
   }
 
   .meta-dot {
@@ -403,12 +297,13 @@ const formatTimeAgo = (date: Date): string => {
 
   /* 内容区域 */
   .card-content {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .moment-markdown :global(p) {
     margin-bottom: 0.5rem;
     word-break: break-word;
+    line-height: 1.7;
   }
 
   .moment-markdown :global(p:last-child) {
@@ -425,11 +320,12 @@ const formatTimeAgo = (date: Date): string => {
   .card-images {
     display: grid;
     gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .image-cols-1 {
     grid-template-columns: 1fr;
+    max-width: 500px;
   }
 
   .image-cols-2 {
@@ -440,13 +336,9 @@ const formatTimeAgo = (date: Date): string => {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .single-image {
-    max-width: 280px;
-  }
-
   .image-item {
     position: relative;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
     background: var(--border);
@@ -488,107 +380,44 @@ const formatTimeAgo = (date: Date): string => {
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 
-  /* 标签 */
-  .card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
+  /* 标签 - 胶囊描边样式 */
 
   .tag-item {
-    padding: 3px 10px;
-    background: rgba(74, 158, 255, 0.1);
-    border-radius: 12px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid var(--primary);
+    border-radius: 20px;
     font-size: 12px;
-    color: #4a9eff;
-    transition: background 0.2s;
+    color: var(--primary);
+    transition: all 0.2s;
   }
 
   .tag-item:hover {
-    background: rgba(74, 158, 255, 0.2);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
   }
 
   /* 互动栏 */
   .card-actions {
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: flex-start;
+    gap: 16px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
   }
 
-  .action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 0;
-    color: var(--content-meta);
-    font-size: 13px;
-    transition: color 0.2s;
-  }
-
-  .action-icon {
-    font-size: 18px;
-    transition: transform 0.2s;
-  }
-
-  /* 点赞按钮 */
-  .like-btn:hover {
-    color: #ef4444;
-  }
-
-  .like-btn:hover .action-icon {
-    transform: scale(1.15);
-  }
-
-  .like-btn.liked {
-    color: #ef4444;
-  }
-
-  .like-btn.popping .action-icon {
-    animation: like-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-
-  @keyframes like-pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.4); }
-    100% { transform: scale(1); }
-  }
-
-  .like-count {
-    font-weight: 500;
-    min-width: 20px;
-  }
-
-  /* 评论按钮 */
-  .comment-btn:hover {
-    color: #4a9eff;
-  }
-
-  .comment-btn:hover .action-icon {
-    transform: scale(1.1);
-  }
-
-  /* 分享按钮 */
-  .share-btn:hover {
-    color: #10b981;
-  }
-
-  .share-btn:hover .action-icon {
-    transform: scale(1.1) rotate(-10deg);
-  }
-
-  .action-text {
-    font-weight: 500;
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   /* 响应式 */
   @media (max-width: 480px) {
     .moment-card {
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
     }
 
     .avatar-img {
@@ -609,7 +438,7 @@ const formatTimeAgo = (date: Date): string => {
     }
 
     .card-actions {
-      gap: 16px;
+      gap: 20px;
     }
 
     .action-icon {

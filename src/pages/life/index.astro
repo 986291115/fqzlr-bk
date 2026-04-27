@@ -144,38 +144,6 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
 
 <MainGridLayout title="生活" description="用心记录每一天">
   <div class="life-container">
-    <div class="profile-card">
-      <div class="profile-header">
-        <div class="avatar-wrapper">
-          <img src="https://re.0824.uk/zl/tx.webp" alt="头像" class="avatar-img" />
-        </div>
-        <div class="profile-info">
-          <h1 class="profile-name">我的生活</h1>
-          <p class="profile-bio">用心记录每一天，发现生活的美好</p>
-        </div>
-      </div>
-      <div class="profile-stats">
-        <div class="stat-item">
-          <span class="stat-value">{totalWorkouts}</span>
-          <span class="stat-label">运动</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value">{totalIdeas}</span>
-          <span class="stat-label">想法</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value">{totalCheckins}</span>
-          <span class="stat-label">打卡</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value">{totalRunKm.toFixed(0)}</span>
-          <span class="stat-label">km</span>
-        </div>
-      </div>
-    </div>
     <div class="nav-tabs-wrapper" id="life-nav-wrapper">
       <div class="nav-container">
         <!-- 左侧固定的"生活"按钮 -->
@@ -253,41 +221,35 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
             summary = [item.province, item.city, item.district].filter(Boolean).join(" ");
             subInfo = item.experience?.slice(0, 30) || `到访 ${item.visitCount} 次`;
           } else if (item.type === "笔记") {
-            // 类型标签显示笔记本名称，summary显示日记标题
-            typeLabel = item.notebookName || "笔记";
             summary = item.entryName || "未命名";
             subInfo = "";
           }
           
           return (
-            <a href={url(item.href)} class="moment-card">
-              <div class="moment-icon" style={iconStyle}>
-                <span class="moment-icon-inner" style={iconColorStyle}>
-                  {item.icon ? (
-                    <Icon name={item.icon} />
-                  ) : item.emoji ? (
-                    <span class="moment-emoji">{item.emoji}</span>
-                  ) : (
-                    <Icon name="material-symbols:circle" />
-                  )}
-                </span>
-              </div>
-              <div class="moment-content">
-                <div class="moment-header">
-                  <span class="moment-type" style={typeLabelStyle}>{typeLabel}</span>
-                  <span class="moment-time">{formatTimeAgo(item.date)}</span>
+            <a href={url(item.href)} class="life-card">
+              <div class="life-card-header">
+                <div class="life-card-type">
+                  <span class="type-icon" style={iconColorStyle}>
+                    <Icon name={item.icon || "material-symbols:circle"} size={18} />
+                  </span>
+                  <span class="type-label" style={typeLabelStyle}>{typeLabel}</span>
                 </div>
-                <div class="moment-text">{summary}</div>
+                <time class="life-card-time" datetime={item.date instanceof Date ? item.date.toISOString() : String(item.date)}>
+                  {formatTimeAgo(item.date)}
+                </time>
+              </div>
+              <div class="life-card-content">
+                <div class="life-card-title">{summary}</div>
                 {subInfo && (
                   item._renderFoodSubInfo ? (
-                    <div class="moment-sub food-tags" set:html={subInfo} />
+                    <div class="life-card-sub food-tags" set:html={subInfo} />
                   ) : (
-                    <div class="moment-sub">{subInfo}</div>
+                    <div class="life-card-sub">{subInfo}</div>
                   )
                 )}
               </div>
-              <div class="moment-arrow">
-                <Icon name="material-symbols:chevron-right-rounded" />
+              <div class="life-card-arrow">
+                <Icon name="material-symbols:chevron-right-rounded" size={20} />
               </div>
             </a>
           );
@@ -298,19 +260,9 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
 </MainGridLayout>
 
 <style>
-  .life-container { max-width: 720px; margin: 0 auto; padding: 0 16px 40px; }
-  .profile-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-  .profile-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-  .avatar-wrapper { flex-shrink: 0; }
-  .avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #4a9eff; }
-  .profile-info { flex: 1; min-width: 0; }
-  .profile-name { font-size: 18px; font-weight: 700; color: var(--text-color); margin-bottom: 4px; }
-  .profile-bio { font-size: 13px; color: var(--content-meta); }
-  .profile-stats { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 14px; background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border); }
-  .stat-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .stat-value { font-size: 18px; font-weight: 700; color: var(--primary); }
-  .stat-label { font-size: 11px; color: var(--content-meta); }
-  .stat-divider { width: 1px; height: 28px; background: var(--border); }
+  .life-container { margin: 0 auto; padding: 0 16px 40px; }
+
+  /* 导航标签样式 */
   .nav-tabs-wrapper { 
     margin-bottom: 16px; 
     overflow: hidden; 
@@ -339,7 +291,6 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
   .nav-tabs-wrapper.show-left::before { opacity: 1; }
   .nav-tabs-wrapper.show-right::after { opacity: 1; }
   
-  /* 整体容器 */
   .nav-container {
     display: flex;
     align-items: center;
@@ -350,13 +301,11 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
     padding: 6px;
   }
   
-  /* 左侧固定的"生活"按钮 */
   .nav-tab-home {
     flex-shrink: 0;
     background: var(--card-bg);
   }
   
-  /* 右侧可滚动区域 */
   .nav-tabs-scroll {
     flex: 1;
     min-width: 0;
@@ -376,7 +325,6 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
   }
   .nav-tabs::-webkit-scrollbar { display: none; }
   
-  /* 主页CategoryBar风格标签样式 */
   .nav-tab {
     flex-shrink: 0; 
     display: flex; 
@@ -413,73 +361,99 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
     transform: scale(0.98);
   }
   .tab-icon { font-size: 18px; }
-  /* ========== 微博/QQ动态风格 Feed ========== */
+
+  /* ===== 简洁风格卡片 ===== */
   .life-feed {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  /* 统一卡片容器 - 微博动态风格 */
-  .moment-card {
+  .life-card {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px 18px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 12px;
     text-decoration: none;
     color: inherit;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
   }
 
-  .moment-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: transparent;
-    transition: background 0.25s ease;
-  }
-
-  .moment-card:hover {
+  .life-card:hover {
     border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    background: var(--bg-color);
   }
 
-  .moment-card:hover::before {
-    background: linear-gradient(180deg, var(--primary), color-mix(in srgb, var(--primary) 50%, transparent));
+  .life-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 90px;
   }
 
-  /* 左侧图标 */
-  .moment-icon {
+  .life-card-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .type-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .life-card-time {
+    font-size: 12px;
+    color: var(--content-meta);
+    padding-left: 24px;
+  }
+
+  .life-card-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .life-card-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-color);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .life-card-sub {
+    font-size: 13px;
+    color: var(--content-meta);
+    line-height: 1.4;
+  }
+
+  .life-card-arrow {
     flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: var(--content-meta);
+    opacity: 0;
+    transition: all 0.2s ease;
   }
 
-  .moment-icon-inner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    font-size: 20px;
-  }
-
-  .moment-emoji {
-    font-size: 22px;
-    line-height: 1;
+  .life-card:hover .life-card-arrow {
+    opacity: 1;
+    color: var(--primary);
   }
 
   /* 饮食标签样式 */
@@ -517,108 +491,13 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
     color: #f87171;
   }
 
-  /* 右侧内容 */
-  .moment-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  /* 头部：类型标签 + 时间 */
-  .moment-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .moment-type {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-
-  .moment-time {
-    font-size: 12px;
-    color: var(--content-meta);
-    font-weight: 400;
-  }
-
-  /* 主要文字内容 */
-  .moment-text {
-    font-size: 15px;
-    color: var(--text-color);
-    line-height: 1.6;
-    font-weight: 500;
-    word-break: break-word;
-  }
-
-  /* 次要信息 */
-  .moment-sub {
-    font-size: 13px;
-    color: var(--content-meta);
-    line-height: 1.5;
-  }
-
-  /* 右侧箭头 */
-  .moment-arrow {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    color: var(--content-meta);
-    opacity: 0;
-    transform: translateX(-8px);
-    transition: all 0.25s ease;
-  }
-
-  .moment-card:hover .moment-arrow {
-    opacity: 1;
-    transform: translateX(0);
-    color: var(--primary);
-  }
-
-  /* ========== 旧样式（保留兼容性） ========== */
-  .life-card { display: none; } /* 已弃用，使用 moment-card */
-  .card-body { display: none; }
-  .card-header { display: none; }
-  .card-type { display: none; }
-  .card-time { display: none; }
-  .card-link { display: none; }
-  .card-content-full { display: none; }
-  .content-title { display: none; }
-  .content-text { display: none; }
-  .content-meta-row { display: none; }
-  .meta-tag { display: none; }
-  .meta-date { display: none; }
-  .meta-item { display: none; }
-  .meta-stat { display: none; }
-  .content-grid { display: none; }
-  .grid-item { display: none; }
-  .grid-label { display: none; }
-  .grid-value { display: none; }
-  .notebook-content { display: none; }
-  .food-summary { display: none; }
-  .food-meal { display: none; }
-  .food-label { display: none; }
-  .food-value { display: none; }
-  .food-note { display: none; }
-  .link-icon { display: none; }
-
   /* 空状态 */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 12px;
   }
 
   .empty-icon {
@@ -647,81 +526,49 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
     color: var(--content-meta);
   }
 
-  /* ========== 移动端适配 ========== */
+  /* 移动端适配 */
   @media (max-width: 768px) {
-    .moment-card {
+    .life-container { max-width: 100%; }
+    .life-card {
       padding: 14px 16px;
       gap: 12px;
     }
-
-    .moment-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+    .life-card-header {
+      min-width: 70px;
+      gap: 6px;
     }
-
-    .moment-icon-inner {
-      width: 24px;
-      height: 24px;
-      font-size: 18px;
-    }
-
-    .moment-text {
+    .life-card-title {
       font-size: 14px;
     }
-
-    .moment-sub {
+    .life-card-sub {
       font-size: 12px;
     }
-
-    .moment-arrow {
-      width: 24px;
-      height: 24px;
+    .life-card-time {
+      font-size: 11px;
     }
   }
 
   @media (max-width: 480px) {
     .life-container { padding: 0 12px 32px; }
-    .profile-card { padding: 16px; border-radius: 12px; margin-bottom: 12px; }
-    .avatar-img { width: 48px; height: 48px; }
-    .profile-name { font-size: 16px; }
-    .profile-stats { gap: 14px; padding: 12px; }
-    .stat-value { font-size: 16px; }
-    .moment-card {
-      padding: 12px 14px;
-      gap: 10px;
-      border-radius: 12px;
+    .life-card {
+      flex-wrap: wrap;
+      gap: 8px;
     }
-    .moment-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+    .life-card-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-width: unset;
     }
-    .moment-icon-inner {
-      width: 22px;
-      height: 22px;
-      font-size: 16px;
+    .life-card-time {
+      padding-left: 0;
     }
-    .moment-type {
-      padding: 2px 8px;
-      font-size: 11px;
+    .life-card-content {
+      width: 100%;
     }
-    .moment-time {
-      font-size: 11px;
-    }
-    .moment-text {
-      font-size: 14px;
-    }
-    .moment-sub {
-      font-size: 12px;
-    }
-    .nav-tab {
-      padding: 8px 12px;
-      font-size: 12px;
-      border-radius: 8px;
-    }
-    .tab-icon {
-      font-size: 15px;
+    .life-card-arrow {
+      display: none;
     }
   }
 </style>
