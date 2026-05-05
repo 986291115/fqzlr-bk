@@ -8,7 +8,6 @@ interface Props {
 	links: NavBarLink[];
 }
 
-// 处理links中的LinkPreset转换
 const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 	...link,
 	children: link.children?.map((child: NavBarLink | LinkPreset): NavBarLink => {
@@ -20,56 +19,61 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 }));
 ---
 
-<!-- 抽屉菜单遮罩层 -->
-<div id="nav-menu-overlay" class="nav-drawer-overlay"></div>
+<!-- 全屏遮罩层 -->
+<div id="nav-menu-overlay" class="nav-fullscreen-overlay"></div>
 
-<!-- 抽屉菜单面板 -->
-<div id="nav-menu-panel" class="nav-drawer-panel" data-menu-open="false" role="dialog" aria-modal="true" aria-label="导航菜单" aria-hidden="true">
-	<!-- 抽屉头部 -->
-	<div class="nav-drawer-header">
-		<span class="nav-drawer-title">菜单</span>
-		<button 
-			class="nav-drawer-close" 
-			aria-label="关闭菜单"
-			id="nav-menu-close"
-		>
-			<Icon name="material-symbols:close-rounded" class="text-[1.5rem]" />
-		</button>
-	</div>
-	
+<!-- 全屏菜单面板 -->
+<div
+	id="nav-menu-panel"
+	class="nav-fullscreen-panel"
+	data-menu-open="false"
+	role="dialog"
+	aria-modal="true"
+	aria-label="导航菜单"
+	aria-hidden="true"
+>
+	<!-- 关闭按钮 -->
+	<button class="nav-fullscreen-close" aria-label="关闭菜单" id="nav-menu-close">
+		<Icon name="material-symbols:close-rounded" class="text-[1.75rem]" />
+	</button>
+
 	<!-- 菜单内容 -->
-	<div class="nav-drawer-content">
+	<div class="nav-fullscreen-content">
 		{processedLinks.map((link, index) => (
-			<div class="nav-drawer-item-wrapper" style={`--item-delay: ${index * 60}ms`}>
+			<div class="nav-fullscreen-item-wrapper" style={`--item-delay: ${index * 80}ms`}>
 				{link.children && link.children.length > 0 ? (
 					<!-- 有子菜单的项目 -->
-					<div class="nav-drawer-dropdown" data-mobile-dropdown>
-						<button 
-							class="nav-drawer-link nav-drawer-dropdown-trigger"
+					<div class="nav-fullscreen-dropdown" data-mobile-dropdown>
+						<button
+							class="nav-fullscreen-link nav-fullscreen-dropdown-trigger"
 							data-mobile-dropdown-trigger
 							aria-expanded="false"
 						>
-							<span class="nav-drawer-link-content">
-								{link.icon && <Icon name={link.icon} class="text-[1.25rem]" />}
+							<span class="nav-fullscreen-link-content">
+								{link.icon && <Icon name={link.icon} class="text-[1.5rem]" />}
 								<span>{link.name}</span>
 							</span>
-							<Icon 
+							<Icon
 								name="material-symbols:keyboard-arrow-down-rounded"
-								class="nav-drawer-arrow transition-transform duration-300"
+								class="nav-fullscreen-arrow transition-transform duration-300"
 							/>
 						</button>
-						<div class="nav-drawer-submenu" data-mobile-submenu>
+						<div class="nav-fullscreen-submenu" data-mobile-submenu>
 							{link.children.map((child) => (
-								<a href={child.external ? child.url : url(child.url)} 
-								   class="nav-drawer-sublink"
-								   target={child.external ? "_blank" : null}
+								<a
+									href={child.external ? child.url : url(child.url)}
+									class="nav-fullscreen-sublink"
+									target={child.external ? "_blank" : undefined}
 								>
-									<span class="nav-drawer-link-content">
-										{child.icon && <Icon name={child.icon} class="text-[1.1rem]" />}
+									<span class="nav-fullscreen-link-content">
+										{child.icon && <Icon name={child.icon} class="text-[1.25rem]" />}
 										<span>{child.name}</span>
 									</span>
 									{child.external && (
-										<Icon name="fa7-solid:arrow-up-right-from-square" class="text-[0.75rem] opacity-50" />
+										<Icon
+											name="fa7-solid:arrow-up-right-from-square"
+											class="text-[0.75rem] opacity-50"
+										/>
 									)}
 								</a>
 							))}
@@ -77,22 +81,30 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 					</div>
 				) : (
 					<!-- 普通链接项目 -->
-					<a 
-						href={link.external ? link.url : url(link.url)} 
-						class="nav-drawer-link"
-						target={link.external ? "_blank" : null}
+					<a
+						href={link.external ? link.url : url(link.url)}
+						class="nav-fullscreen-link"
+						target={link.external ? "_blank" : undefined}
 					>
-						<span class="nav-drawer-link-content">
-							{link.icon && <Icon name={link.icon} class="text-[1.25rem]" />}
+						<span class="nav-fullscreen-link-content">
+							{link.icon && <Icon name={link.icon} class="text-[1.5rem]" />}
 							<span>{link.name}</span>
 						</span>
 						{link.external && (
-							<Icon name="fa7-solid:arrow-up-right-from-square" class="text-[0.75rem] opacity-50" />
+							<Icon
+								name="fa7-solid:arrow-up-right-from-square"
+								class="text-[0.75rem] opacity-50"
+							/>
 						)}
 					</a>
 				)}
 			</div>
 		))}
+	</div>
+
+	<!-- 底部装饰 -->
+	<div class="nav-fullscreen-footer">
+		<div class="nav-fullscreen-footer-line"></div>
 	</div>
 </div>
 
@@ -100,152 +112,159 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 	@reference "../../styles/main.css";
 
 	/* ============================================
-	 * 抽屉遮罩层
+	 * 全屏遮罩层
 	 * ============================================ */
-	.nav-drawer-overlay {
+	.nav-fullscreen-overlay {
 		display: none;
 		position: fixed;
 		inset: 0;
-		background: transparent;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
 		z-index: 998;
-		pointer-events: none;
+		opacity: 0;
 		transition: opacity 0.35s ease;
+		pointer-events: none;
 	}
 
-	.nav-drawer-overlay.active {
+	.nav-fullscreen-overlay.active {
+		display: block;
+		opacity: 1;
+		pointer-events: auto;
 	}
 
 	/* ============================================
-	 * 抽屉面板 - 仅移动端显示
+	 * 全屏菜单面板
 	 * ============================================ */
-	.nav-drawer-panel {
+	.nav-fullscreen-panel {
 		position: fixed !important;
-		top: 0 !important;
-		right: 0 !important;
-		bottom: 0 !important;
-		width: min(320px, 85vw);
-		height: 100dvh;
+		inset: 0 !important;
+		width: 100vw !important;
+		height: 100dvh !important;
 		background: var(--card-bg);
-		transform: translateX(100%);
-		transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+		transform: scale(0.95);
+		opacity: 0;
+		transition:
+			transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+			opacity 0.4s ease;
 		z-index: 999 !important;
 		display: flex !important;
 		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 		overflow: hidden;
+		pointer-events: none;
 	}
 
-	.nav-drawer-panel[data-menu-open="true"] {
-		transform: translateX(0) !important;
+	.nav-fullscreen-panel[data-menu-open="true"] {
+		transform: scale(1);
+		opacity: 1;
+		pointer-events: auto;
 	}
 
-	/* 覆盖 float-panel-closed 的样式 */
-	.nav-drawer-panel.float-panel-closed {
-		opacity: 1 !important;
-		pointer-events: auto !important;
-	}
-
-	.nav-drawer-panel.float-panel-closed * {
-		pointer-events: auto !important;
-	}
-
-	/* 桌面端隐藏抽屉 */
+	/* 桌面端隐藏全屏菜单 */
 	@media (min-width: 1024px) {
-		.nav-drawer-overlay,
-		.nav-drawer-panel {
-			display: none;
+		.nav-fullscreen-overlay,
+		.nav-fullscreen-panel {
+			display: none !important;
 		}
 	}
 
 	/* ============================================
-	 * 抽屉头部
+	 * 关闭按钮
 	 * ============================================ */
-	.nav-drawer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 1rem 1.25rem;
-		border-bottom: 1px solid var(--line-divider);
-		flex-shrink: 0;
-	}
-
-	.nav-drawer-title {
-		font-weight: 700;
-		font-size: 1.125rem;
-		color: var(--text-primary);
-	}
-
-	.nav-drawer-close {
+	.nav-fullscreen-close {
+		position: absolute;
+		top: 1.25rem;
+		right: 1.25rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 0.5rem;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
 		color: var(--text-secondary);
-		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+		background: var(--btn-regular-bg);
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			transform 0.2s ease;
 		cursor: pointer;
 	}
 
-	.nav-drawer-close:hover {
-		background: var(--btn-plain-bg-hover);
+	.nav-fullscreen-close:hover {
+		background: var(--btn-regular-bg-hover);
 		color: var(--primary);
 	}
 
-	.nav-drawer-close:active {
-		transform: scale(0.95);
+	.nav-fullscreen-close:active {
+		transform: scale(0.9);
 	}
 
 	/* ============================================
 	 * 菜单内容
 	 * ============================================ */
-	.nav-drawer-content {
-		flex: 1;
+	.nav-fullscreen-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		width: 100%;
+		max-width: 320px;
+		padding: 0 1.5rem;
 		overflow-y: auto;
-		overflow-x: hidden;
-		padding: 0.75rem 0.75rem 1.5rem;
-		min-height: 0;
+		max-height: 70vh;
 	}
 
 	/* ============================================
-	 * 菜单项淡入动画
+	 * 菜单项动画
 	 * ============================================ */
-	.nav-drawer-item-wrapper {
-		opacity: 0 !important;
-		transform: translateX(20px) !important;
-		transition: 
+	.nav-fullscreen-item-wrapper {
+		width: 100%;
+		opacity: 0;
+		transform: translateY(15px);
+		transition:
 			opacity 0.4s ease var(--item-delay),
 			transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) var(--item-delay) !important;
 	}
 
-	.nav-drawer-panel[data-menu-open="true"] .nav-drawer-item-wrapper {
-		opacity: 1 !important;
-		transform: translateX(0) !important;
+	.nav-fullscreen-panel[data-menu-open="true"] .nav-fullscreen-item-wrapper {
+		opacity: 1;
+		transform: translateY(0);
 	}
 
 	/* ============================================
 	 * 菜单链接
 	 * ============================================ */
-	.nav-drawer-link {
+	.nav-fullscreen-link {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 0.875rem 1rem;
-		border-radius: 0.625rem;
+		justify-content: center;
+		gap: 0.75rem;
+		padding: 1rem 1.5rem;
+		border-radius: 1rem;
 		color: var(--text-primary);
-		transition: background-color 0.2s ease, color 0.2s ease;
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			transform 0.15s ease;
 		font-weight: 500;
+		font-size: 1.125rem;
+		text-align: center;
 	}
 
-	.nav-drawer-link:hover {
+	.nav-fullscreen-link:hover {
 		background: var(--btn-plain-bg-hover);
 		color: var(--primary);
+		transform: scale(1.02);
 	}
 
-	.nav-drawer-link:active {
+	.nav-fullscreen-link:active {
 		background: var(--btn-plain-bg-active);
+		transform: scale(0.98);
 	}
 
-	.nav-drawer-link-content {
+	.nav-fullscreen-link-content {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
@@ -254,234 +273,249 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 	/* ============================================
 	 * 子菜单
 	 * ============================================ */
-	.nav-drawer-dropdown {
-		margin-bottom: 0.25rem;
+	.nav-fullscreen-dropdown {
+		width: 100%;
+		text-align: center;
 	}
 
-	.nav-drawer-dropdown-trigger {
+	.nav-fullscreen-dropdown-trigger {
 		width: 100%;
 		cursor: pointer;
 	}
 
-	.nav-drawer-dropdown-trigger .nav-drawer-arrow {
+	.nav-fullscreen-dropdown-trigger .nav-fullscreen-arrow {
 		color: var(--text-tertiary);
 	}
 
-	.nav-drawer-dropdown[data-expanded="true"] .nav-drawer-arrow {
+	.nav-fullscreen-dropdown[data-expanded="true"] .nav-fullscreen-arrow {
 		transform: rotate(180deg);
 	}
 
-	.nav-drawer-submenu {
+	.nav-fullscreen-submenu {
 		max-height: 0;
 		overflow: hidden;
 		transition: max-height 0.3s ease-in-out;
 	}
 
-	.nav-drawer-dropdown[data-expanded="true"] .nav-drawer-submenu {
+	.nav-fullscreen-dropdown[data-expanded="true"] .nav-fullscreen-submenu {
 		max-height: 500px;
 	}
 
-	.nav-drawer-sublink {
+	.nav-fullscreen-sublink {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem 0.75rem 2.5rem;
-		border-radius: 0.5rem;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border-radius: 0.75rem;
 		color: var(--text-secondary);
-		transition: background-color 0.2s ease, color 0.2s ease;
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			transform 0.15s ease;
 		font-weight: 400;
-		font-size: 0.9375rem;
+		font-size: 1rem;
 	}
 
-	.nav-drawer-sublink:hover {
+	.nav-fullscreen-sublink:hover {
 		background: var(--btn-plain-bg-hover);
 		color: var(--primary);
+		transform: scale(1.01);
 	}
 
-	.nav-drawer-sublink:active {
+	.nav-fullscreen-sublink:active {
 		background: var(--btn-plain-bg-active);
+		transform: scale(0.98);
+	}
+
+	/* ============================================
+	 * 底部装饰
+	 * ============================================ */
+	.nav-fullscreen-footer {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		opacity: 0;
+		transition: opacity 0.5s ease 0.6s;
+	}
+
+	.nav-fullscreen-panel[data-menu-open="true"] .nav-fullscreen-footer {
+		opacity: 1;
+	}
+
+	.nav-fullscreen-footer-line {
+		width: 40px;
+		height: 4px;
+		background: var(--line-divider);
+		border-radius: 2px;
 	}
 
 	/* ============================================
 	 * 暗色模式适配
 	 * ============================================ */
-	:global(.dark) .nav-drawer-panel {
+	:global(.dark) .nav-fullscreen-panel {
 		background: var(--card-bg);
 	}
 </style>
 
 <script>
-// 移动端菜单控制器 - 使用 data 属性控制状态
-(function() {
-    // 保存事件处理器引用，用于移除监听器
-    let clickHandler: ((e: MouseEvent) => void) | null = null;
-    let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+	(function () {
+		let clickHandler: ((e: MouseEvent) => void) | null = null;
+		let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
-    // 打开菜单
-    function openMenu() {
-        const panel = document.getElementById('nav-menu-panel');
-        const overlay = document.getElementById('nav-menu-overlay');
-        if (panel) {
-            panel.setAttribute('data-menu-open', 'true');
-            panel.removeAttribute('aria-hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        if (overlay) {
-            overlay.classList.add('active');
-        }
-    }
+		function openMenu() {
+			const panel = document.getElementById("nav-menu-panel");
+			const overlay = document.getElementById("nav-menu-overlay");
+			if (panel) {
+				panel.setAttribute("data-menu-open", "true");
+				panel.removeAttribute("aria-hidden");
+				document.body.style.overflow = "hidden";
+			}
+			if (overlay) {
+				overlay.classList.add("active");
+			}
+		}
 
-    // 关闭菜单
-    function closeMenu() {
-        const panel = document.getElementById('nav-menu-panel');
-        const overlay = document.getElementById('nav-menu-overlay');
-        if (panel) {
-            panel.setAttribute('data-menu-open', 'false');
-            // 关闭前把焦点移到触发按钮，避免 aria-hidden 与 focus 冲突
-            const closeBtn = panel.querySelector('#nav-menu-close');
-            const menuSwitch = document.getElementById('nav-menu-switch');
-            if (document.activeElement && panel.contains(document.activeElement)) {
-                menuSwitch ? menuSwitch.focus() : closeBtn ? closeBtn.blur() : null;
-            }
-            panel.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        }
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
-    }
+		function closeMenu() {
+			const panel = document.getElementById("nav-menu-panel");
+			const overlay = document.getElementById("nav-menu-overlay");
+			if (panel) {
+				panel.setAttribute("data-menu-open", "false");
+				const closeBtn = panel.querySelector("#nav-menu-close");
+				const menuSwitch = document.getElementById("nav-menu-switch");
+				if (document.activeElement && panel.contains(document.activeElement)) {
+					menuSwitch ? menuSwitch.focus() : closeBtn ? closeBtn.blur() : null;
+				}
+				panel.setAttribute("aria-hidden", "true");
+				document.body.style.overflow = "";
+			}
+			if (overlay) {
+				overlay.classList.remove("active");
+			}
+		}
 
-    // 切换菜单状态
-    function toggleMenu() {
-        const panel = document.getElementById('nav-menu-panel');
-        if (!panel) {
-            return;
-        }
+		function toggleMenu() {
+			const panel = document.getElementById("nav-menu-panel");
+			if (!panel) {
+				return;
+			}
+			const isOpen = panel.getAttribute("data-menu-open") === "true";
+			if (isOpen) {
+				closeMenu();
+			} else {
+				openMenu();
+			}
+		}
 
-        const isOpen = panel.getAttribute('data-menu-open') === 'true';
+		function handleDropdownClick(e: Event) {
+			const target = e.target as Node | null;
+			if (!target) return;
+			const trigger = (target as Element).closest?.(
+				"[data-mobile-dropdown-trigger]"
+			);
+			if (!trigger) return;
 
-        if (isOpen) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-    }
+			e.preventDefault();
+			const dropdown = (trigger as Element).closest?.("[data-mobile-dropdown]");
+			if (!dropdown) return;
 
-    // 处理子菜单点击
-    function handleDropdownClick(e: Event) {
-        const target = e.target as Node | null;
-        if (!target) return;
-        const trigger = (target as Element).closest?.('[data-mobile-dropdown-trigger]');
-        if (!trigger) return;
+			const isExpanded =
+				(dropdown as Element).getAttribute("data-expanded") === "true";
 
-        e.preventDefault();
-        const dropdown = (trigger as Element).closest?.('[data-mobile-dropdown]');
-        if (!dropdown) return;
+			document
+				.querySelectorAll("[data-mobile-dropdown]")
+				.forEach(function (other) {
+					if (other !== dropdown) {
+						(other as Element).setAttribute("data-expanded", "false");
+						const otherTrigger = (other as Element).querySelector(
+							"[data-mobile-dropdown-trigger]"
+						);
+						if (otherTrigger) {
+							(otherTrigger as Element).setAttribute(
+								"aria-expanded",
+								"false"
+							);
+						}
+					}
+				});
 
-        const isExpanded = (dropdown as Element).getAttribute('data-expanded') === 'true';
+			(dropdown as Element).setAttribute("data-expanded", (!isExpanded).toString());
+			(trigger as Element).setAttribute("aria-expanded", (!isExpanded).toString());
+		}
 
-        // 关闭其他子菜单
-        document.querySelectorAll('[data-mobile-dropdown]').forEach(function(other) {
-            if (other !== dropdown) {
-                (other as Element).setAttribute('data-expanded', 'false');
-                const otherTrigger = (other as Element).querySelector('[data-mobile-dropdown-trigger]');
-                if (otherTrigger) {
-                    (otherTrigger as Element).setAttribute('aria-expanded', 'false');
-                }
-            }
-        });
+		function handleClick(e: MouseEvent) {
+			const target = e.target as Node | null;
+			if (!target) return;
 
-        // 切换当前子菜单
-        (dropdown as Element).setAttribute('data-expanded', (!isExpanded).toString());
-        (trigger as Element).setAttribute('aria-expanded', (!isExpanded).toString());
-    }
+			if ((target as Element).closest?.("#nav-menu-switch")) {
+				e.preventDefault();
+				e.stopPropagation();
+				toggleMenu();
+				return;
+			}
 
-    // 事件处理函数
-    function handleClick(e: MouseEvent) {
-        const target = e.target as Node | null;
-        if (!target) return;
+			const targetEl = target as Element;
+			if (
+				targetEl.id === "nav-menu-overlay" ||
+				targetEl.classList?.contains("nav-fullscreen-overlay")
+			) {
+				e.preventDefault();
+				closeMenu();
+				return;
+			}
 
-        // 菜单按钮点击
-        if ((target as Element).closest?.('#nav-menu-switch')) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleMenu();
-            return;
-        }
+			if ((target as Element).closest?.("#nav-menu-close")) {
+				e.preventDefault();
+				closeMenu();
+				return;
+			}
 
-        // 遮罩层点击 - 关闭菜单
-        const targetEl = target as Element;
-        if (targetEl.id === 'nav-menu-overlay' || targetEl.classList?.contains('nav-drawer-overlay')) {
-            e.preventDefault();
-            closeMenu();
-            return;
-        }
+			if ((target as Element).closest?.("[data-mobile-dropdown-trigger]")) {
+				handleDropdownClick(e);
+				return;
+			}
+		}
 
-        // 关闭按钮点击
-        if ((target as Element).closest?.('#nav-menu-close')) {
-            e.preventDefault();
-            closeMenu();
-            return;
-        }
+		function handleKeydown(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				const panel = document.getElementById("nav-menu-panel");
+				if (panel && panel.getAttribute("data-menu-open") === "true") {
+					closeMenu();
+				}
+			}
+		}
 
-        // 子菜单触发器点击
-        if ((target as Element).closest?.('[data-mobile-dropdown-trigger]')) {
-            handleDropdownClick(e);
-            return;
-        }
-    }
+		function init() {
+			if (clickHandler) {
+				document.removeEventListener("click", clickHandler);
+			}
+			if (keydownHandler) {
+				document.removeEventListener("keydown", keydownHandler);
+			}
 
-    // ESC 键处理
-    function handleKeydown(e: KeyboardEvent) {
-        if (e.key === 'Escape') {
-            const panel = document.getElementById('nav-menu-panel');
-            if (panel && panel.getAttribute('data-menu-open') === 'true') {
-                closeMenu();
-            }
-        }
-    }
+			clickHandler = handleClick;
+			keydownHandler = handleKeydown;
 
-    // 初始化函数 - 注册事件监听器
-    function init() {
-        // 移除旧监听器（如果存在）
-        if (clickHandler) {
-            document.removeEventListener('click', clickHandler);
-        }
-        if (keydownHandler) {
-            document.removeEventListener('keydown', keydownHandler);
-        }
+			document.addEventListener("click", clickHandler);
+			document.addEventListener("keydown", keydownHandler);
+		}
 
-        // 保存引用
-        clickHandler = handleClick;
-        keydownHandler = handleKeydown;
+		function onPageTransition() {
+			closeMenu();
+			init();
+		}
 
-        // 注册新监听器
-        document.addEventListener('click', clickHandler);
-        document.addEventListener('keydown', keydownHandler);
-    }
+		document.addEventListener("astro:page-load", init);
+		document.addEventListener("swup:contentReplaced", onPageTransition);
+		document.addEventListener("swup:page:view", onPageTransition);
 
-    // 页面切换后关闭菜单并重新初始化
-    function onPageTransition() {
-        closeMenu();
-        init();
-    }
+		if (document.readyState === "complete" || document.readyState === "interactive") {
+			init();
+		}
 
-    // 使用 astro:page-load 确保在页面完全加载后初始化
-    // 这对于 Swup 页面过渡后的初始化尤为重要
-    document.addEventListener('astro:page-load', init);
-
-    // 也监听 Swup 事件作为备份
-    document.addEventListener('swup:contentReplaced', onPageTransition);
-    document.addEventListener('swup:page:view', onPageTransition);
-
-    // 页面完全加载后初始化
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        init();
-    }
-
-    // 暴露到全局
-    window.openNavMenu = openMenu;
-    window.closeNavMenu = closeMenu;
-    window.toggleNavMenu = toggleMenu;
-})();
+		window.openNavMenu = openMenu;
+		window.closeNavMenu = closeMenu;
+		window.toggleNavMenu = toggleMenu;
+	})();
 </script>

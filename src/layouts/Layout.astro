@@ -608,6 +608,9 @@ function disableAnimation() {
   const bannerEnabled = !!document.getElementById("wallpaper-wrapper");
 
   function setClickOutsideToClose(panel: string, ignores: string[]) {
+      // 跳过全屏导航菜单，它有自己的处理逻辑
+      if (panel === "nav-menu-panel") return;
+
       document.addEventListener("click", (event) => {
           let panelDom = document.getElementById(panel);
           if (!panelDom) return;
@@ -626,10 +629,7 @@ function disableAnimation() {
     "display-setting",
     "display-settings-switch",
   ]);
-  setClickOutsideToClose("nav-menu-panel", [
-    "nav-menu-panel",
-    "nav-menu-switch",
-  ]);
+  // 导航菜单由 NavMenuPanel.astro 自己处理点击外部关闭
   setClickOutsideToClose("search-panel", [
     "search-panel",
     "search-bar",
