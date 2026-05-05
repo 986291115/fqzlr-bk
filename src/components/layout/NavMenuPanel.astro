@@ -313,6 +313,10 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 <script>
 // 移动端菜单控制器 - 使用 data 属性控制状态
 (function() {
+    // 保存事件处理器引用，用于移除监听器
+    let clickHandler: ((e: MouseEvent) => void) | null = null;
+    let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+
     // 打开菜单
     function openMenu() {
         const panel = document.getElementById('nav-menu-panel');
@@ -349,10 +353,8 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 
     // 切换菜单状态
     function toggleMenu() {
-        console.log('[Menu] toggleMenu called');
         const panel = document.getElementById('nav-menu-panel');
         if (!panel) {
-            console.log('[Menu] panel not found in toggleMenu!');
             return;
         }
 
@@ -366,36 +368,41 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
     }
 
     // 处理子菜单点击
-    function handleDropdownClick(e) {
-        const trigger = e.target.closest('[data-mobile-dropdown-trigger]');
+    function handleDropdownClick(e: Event) {
+        const target = e.target as Node | null;
+        if (!target) return;
+        const trigger = (target as Element).closest?.('[data-mobile-dropdown-trigger]');
         if (!trigger) return;
 
         e.preventDefault();
-        const dropdown = trigger.closest('[data-mobile-dropdown]');
+        const dropdown = (trigger as Element).closest?.('[data-mobile-dropdown]');
         if (!dropdown) return;
 
-        const isExpanded = dropdown.getAttribute('data-expanded') === 'true';
+        const isExpanded = (dropdown as Element).getAttribute('data-expanded') === 'true';
 
         // 关闭其他子菜单
         document.querySelectorAll('[data-mobile-dropdown]').forEach(function(other) {
             if (other !== dropdown) {
-                other.setAttribute('data-expanded', 'false');
-                const otherTrigger = other.querySelector('[data-mobile-dropdown-trigger]');
+                (other as Element).setAttribute('data-expanded', 'false');
+                const otherTrigger = (other as Element).querySelector('[data-mobile-dropdown-trigger]');
                 if (otherTrigger) {
-                    otherTrigger.setAttribute('aria-expanded', 'false');
+                    (otherTrigger as Element).setAttribute('aria-expanded', 'false');
                 }
             }
         });
 
         // 切换当前子菜单
-        dropdown.setAttribute('data-expanded', (!isExpanded).toString());
-        trigger.setAttribute('aria-expanded', (!isExpanded).toString());
+        (dropdown as Element).setAttribute('data-expanded', (!isExpanded).toString());
+        (trigger as Element).setAttribute('aria-expanded', (!isExpanded).toString());
     }
 
     // 事件处理函数
-    function handleClick(e) {
+    function handleClick(e: MouseEvent) {
+        const target = e.target as Node | null;
+        if (!target) return;
+
         // 菜单按钮点击
-        if (e.target.closest('#nav-menu-switch')) {
+        if ((target as Element).closest?.('#nav-menu-switch')) {
             e.preventDefault();
             e.stopPropagation();
             toggleMenu();
@@ -403,28 +410,29 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
         }
 
         // 遮罩层点击 - 关闭菜单
-        if (e.target.id === 'nav-menu-overlay' || e.target.classList.contains('nav-drawer-overlay')) {
+        const targetEl = target as Element;
+        if (targetEl.id === 'nav-menu-overlay' || targetEl.classList?.contains('nav-drawer-overlay')) {
             e.preventDefault();
             closeMenu();
             return;
         }
 
         // 关闭按钮点击
-        if (e.target.closest('#nav-menu-close')) {
+        if ((target as Element).closest?.('#nav-menu-close')) {
             e.preventDefault();
             closeMenu();
             return;
         }
 
         // 子菜单触发器点击
-        if (e.target.closest('[data-mobile-dropdown-trigger]')) {
+        if ((target as Element).closest?.('[data-mobile-dropdown-trigger]')) {
             handleDropdownClick(e);
             return;
         }
     }
 
     // ESC 键处理
-    function handleKeydown(e) {
+    function handleKeydown(e: KeyboardEvent) {
         if (e.key === 'Escape') {
             const panel = document.getElementById('nav-menu-panel');
             if (panel && panel.getAttribute('data-menu-open') === 'true') {
@@ -433,32 +441,43 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
         }
     }
 
-    // 初始化函数
+    // 初始化函数 - 注册事件监听器
     function init() {
-        document.addEventListener('click', handleClick);
-        document.addEventListener('keydown', handleKeydown);
+        // 移除旧监听器（如果存在）
+        if (clickHandler) {
+            document.removeEventListener('click', clickHandler);
+        }
+        if (keydownHandler) {
+            document.removeEventListener('keydown', keydownHandler);
+        }
+
+        // 保存引用
+        clickHandler = handleClick;
+        keydownHandler = handleKeydown;
+
+        // 注册新监听器
+        document.addEventListener('click', clickHandler);
+        document.addEventListener('keydown', keydownHandler);
     }
 
     // 页面切换后关闭菜单并重新初始化
     function onPageTransition() {
         closeMenu();
-        // 移除旧监听器，避免重复注册
-        document.removeEventListener('click', handleClick);
-        document.removeEventListener('keydown', handleKeydown);
-        // 重新初始化
         init();
     }
 
-    // 初始化
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // 使用 astro:page-load 确保在页面完全加载后初始化
+    // 这对于 Swup 页面过渡后的初始化尤为重要
+    document.addEventListener('astro:page-load', init);
 
-    // Swup 事件监听
+    // 也监听 Swup 事件作为备份
+    document.addEventListener('swup:contentReplaced', onPageTransition);
     document.addEventListener('swup:page:view', onPageTransition);
-    document.addEventListener('swup:content:replace', onPageTransition);
+
+    // 页面完全加载后初始化
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+    }
 
     // 暴露到全局
     window.openNavMenu = openMenu;
