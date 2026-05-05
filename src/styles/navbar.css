@@ -302,3 +302,342 @@ body.wallpaper-transparent .float-panel {
         padding-right: 0.625rem !important;
     }
 }
+
+/* ============================================
+ * 导航栏链接下划线效果
+ * 桌面端所有导航链接都使用主题色 + 渐变下划线效果
+ * ============================================ */
+@media (min-width: 1024px) {
+    /* 桌面端导航链接容器 */
+    #navbar .hidden.lg\:flex {
+        gap: 0.25rem;
+    }
+
+    /* 导航链接 - 移除默认的hover背景效果，替换为下划线 */
+    #navbar .dropdown-container > a,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a {
+        background: transparent !important;
+        border-radius: 0.5rem;
+        position: relative;
+        overflow: visible;
+    }
+
+    /* 移除原有的scale-animation效果中的伪元素背景 */
+    #navbar .dropdown-container > a::before,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a::before {
+        display: none !important;
+    }
+
+    /* 下划线效果 */
+    #navbar .dropdown-container > a .navbar-link-text,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a .navbar-link-text {
+        position: relative;
+        display: inline-block;
+        color: inherit;
+        transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 下划线伪元素 */
+    #navbar .dropdown-container > a .navbar-link-text::after,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a .navbar-link-text::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--primary));
+        border-radius: 1px;
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 悬停时显示下划线 */
+    #navbar .dropdown-container > a:hover .navbar-link-text,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a:hover .navbar-link-text {
+        color: var(--primary);
+    }
+
+    #navbar .dropdown-container > a:hover .navbar-link-text::after,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a:hover .navbar-link-text::after {
+        transform: scaleX(1);
+    }
+
+    /* 点击时保持主题色 */
+    #navbar .dropdown-container > a:active .navbar-link-text,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a:active .navbar-link-text {
+        color: var(--primary);
+    }
+
+    /* 当前页面/激活状态 */
+    #navbar .dropdown-container > a[aria-current="page"] .navbar-link-text,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a[aria-current="page"] .navbar-link-text,
+    #navbar .dropdown-container > a[data-active="true"] .navbar-link-text,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a[data-active="true"] .navbar-link-text {
+        color: var(--primary);
+    }
+
+    #navbar .dropdown-container > a[aria-current="page"] .navbar-link-text::after,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a[aria-current="page"] .navbar-link-text::after,
+    #navbar .dropdown-container > a[data-active="true"] .navbar-link-text::after,
+    #navbar .dropdown-container:not(:has([data-dropdown-menu])) > a[data-active="true"] .navbar-link-text::after {
+        transform: scaleX(1);
+    }
+
+    /* 下拉箭头跟随主题色 */
+    #navbar .dropdown-container > a:hover .dropdown-arrow,
+    #navbar .dropdown-container > a:focus .dropdown-arrow {
+        color: var(--primary);
+    }
+
+    /* ============================================
+     * Logo 区域下划线效果
+     * ============================================ */
+    .navbar-logo-link {
+        background: transparent !important;
+        position: relative;
+        overflow: visible;
+    }
+
+    .navbar-logo-link::before {
+        display: none !important;
+    }
+
+    .navbar-logo-content {
+        position: relative;
+        display: inline-flex;
+        transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Logo 下划线 */
+    .navbar-logo-content::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--primary));
+        border-radius: 1px;
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .navbar-logo-link:hover .navbar-logo-content {
+        color: var(--primary);
+    }
+
+    .navbar-logo-link:hover .navbar-logo-content::after {
+        transform: scaleX(1);
+    }
+
+    .navbar-logo-link:active .navbar-logo-content {
+        color: var(--primary);
+    }
+
+    /* Logo 图标 */
+    .navbar-logo-link:hover .navbar-logo-icon,
+    .navbar-logo-link:hover .navbar-logo-img {
+        color: var(--primary);
+    }
+
+    /* ============================================
+     * 导航栏图标按钮下划线效果 (搜索、换肤)
+     * ============================================ */
+    .navbar-icon-btn {
+        background: transparent !important;
+        position: relative;
+        overflow: visible;
+    }
+
+    .navbar-icon-btn::before {
+        display: none !important;
+    }
+
+    .navbar-icon-btn {
+        position: relative;
+    }
+
+    /* 图标按钮下划线 */
+    .navbar-icon-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: 20px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--primary));
+        border-radius: 1px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .navbar-icon-btn:hover {
+        color: var(--primary) !important;
+    }
+
+    .navbar-icon-btn:hover::after {
+        transform: translateX(-50%) scaleX(1);
+    }
+
+    .navbar-icon-btn:active {
+        color: var(--primary) !important;
+    }
+
+    /* 搜索框保持原有样式 */
+    #search-bar {
+        background: transparent !important;
+    }
+
+    #search-bar:hover {
+        background: var(--btn-plain-bg-hover) !important;
+    }
+}
+
+/* ============================================
+ * 移动端导航栏图标按钮下划线效果
+ * ============================================ */
+@media (max-width: 1023px) {
+    /* 移动端图标按钮下划线 */
+    .navbar-icon-btn {
+        position: relative;
+        background: transparent !important;
+    }
+
+    .navbar-icon-btn::before {
+        display: none !important;
+    }
+
+    .navbar-icon-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: 20px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--primary));
+        border-radius: 1px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .navbar-icon-btn:hover {
+        color: var(--primary) !important;
+        background: transparent !important;
+    }
+
+    .navbar-icon-btn:hover::after {
+        transform: translateX(-50%) scaleX(1);
+    }
+
+    .navbar-icon-btn:active {
+        color: var(--primary) !important;
+        background: transparent !important;
+        transform: scale(0.95);
+    }
+
+    /* 移动端汉堡菜单按钮 - 下划线位置微调 */
+    .nav-hamburger-btn {
+        background: transparent !important;
+    }
+
+    .nav-hamburger-btn::before {
+        display: none !important;
+    }
+
+    .nav-hamburger-btn::after {
+        bottom: 4px;
+    }
+
+    .nav-hamburger-btn:hover {
+        background: transparent !important;
+    }
+
+    .nav-hamburger-btn:active {
+        background: transparent !important;
+    }
+
+    /* 移动端 Logo 链接也移除背景 */
+    .navbar-logo-link {
+        background: transparent !important;
+    }
+
+    .navbar-logo-link::before {
+        display: none !important;
+    }
+
+    .navbar-logo-link:hover {
+        background: transparent !important;
+    }
+
+    .navbar-logo-link:active {
+        background: transparent !important;
+    }
+
+    /* 导航栏区域内所有按钮移除 expand-animation 的背景效果 */
+    #navbar .btn-plain {
+        background: transparent !important;
+    }
+
+    #navbar .btn-plain::before {
+        display: none !important;
+    }
+
+    #navbar .btn-plain:hover {
+        background: transparent !important;
+    }
+
+    #navbar .btn-plain:hover::before {
+        display: none !important;
+    }
+
+    #navbar .btn-plain:active {
+        background: transparent !important;
+    }
+
+    #navbar .btn-plain:active::before {
+        display: none !important;
+    }
+
+    /* 搜索按钮特别处理 */
+    #navbar #search-switch {
+        background: transparent !important;
+    }
+
+    #navbar #search-switch::before {
+        display: none !important;
+    }
+
+    #navbar #search-switch:hover {
+        background: transparent !important;
+        color: var(--primary) !important;
+    }
+
+    #navbar #search-switch:active {
+        background: transparent !important;
+    }
+}
+
+/* ============================================
+ * 汉堡菜单按钮样式
+ * ============================================ */
+.nav-hamburger-btn {
+    position: relative;
+    overflow: hidden;
+    transition: color 0.2s ease;
+}
+
+.nav-hamburger-btn:hover {
+    color: var(--primary) !important;
+}
+
+.nav-hamburger-icon {
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+}
+
+.nav-hamburger-btn:hover .nav-hamburger-icon {
+    color: var(--primary);
+}

@@ -565,3 +565,53 @@ html {
 .pagination-info {
   @apply text-sm text-(--text-secondary) text-center mb-2;
 }
+
+/* ============================================
+ * 文章内表格横向滚动
+ * 表格不换行，允许在容器内横向滚动
+ * ============================================ */
+.custom-md table,
+article table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 表格容器 - 添加滚动条样式 */
+.custom-md table::-webkit-scrollbar,
+article table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-md table::-webkit-scrollbar-track,
+article table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-md table::-webkit-scrollbar-thumb,
+article table::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(128, 128, 128, 0.3));
+  border-radius: 3px;
+}
+
+.custom-md table::-webkit-scrollbar-thumb:hover,
+article table::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(128, 128, 128, 0.5));
+}
+
+/* Firefox 滚动条 */
+.custom-md table,
+article table {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(128, 128, 128, 0.3)) transparent;
+}
+
+/* 确保表格单元格不换行 */
+.custom-md table th,
+.custom-md table td,
+article table th,
+article table td {
+  white-space: nowrap;
+  min-width: max-content;
+}
