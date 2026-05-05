@@ -316,7 +316,6 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
     // 保存事件处理器引用，用于移除监听器
     let clickHandler: ((e: MouseEvent) => void) | null = null;
     let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
-    let isInitialized = false;
 
     // 打开菜单
     function openMenu() {
@@ -459,19 +458,25 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
         // 注册新监听器
         document.addEventListener('click', clickHandler);
         document.addEventListener('keydown', keydownHandler);
+    }
 
-        isInitialized = true;
+    // 页面切换后关闭菜单并重新初始化
+    function onPageTransition() {
+        closeMenu();
+        init();
     }
 
     // 使用 astro:page-load 确保在页面完全加载后初始化
-    // 这是 Swup 页面切换后的正确初始化时机
+    // 这对于 Swup 页面过渡后的初始化尤为重要
     document.addEventListener('astro:page-load', init);
+
+    // 也监听 Swup 事件作为备份
+    document.addEventListener('swup:contentReplaced', onPageTransition);
+    document.addEventListener('swup:page:view', onPageTransition);
 
     // 页面完全加载后初始化
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         init();
-    } else {
-        document.addEventListener('DOMContentLoaded', init);
     }
 
     // 暴露到全局
