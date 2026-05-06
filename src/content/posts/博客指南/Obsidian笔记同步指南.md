@@ -5,6 +5,7 @@ description: 如何使用 Obsidian 笔记同步工具将笔记同步到博客
 tags:
   - 使用文档
 category: 博客指南
+descriptionSource: manual
 ---
 
 # Obsidian 笔记同步指南

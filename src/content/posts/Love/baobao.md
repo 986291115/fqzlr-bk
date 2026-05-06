@@ -5,6 +5,7 @@ description: 记录她。
 image: "https://re.tsh520.cn/img/baobao/default.jpeg"  
 tags: [宝宝]  
 category: "I Love You"
+descriptionSource: manual
 ---
 
 ## 🍬 写给我的陈无敌宝贝 🍬

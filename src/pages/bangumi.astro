@@ -10,15 +10,12 @@ import type { UserSubjectCollection } from "@/types/bangumi";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
 import { getCollection } from "astro:content";
 
-// 检查页面是否启用
 if (!siteConfig.pages.bangumi) {
 	return Astro.redirect("/404/");
 }
 
-// 获取构建时间
 const buildTime = formatDateI18nWithTime(new Date());
 
-// 分类映射
 const categoryMap = {
 	book: { id: "book", name: i18n(I18nKey.bangumiCategoryBook), subjectType: 1 },
 	anime: {
@@ -35,20 +32,16 @@ const categoryMap = {
 	real: { id: "real", name: i18n(I18nKey.bangumiCategoryReal), subjectType: 6 },
 };
 
-// 从本地 Content Collection 获取数据
 const customBangumi = await getCollection("bangumi");
 const allPosts = await getCollection("posts");
 
-// 将本地数据映射到 UserSubjectCollection 类型
 const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 	const { data } = item;
 	const categoryInfo = categoryMap[data.category];
 
-	// 尝试匹配博客文章以获取正确的链接
 	let rawLink = (data.link || "").trim().replace(/\\/g, "/");
 	let finalLink = rawLink;
 
-	// 统一规范化函数
 	const normalize = (s: string) =>
 		s.toLowerCase().replace(/\\/g, "/").replace(/\/$/, "");
 
@@ -68,7 +61,6 @@ const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 			nRaw === nId ||
 			nRaw.endsWith(nSlug) ||
 			nRaw.endsWith(nId) ||
-			// 同时也按标题匹配作为兜底
 			p.data.title === data.title
 		);
 	});
@@ -79,7 +71,6 @@ const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 		finalLink = `/posts/${slug}/`;
 	}
 
-	// 确保链接以 / 开头（如果是内部链接）
 	if (!finalLink.startsWith("http") && !finalLink.startsWith("/")) {
 		finalLink = "/" + finalLink;
 	}
@@ -95,9 +86,9 @@ const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 		vol_status: 0,
 		updated_at: data.published?.toISOString() || new Date().toISOString(),
 		private: false,
-		link: finalLink, // 移除 encodeURI，让浏览器和框架自然处理
+		link: finalLink,
 		subject: {
-			id: 0, // 已经在 link 中处理了
+			id: 0,
 			type: categoryInfo.subjectType,
 			name: data.title,
 			name_cn: data.name_cn || data.title,
@@ -123,11 +114,16 @@ const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 	};
 });
 
-// 获取所有启用分类的数据
+// 按时间倒序排列，最新添加的排在前面
+mappedData.sort((a, b) => {
+	const dateA = new Date(a.updated_at).getTime();
+	const dateB = new Date(b.updated_at).getTime();
+	return dateB - dateA;
+});
+
 const bangumiData: Record<string, UserSubjectCollection[]> = {};
 const tabs: Array<{ id: string; name: string; count: number }> = [];
 
-// 指定要显示的分类顺序和项
 const displayCategories = ["anime", "book", "game", "music"];
 
 for (const key of displayCategories) {
@@ -147,65 +143,121 @@ const activeTab = tabs[0]?.id || "anime";
 ---
 
 <MainGridLayout title={i18n(I18nKey.bangumi)} description={i18n(I18nKey.bangumiSubtitle)}>
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-9 py-6 relative w-full">
-        <!-- 页面标题 -->
-        <div class="relative w-full mb-8">
-            <div class="mb-6">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
-                        <Icon name="material-symbols:camera-outdoor" class="text-[1.5rem]"></Icon>
-                    </div>
-                    <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-                        {i18n(I18nKey.bangumi)}
-                    </h1>
-                </div>
-                <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                    {i18n(I18nKey.bangumiSubtitle)}
-                </p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
-                    {i18n(I18nKey.bangumiLastUpdated)} {buildTime}
-                </p>
-            </div>
+	<div class="bangumi-page-wrapper flex w-full overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<!-- Page header -->
+			<header class="bangumi-header relative w-full mb-8">
+				<div class="flex items-center gap-3 mb-4">
+					<div class="bangumi-icon flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--primary)]/10 dark:bg-[var(--primary)]/15 border border-[var(--primary)]/20 shadow-sm">
+						<Icon name="material-symbols:collections-bookmark-outline-rounded" class="text-[1.4rem] text-[var(--primary)]"></Icon>
+					</div>
+					<div>
+						<h1 class="text-2xl font-bold text-[var(--deep-text)] dark:text-[var(--title-active)] tracking-tight">
+							{i18n(I18nKey.bangumi)}
+						</h1>
+					</div>
+				</div>
+				<p class="text-sm text-[var(--content-meta)] leading-relaxed pl-[3.5rem]">
+					{i18n(I18nKey.bangumiSubtitle)}
+				</p>
+				<p class="text-xs text-[var(--content-meta)] opacity-60 mt-1.5 pl-[3.5rem]">
+					{i18n(I18nKey.bangumiLastUpdated)} {buildTime}
+				</p>
+			</header>
 
-      <!-- Tab 导航和内容 -->
-      {tabs.length > 0 ? (
-        <>
-          <TabNav tabs={tabs} activeTab={activeTab} />
+			<!-- Tab navigation and content -->
+			{tabs.length > 0 ? (
+				<>
+					<TabNav tabs={tabs} activeTab={activeTab} />
 
-          <!-- 内容区域 -->
-          {tabs.map((tab) => (
-                      <BangumiSection
-            sectionId={tab.id}
-            items={bangumiData[tab.id] || []}
-            isActive={tab.id === activeTab}
-            itemsPerPage={15}
-          />
-          ))}
-        </>
-      ) : (
-        <div class="text-center py-16">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-(--btn-regular-bg) rounded-full mb-6 border border-(--line-divider)">
-            <Icon name="material-symbols:settings" class="text-[2rem] text-(--btn-content)" />
-          </div>
-          <h2 class="text-xl font-semibold text-black/80 dark:text-white/80 mb-3">
-            {i18n(I18nKey.bangumiEmpty)}
-          </h2>
-          <p class="text-black/60 dark:text-white/60 mb-4 max-w-md mx-auto">
-            请在 src/content/bangumi 目录下添加内容文件以显示在此页面
-          </p>
-        </div>
-      )}
-    </div>
-  </div>
+					{tabs.map((tab) => (
+						<BangumiSection
+							sectionId={tab.id}
+							items={bangumiData[tab.id] || []}
+							isActive={tab.id === activeTab}
+					itemsPerPage={12}
+							itemsPerPageMobile={6}
+						/>
+					))}
+				</>
+			) : (
+				<div class="flex flex-col items-center justify-center py-20 text-center">
+					<div class="inline-flex items-center justify-center w-16 h-16 bg-[var(--btn-regular-bg)] rounded-2xl mb-6 border border-[var(--line-divider)]">
+						<Icon name="material-symbols:settings" class="text-[2rem] text-[var(--btn-content)]" />
+					</div>
+					<h2 class="text-xl font-semibold text-[var(--deep-text)] dark:text-[var(--title-active)] mb-3">
+						{i18n(I18nKey.bangumiEmpty)}
+					</h2>
+					<p class="text-[var(--content-meta)] mb-4 max-w-md mx-auto text-sm">
+						请在 src/content/bangumi 目录下添加内容文件以显示在此页面
+					</p>
+				</div>
+			)}
+		</div>
+	</div>
 </MainGridLayout>
 
 <style>
-  /* 自定义样式 */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+	.bangumi-page-wrapper {
+		border-radius: var(--radius-large);
+	}
+
+	/* Responsive grid */
+	.bangumi-grid {
+		/* Mobile-first: already set via Tailwind classes */
+	}
+
+	/* Smooth page-level transitions */
+	.bangumi-header {
+		animation: fadeSlideIn 0.4s ease-[var(--ease-standard)] both;
+	}
+
+	.bangumi-icon {
+		transition: transform 0.2s ease-[var(--ease-standard)];
+	}
+
+	.bangumi-icon:hover {
+		transform: scale(1.05);
+	}
+
+	@keyframes fadeSlideIn {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Section fade in */
+	.bangumi-section {
+		animation: fadeIn 0.3s ease-[var(--ease-standard)] both;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	/* Hide scrollbar for tab nav on mobile but keep it functional */
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Responsive padding adjustments */
+	@media (max-width: 640px) {
+		.card-base {
+			padding-left: 1rem;
+			padding-right: 1rem;
+			padding-top: 1.5rem;
+			padding-bottom: 1.5rem;
+		}
+	}
 </style>
