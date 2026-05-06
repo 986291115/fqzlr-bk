@@ -3,7 +3,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { url } from "@/utils/url-utils";
-import { marked } from "marked";
 
 const allLifeEntries = await getCollection("life");
 const isIn = (entryId, folder) => entryId.replace(/\\/g, "/").startsWith(folder + "/");
@@ -136,10 +135,6 @@ const navItems = [
   { label: "打卡", icon: "material-symbols:check-circle-outline", href: "/life/checkin/", color: "#84cc16" },
 ];
 
-const totalWorkouts = workoutEntries.length;
-const totalRunKm = workoutEntries.reduce((acc, i) => acc + i.runKm, 0);
-const totalIdeas = ideas.length;
-const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?.length || 0), 0);
 ---
 
 <MainGridLayout title="生活" description="用心记录每一天">
@@ -179,14 +174,9 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
         </div>
       ) : (
         allItems.map(item => {
-          const iconStyle = `background: ${item.bgColor}`;
-          const iconColorStyle = `color: ${item.color}`;
-          const typeLabelStyle = `color: ${item.color}; background: ${item.bgColor}`;
-          
-          // 统一的摘要生成函数
           let summary = "";
           let subInfo = "";
-          let typeLabel = item.type; // 默认使用 item.type
+          let typeLabel = item.type;
           
           if (item.type === "想法") {
             summary = item.content;
@@ -227,18 +217,14 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
           
           return (
             <a href={url(item.href)} class="life-card">
-              <div class="life-card-header">
-                <div class="life-card-type">
-                  <span class="type-icon" style={iconColorStyle}>
-                    <Icon name={item.icon || "material-symbols:circle"} size={18} />
-                  </span>
-                  <span class="type-label" style={typeLabelStyle}>{typeLabel}</span>
+              <span class="life-dot" style={`background: ${item.color}`} aria-hidden="true" />
+              <div class="life-card-body">
+                <div class="life-card-top">
+                  <span class="life-type-tag">{typeLabel}</span>
+                  <time class="life-card-time" datetime={item.date instanceof Date ? item.date.toISOString() : String(item.date)}>
+                    {formatTimeAgo(item.date)}
+                  </time>
                 </div>
-                <time class="life-card-time" datetime={item.date instanceof Date ? item.date.toISOString() : String(item.date)}>
-                  {formatTimeAgo(item.date)}
-                </time>
-              </div>
-              <div class="life-card-content">
                 <div class="life-card-title">{summary}</div>
                 {subInfo && (
                   item._renderFoodSubInfo ? (
@@ -248,9 +234,9 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
                   )
                 )}
               </div>
-              <div class="life-card-arrow">
-                <Icon name="material-symbols:chevron-right-rounded" size={20} />
-              </div>
+              <span class="life-card-arrow">
+                <Icon name="material-symbols:chevron-right-rounded" size={18} />
+              </span>
             </a>
           );
         })
@@ -262,23 +248,11 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
 <style>
   .life-container { margin: 0 auto; padding: 0 4px 40px; }
 
-  /* 导航标签样式 */
-  .nav-tabs-wrapper { 
-    margin-bottom: 16px; 
-    overflow: hidden; 
-    position: relative;
-  }
+  .nav-tabs-wrapper { margin-bottom: 16px; overflow: hidden; position: relative; }
   .nav-tabs-wrapper::before,
   .nav-tabs-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 32px;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
+    content: ''; position: absolute; top: 0; bottom: 0; width: 32px;
+    z-index: 2; pointer-events: none; opacity: 0; transition: opacity 0.2s;
   }
   .nav-tabs-wrapper::before {
     left: 0;
@@ -290,286 +264,144 @@ const totalCheckins = checkinEntries.reduce((acc, i) => acc + (i.data?.checkins?
   }
   .nav-tabs-wrapper.show-left::before { opacity: 1; }
   .nav-tabs-wrapper.show-right::after { opacity: 1; }
-  
+
   .nav-container {
-    display: flex;
-    align-items: center;
-    gap: 0;
+    display: flex; align-items: center; gap: 0;
     background: var(--card-bg);
     border: 1px solid var(--line-divider);
-    border-radius: 12px;
-    padding: 6px;
+    border-radius: 12px; padding: 6px;
   }
-  
-  .nav-tab-home {
-    flex-shrink: 0;
-    background: var(--card-bg);
-  }
-  
-  .nav-tabs-scroll {
-    flex: 1;
-    min-width: 0;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .nav-tabs { 
-    display: flex; 
-    gap: 6px; 
-    padding: 2px;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
+
+  .nav-tab-home { flex-shrink: 0; background: var(--card-bg); }
+  .nav-tabs-scroll { flex: 1; min-width: 0; position: relative; overflow: hidden; }
+
+  .nav-tabs {
+    display: flex; gap: 6px; padding: 2px; overflow-x: auto;
+    scroll-behavior: smooth; scrollbar-width: none;
+    -ms-overflow-style: none; -webkit-overflow-scrolling: touch;
   }
   .nav-tabs::-webkit-scrollbar { display: none; }
-  
+
   .nav-tab {
-    flex-shrink: 0; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    gap: 6px; 
-    padding: 6px 14px; 
-    border-radius: 8px; 
-    font-size: 14px; 
-    font-weight: 500; 
-    text-decoration: none; 
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    background: transparent;
-    border: 1.5px solid var(--line-divider);
-    color: var(--btn-content);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 14px;
+    font-weight: 500; text-decoration: none; transition: all 0.2s ease;
+    white-space: nowrap; background: transparent;
+    border: 1.5px solid var(--line-divider); color: var(--btn-content);
   }
-  .nav-tab:hover { 
-    border-color: var(--primary);
-    color: var(--primary);
-    background: transparent;
-  }
+  .nav-tab:hover { border-color: var(--primary); color: var(--primary); background: transparent; }
   .nav-tab[data-active] {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
+    background: var(--primary); border-color: var(--primary); color: white;
   }
-  .nav-tab[data-active]:hover {
-    opacity: 0.9;
-    transform: none;
-    box-shadow: none;
-  }
-  .nav-tab:active {
-    transform: scale(0.98);
-  }
+  .nav-tab[data-active]:hover { opacity: 0.9; transform: none; box-shadow: none; }
+  .nav-tab:active { transform: scale(0.98); }
   .tab-icon { font-size: 18px; }
 
-  /* ===== 简洁风格卡片 ===== */
+  /* ===== 博客流卡片 ===== */
   .life-feed {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: flex; flex-direction: column; gap: 8px;
   }
 
   .life-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 16px;
     background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.2s ease;
+    border: 1px solid var(--line-divider);
+    border-radius: var(--radius-large);
+    text-decoration: none; color: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    position: relative;
   }
-
   .life-card:hover {
-    border-color: var(--primary);
-    background: var(--bg-color);
+    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    transform: translateX(2px);
   }
 
-  .life-card-header {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    min-width: 90px;
+  /* 左侧小色点 */
+  .life-dot {
+    flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 6px; opacity: .65;
   }
 
-  .life-card-type {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .life-card-body {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 3px;
   }
 
-  .type-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* 顶行：类型标签 + 时间 */
+  .life-card-top {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1px;
   }
-
-  .type-label {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
+  .life-type-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .03em;
+    color: var(--content-meta); text-transform: uppercase;
   }
-
   .life-card-time {
-    font-size: 12px;
-    color: var(--content-meta);
-    padding-left: 24px;
+    font-size: 11px; color: var(--content-meta); opacity: .65;
   }
 
-  .life-card-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
+  /* 标题 */
   .life-card-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text-color);
-    line-height: 1.5;
-    word-break: break-word;
+    font-size: 15px; font-weight: 600; color: var(--text-color);
+    line-height: 1.45; word-break: break-word;
   }
 
+  /* 摘要行 */
   .life-card-sub {
-    font-size: 13px;
-    color: var(--content-meta);
-    line-height: 1.4;
+    font-size: 13px; color: var(--content-meta);
+    line-height: 1.45; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
+  /* 箭头 */
   .life-card-arrow {
-    flex-shrink: 0;
-    color: var(--content-meta);
-    opacity: 0;
-    transition: all 0.2s ease;
+    flex-shrink: 0; margin-top: 4px;
+    color: var(--content-meta); opacity: 0; transition: all .2s ease;
   }
+  .life-card:hover .life-card-arrow { opacity: .55; }
 
-  .life-card:hover .life-card-arrow {
-    opacity: 1;
-    color: var(--primary);
-  }
-
-  /* 饮食标签样式 */
-  .food-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
+  /* 饮食标签 */
+  .food-tags { display: flex; flex-wrap: wrap; gap: 5px; }
   .food-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
   }
-
-  .food-tag.allowed {
-    background: rgba(34, 197, 94, 0.15);
-    color: #16a34a;
-  }
-
-  .food-tag.avoid {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
-  }
-
-  :global(html.dark) .food-tag.allowed {
-    color: #4ade80;
-  }
-
-  :global(html.dark) .food-tag.avoid {
-    color: #f87171;
-  }
+  .food-tag.allowed { background: rgba(34,197,94,.1); color: #16a34a; }
+  .food-tag.avoid   { background: rgba(239,68,68,.1); color: #dc2626; }
+  :global(html.dark) .food-tag.allowed { color: #4ade80; }
+  :global(html.dark) .food-tag.avoid   { color: #f87171; }
 
   /* 空状态 */
   .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    text-align: center; padding: 48px 20px; background: var(--card-bg);
+    border: 1px solid var(--line-divider); border-radius: var(--radius-large);
   }
-
   .empty-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-color);
-    border-radius: 50%;
-    color: var(--content-meta);
-    font-size: 32px;
-    opacity: 0.5;
+    width: 56px; height: 56px; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-color); border-radius: 50%;
+    color: var(--content-meta); font-size: 28px; opacity: .45;
+  }
+  .empty-title { font-size: 15px; font-weight: 600; color: var(--text-color); margin-bottom: 4px; }
+  .empty-desc  { font-size: 13px; color: var(--content-meta); }
+
+  /* 暗色模式微调 */
+  :global(html.dark) .life-card:hover {
+    box-shadow: 0 2px 16px rgba(0,0,0,.18);
   }
 
-  .empty-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 6px;
-  }
-
-  .empty-desc {
-    font-size: 14px;
-    color: var(--content-meta);
-  }
-
-  /* 移动端适配 */
+  /* ── 移动端 ── */
   @media (max-width: 768px) {
-    .life-container { max-width: 100%; }
-    .life-card {
-      padding: 14px 16px;
-      gap: 12px;
-    }
-    .life-card-header {
-      min-width: 70px;
-      gap: 6px;
-    }
-    .life-card-title {
-      font-size: 14px;
-    }
-    .life-card-sub {
-      font-size: 12px;
-    }
-    .life-card-time {
-      font-size: 11px;
-    }
+    .life-card { padding: 10px 14px; gap: 10px; }
+    .life-card-title { font-size: 14px; }
+    .life-card-sub { font-size: 12px; }
+    .life-type-tag { font-size: 10px; }
+    .life-card-time { font-size: 10px; }
   }
-
   @media (max-width: 480px) {
     .life-container { padding: 0 12px 32px; }
-    .life-card {
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .life-card-header {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      min-width: unset;
-    }
-    .life-card-time {
-      padding-left: 0;
-    }
-    .life-card-content {
-      width: 100%;
-    }
-    .life-card-arrow {
-      display: none;
-    }
+    .life-card-arrow { display: none; }
   }
 </style>
 

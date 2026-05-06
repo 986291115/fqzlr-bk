@@ -550,7 +550,7 @@ html {
 }
 
 .post-list-container.grid-mode .post-card-item .line-clamp-1 {
-  @apply line-clamp-2;
+  @apply line-clamp-1;
 }
 
 /* 网格模式下的卡片内容区域调整 */
@@ -565,7 +565,7 @@ html {
 
 /* 网格模式下的描述文本调整 */
 .post-list-container.grid-mode .post-card-item .description {
-  @apply text-sm mb-2 line-clamp-2;
+  @apply text-sm mb-2 line-clamp-1;
 }
 
 /* 网格模式下的统计信息调整 */

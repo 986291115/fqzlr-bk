@@ -18,6 +18,7 @@ import {
 import { Icon } from "astro-icon/components";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import AiSummary from "@/components/widget/AiSummary.astro";
 import CoverImage from "@/components/common/CoverImage.astro";
 import PostMetadata from "@/components/layout/PostMeta.astro";
 import SharePoster from "@/components/misc/SharePoster.svelte";
@@ -219,13 +220,22 @@ const jsonLd = {
           id={entry.id}
         />
         {
-          !processedImage && (
-            <div class="border-(--line-divider) border-dashed border-b mt-3 mb-5" />
-          )
-        }
-      </div>
+        !processedImage && (
+          <div class="border-(--line-divider) border-dashed border-b mt-3 mb-5" />
+        )
+      }
+    </div>
 
-      <!-- always show cover as long as it has one -->
+    {
+      entry.data.description && (
+        <AiSummary
+          description={entry.data.description}
+          descriptionSource={entry.data.descriptionSource}
+        />
+      )
+    }
+
+    <!-- always show cover as long as it has one -->
 
       {
         processedImage && coverImageConfig.enableInPost && (
