@@ -8,6 +8,7 @@ import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import type { UserSubjectCollection } from "@/types/bangumi";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { removeFileExtension } from "@/utils/url-utils";
 import { getCollection } from "astro:content";
 
 if (!siteConfig.pages.bangumi) {
@@ -40,6 +41,12 @@ const mappedData: UserSubjectCollection[] = customBangumi.map((item) => {
 	const categoryInfo = categoryMap[data.category];
 
 	let rawLink = (data.link || "").trim().replace(/\\/g, "/");
+
+	if (!rawLink) {
+		const entrySlug = removeFileExtension(item.id);
+		rawLink = `/bangumi/${entrySlug}/`;
+	}
+
 	let finalLink = rawLink;
 
 	const normalize = (s: string) =>

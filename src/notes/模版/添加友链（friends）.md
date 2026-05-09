@@ -1,7 +1,7 @@
 ---
-title: 团子和蛋糕
-imgurl: https://re.tsh520.cn/zl/tx.webp
-siteurl: https://blog.tsh520.cn
+title: 博客名字
+imgurl: 网站头像
+siteurl: 网站地址
 weight: 10
 enabled: true
 desc: 介绍
