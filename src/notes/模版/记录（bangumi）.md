@@ -1,12 +1,14 @@
 ---
-title: 攻壳机动队
+title:
 category: anime、book、music、game
 status: 2
-image: https://example.com/cover.jpg
-link: https://bgm.tv/subject/1
+image:
 score: 10
 tags:
-  - 科幻
-  - 神作
-published: 2026-01-01
+published:
 ---
+1	想看	想要观看/阅读/游玩
+2	看过	已完成观看/阅读/游玩
+3	在看	正在观看/阅读/游玩
+4	搁置	暂时搁置
+5	抛弃	放弃

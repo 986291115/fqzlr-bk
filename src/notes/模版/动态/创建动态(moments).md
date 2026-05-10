@@ -1,12 +1,9 @@
 ---
 author: 团子和蛋糕
 avatar: https://re.tsh520.cn/zl/tx.webp
-published: 2026-04-18
+published:
 images: photo1.jpg, photo2.jpg, photo3.jpg
 tags:
   - 日常
 location: 河南-郑州
-device: vivo x300pro
 ---
-
-动态正文内容...
