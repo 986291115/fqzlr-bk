@@ -260,9 +260,6 @@ const showLoading = coverImageConfig.randomCoverImage.showLoading ?? true;
 </style>
 
 <script>
-	// 生成页面级别的随机种子，确保同一页面加载中相同文章使用相同图片
-	const pageSeed = Math.floor(Math.random() * 1000000);
-
 	// 基于种子生成哈希值的函数
 	function getSeedHash(seed) {
 		return seed
@@ -290,11 +287,11 @@ const showLoading = coverImageConfig.randomCoverImage.showLoading ?? true;
 				try { apiUrls = JSON.parse(apiUrlsAttr); } catch (_e) { /* ignore */ }
 			}
 
-			// 生成基于页面种子和容器的唯一标识符
-			const containerId = container.getAttribute('id') || container.dataset.index || Math.random().toString(36).substr(2, 9);
-			const uniqueSeed = `${pageSeed}-${containerId}`;
-			const hash = getSeedHash(uniqueSeed);
-			let currentApiIndex = hash % apiUrls.length;
+			// 匹配服务端预选的图片在API列表中的位置
+			// 服务端 processCoverImageSync 已基于文章seed确定了图片，客户端不再重新随机选择
+			const currentSrc = img.getAttribute('src') || '';
+			const serverIndex = apiUrls.findIndex(url => url === currentSrc);
+			let currentApiIndex = serverIndex >= 0 ? serverIndex + 1 : 0;
 
 			const hideLoading = () => {
 				container.setAttribute('data-loading', 'false');
@@ -305,10 +302,9 @@ const showLoading = coverImageConfig.randomCoverImage.showLoading ?? true;
 				container.setAttribute('data-error', 'true');
 			};
 
-			// 尝试加载随机选择的API
+			// 尝试加载下一个API（仅用于当前图片加载失败时的回退）
 			const tryNextApi = () => {
 				if (currentApiIndex < apiUrls.length) {
-					// 先绑定好事件，再更换src
 					img.addEventListener('load', hideLoading, { once: true });
 					img.addEventListener('error', onError, { once: true });
 					img.src = apiUrls[currentApiIndex];
@@ -318,14 +314,32 @@ const showLoading = coverImageConfig.randomCoverImage.showLoading ?? true;
 				}
 			};
 
-			// 统一的错误处理：尝试下一个API或显示回退
+			// 错误处理：尝试下一个API或显示回退
 			const onError = () => {
 				if (img.dataset.remote !== 'true') return;
 				tryNextApi();
 			};
 
-			// 初始加载：使用随机选择的API
-			if (apiUrls.length > 0) {
+			// 服务端已预选图片：保持该选择，不重新挑选
+			if (serverIndex >= 0) {
+				if (img.complete) {
+					if (img.naturalWidth > 0) {
+						hideLoading();
+					} else {
+						onError();
+					}
+				} else {
+					img.addEventListener('load', hideLoading, { once: true });
+					img.addEventListener('error', onError, { once: true });
+				}
+			} else if (apiUrls.length > 0) {
+				// 服务端未预选时，基于日期种子选择（同一天内刷新不换图）
+				const now = new Date();
+				const dateSeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+				const containerId = container.getAttribute('id') || container.dataset.index || '0';
+				const uniqueSeed = `${dateSeed}-${containerId}`;
+				const hash = getSeedHash(uniqueSeed);
+				currentApiIndex = hash % apiUrls.length;
 				tryNextApi();
 			} else if (img.complete) {
 				if (img.naturalWidth > 0) {
