@@ -51,7 +51,7 @@ const hasTOC = headings && headings.length > 0;
 
 	<!-- TOC 面板 -->
 	{hasTOC && (
-		<div id="floating-toc-panel" class="toc-panel hide w-80 max-h-96 overflow-hidden rounded-2xl shadow-2xl border border-white/20 bg-white/60 dark:bg-black/60 dark:border-white/10 md:w-80 w-[calc(100vw-2rem)]">
+		<div id="floating-toc-panel" class="toc-panel hide w-80 max-h-96 overflow-hidden rounded-2xl shadow-2xl border border-white/20 bg-white dark:bg-black dark:border-white/10 md:w-80 w-[calc(100vw-2rem)]">
 			<div class="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
 				<div class="flex items-center justify-between">
 					<h3 class="text-lg font-bold text-(--primary) flex items-center gap-2">
@@ -192,21 +192,21 @@ const hasTOC = headings && headings.length > 0;
 	/* TOC Panel */
 	.toc-panel {
 		position: absolute;
-		bottom: calc(100% + 1rem);
-		right: 0;
+		bottom: 0;
+		right: calc(100% + 0.75rem);
 		transition: all 0.3s ease;
-		transform: translateY(20px);
+		transform: translateX(10px);
 		opacity: 0;
 		pointer-events: none;
 		z-index: 1001;
 	}
 	.toc-panel.show {
-		transform: translateY(0);
+		transform: translateX(0);
 		opacity: 1;
 		pointer-events: auto;
 	}
 	.toc-panel.hide {
-		transform: translateY(20px);
+		transform: translateX(10px);
 		opacity: 0;
 		pointer-events: none;
 		visibility: hidden;
