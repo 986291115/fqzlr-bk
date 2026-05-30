@@ -769,6 +769,7 @@ html.is-page-transitioning .banner-home-text-overlay {
     filter: blur(var(--overlay-blur, 0px));
 }
 
+
 /* Overlay 模式隐藏 Banner 专属元素 */
 #wallpaper-wrapper.wallpaper-overlay .banner-home-text-overlay,
 #wallpaper-wrapper.wallpaper-overlay .banner-page-title-overlay,

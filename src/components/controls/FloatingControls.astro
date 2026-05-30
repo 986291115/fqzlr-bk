@@ -1,61 +1,99 @@
 ---
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
-import { sidebarLayoutConfig } from "@/config/sidebarConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import { url, getTagUrl } from "@/utils/url-utils";
-import { getTagList } from "@/utils/content-utils";
+import { getTagUrl, getPostUrlBySlug, removeFileExtension } from "@/utils/url-utils";
+import { getTagList, getSortedPostsList } from "@/utils/content-utils";
 
 interface Props {
 	headings?: MarkdownHeading[];
+	prevSlug?: string;
+	prevTitle?: string;
+	nextSlug?: string;
+	nextTitle?: string;
+	currentSlug?: string;
 }
 
-const { headings } = Astro.props;
+const { prevSlug, prevTitle, nextSlug, nextTitle, currentSlug } = Astro.props;
+// ← btn-prev → newer article (nextSlug), → btn-next → older article (prevSlug)
+const prevUrl = nextSlug ? getPostUrlBySlug(nextSlug) : "";
+const nextUrl = prevSlug ? getPostUrlBySlug(prevSlug) : "";
+
+// Compute nearby articles (±5 around current)
+const allPosts = await getSortedPostsList();
+const currentIdx = currentSlug
+	? allPosts.findIndex((p) => removeFileExtension(p.id) === currentSlug || p.id === currentSlug)
+	: -1;
+const NEARBY_HALF = 5;
+let startIdx = Math.max(0, currentIdx - NEARBY_HALF);
+let endIdx = Math.min(allPosts.length, currentIdx + NEARBY_HALF + 1);
+// If one side is short, extend the other side
+const leftShort = currentIdx - startIdx;
+if (leftShort < NEARBY_HALF) {
+	endIdx = Math.min(allPosts.length, endIdx + (NEARBY_HALF - leftShort));
+}
+const rightShort = endIdx - currentIdx - 1;
+if (rightShort < NEARBY_HALF && startIdx > 0) {
+	startIdx = Math.max(0, startIdx - (NEARBY_HALF - rightShort));
+}
+const nearbyPosts = currentIdx >= 0 ? allPosts.slice(startIdx, endIdx) : [];
 
 const allTags = await getTagList();
 const sortedTags = allTags.sort((a, b) => b.count - a.count);
 
 function tagHue(name: string): number {
 	let hash = 0;
-	for (let i = 0; i < name.length; i++) {
-		hash = name.charCodeAt(i) + ((hash << 5) - hash);
-	}
+	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
 	return Math.abs(hash % 360);
 }
 ---
 
-<div class="fab-container" id="fab-container">
+<div class="fab-container" id="fab-container"
+	data-prev-url={prevUrl}
+	data-prev-title={prevTitle || ""}
+	data-next-url={nextUrl}
+	data-next-title={nextTitle || ""}
+>
+	<!-- 竖向展开菜单 -->
 	<div class="fab-menu" id="fab-menu">
 		<button class="fab-item hide" id="fab-item-notebook" aria-label="笔记本" title="笔记本">
 			<Icon name="material-symbols:book-outline" />
 		</button>
-
 		<button class="fab-item" id="fab-item-top" aria-label="回到顶部" title="回到顶部">
 			<Icon name="material-symbols:keyboard-arrow-up-rounded" />
 		</button>
-
 		<button class="fab-item hide" id="fab-item-comment" aria-label="跳转评论区" title="跳转评论区">
 			<Icon name="material-symbols:chat-bubble-outline-rounded" />
 		</button>
-
 		<button class="fab-item hide" id="fab-item-home" aria-label={i18n(I18nKey.home)} title={i18n(I18nKey.home)}>
 			<Icon name="material-symbols:home-outline-rounded" />
 		</button>
-
 		<button class="fab-item hide" id="fab-item-toc" aria-label="目录" title="目录">
 			<Icon name="material-symbols:format-list-bulleted" />
 		</button>
-
 		<button class="fab-item hide" id="fab-item-tags" aria-label="标签" title="标签">
 			<Icon name="material-symbols:label-outline" />
 		</button>
 	</div>
 
-	<!-- 三点触发器 -->
-	<button class="fab-trigger" id="fab-trigger" aria-label="更多操作" title="更多操作">
-		<Icon name="material-symbols:more-horiz" />
-	</button>
+	<!-- 横向展开：上一篇/下一篇 ← 三点触发器 -->
+	<div class="fab-nav-row">
+		<div class="fab-nav-left" id="fab-nav-left">
+			<button class="fab-item hide" id="fab-item-prev" aria-label="上一篇" title={prevTitle || "上一篇"}>
+				<Icon name="material-symbols:arrow-left-rounded" />
+			</button>
+			<button class="fab-item hide" id="fab-item-navigate" aria-label="选择文章" title="选择文章">
+				<Icon name="material-symbols:list-alt-rounded" />
+			</button>
+			<button class="fab-item hide" id="fab-item-next" aria-label="下一篇" title={nextTitle || "下一篇"}>
+				<Icon name="material-symbols:arrow-right-rounded" />
+			</button>
+		</div>
+		<button class="fab-trigger" id="fab-trigger" aria-label="更多操作" title="更多操作">
+			<Icon name="material-symbols:more-horiz" />
+		</button>
+	</div>
 
 	<!-- TOC 面板 -->
 	<div id="floating-toc-panel" class="float-panel-side hide w-80 max-h-96 overflow-hidden rounded-2xl shadow-2xl border border-white/20 bg-white dark:bg-black dark:border-white/10 md:w-80 w-[calc(100vw-2rem)]">
@@ -92,17 +130,26 @@ function tagHue(name: string): number {
 				{sortedTags.map((tag) => {
 					const hue = tagHue(tag.name);
 					return (
-						<a
-							href={getTagUrl(tag.name)}
-							class="floating-tag-chip"
-							style={`--tag-hue: ${hue}; --tag-light: oklch(0.92 0.04 ${hue}); --tag-dark: oklch(0.25 0.04 ${hue})`}
-						>
+						<a href={getTagUrl(tag.name)} class="floating-tag-chip"
+							style={`--tag-hue: ${hue}; --tag-light: oklch(0.92 0.04 ${hue}); --tag-dark: oklch(0.25 0.04 ${hue})`}>
 							<span class="floating-tag-name">{tag.name}</span>
 							<span class="floating-tag-count">{tag.count}</span>
 						</a>
 					);
 				})}
 			</div>
+		</div>
+	</div>
+	<!-- 附近文章列表 -->
+	<div id="floating-navigate-panel" class="float-panel-side hide w-72 max-h-80 overflow-hidden rounded-2xl shadow-2xl border border-white/20 bg-white dark:bg-black dark:border-white/10 md:w-72 w-[calc(100vw-2rem)]">
+		<div class="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 bg-white dark:bg-black">
+			<h3 class="text-base font-bold text-(--primary)">附近文章</h3>
+		</div>
+		<div class="navigate-scroll-container p-3">
+			<div class="flex flex-col gap-1" id="floating-navigate-content">{nearbyPosts.map((p) => {
+				const isCurrent = currentIdx >= 0 && removeFileExtension(p.id) === removeFileExtension(allPosts[currentIdx].id);
+				return (<a href={getPostUrlBySlug(p.id)} class={`navigate-link${isCurrent ? " current" : ""}`}>{p.data.title}<span class="navigate-date ml-auto text-xs opacity-40 shrink-0">{new Date(p.data.published).toISOString().slice(0, 10)}</span></a>);
+			})}</div>
 		</div>
 	</div>
 </div>
@@ -136,6 +183,29 @@ function tagHue(name: string): number {
 		pointer-events: auto;
 	}
 
+	/* ---- Horizontal nav row: prev/next slides out to the left ---- */
+	.fab-nav-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-direction: row;
+	}
+	.fab-nav-left {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-direction: row;
+		opacity: 0;
+		transform: translateX(12px);
+		pointer-events: none;
+		transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	.fab-container.expanded .fab-nav-left {
+		opacity: 1;
+		transform: translateX(0);
+		pointer-events: auto;
+	}
+
 	.fab-item {
 		width: 3rem;
 		height: 3rem;
@@ -156,38 +226,24 @@ function tagHue(name: string): number {
 		box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 	}
 
-	.fab-item:hover {
-		transform: scale(1.08);
-		box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-	}
-
-	.fab-item:active {
-		transform: scale(0.9);
-	}
+	.fab-item:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+	.fab-item:active { transform: scale(0.9); }
 
 	.fab-item.hide {
 		display: none !important;
-		width: 0 !important;
-		height: 0 !important;
-		margin: 0 !important;
-		padding: 0 !important;
+		width: 0 !important; height: 0 !important;
+		margin: 0 !important; padding: 0 !important;
 		border-width: 0 !important;
 		opacity: 0;
 		pointer-events: none;
 		overflow: hidden;
 	}
 
-	html.dark .fab-item {
-		border-color: rgba(255,255,255,0.15);
-		box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-	}
-	html.dark .fab-item:hover {
-		box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-	}
+	html.dark .fab-item { border-color: rgba(255,255,255,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+	html.dark .fab-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
 
 	.fab-trigger {
-		width: 3rem;
-		height: 3rem;
+		width: 3rem; height: 3rem;
 		border-radius: 1rem;
 		display: flex;
 		align-items: center;
@@ -205,30 +261,14 @@ function tagHue(name: string): number {
 		box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 	}
 
-	.fab-trigger:hover {
-		color: var(--primary);
-		transform: scale(1.05);
-		box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-	}
+	.fab-trigger:hover { color: var(--primary); transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+	.fab-trigger:active { transform: scale(0.9); }
+	.fab-container.expanded .fab-trigger { color: var(--primary); transform: rotate(90deg); }
 
-	.fab-trigger:active {
-		transform: scale(0.9);
-	}
+	html.dark .fab-trigger { border-color: rgba(255,255,255,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+	html.dark .fab-trigger:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
 
-	.fab-container.expanded .fab-trigger {
-		color: var(--primary);
-		transform: rotate(90deg);
-	}
-
-	html.dark .fab-trigger {
-		border-color: rgba(255,255,255,0.15);
-		box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-	}
-	html.dark .fab-trigger:hover {
-		box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-	}
-
-	/* Side panels (TOC + Tags share this base style) */
+	/* Side panels */
 	.float-panel-side {
 		position: absolute;
 		bottom: 0;
@@ -239,25 +279,18 @@ function tagHue(name: string): number {
 		pointer-events: none;
 		z-index: 1001;
 	}
-	.float-panel-side.show {
-		transform: translateX(0);
-		opacity: 1;
-		pointer-events: auto;
-	}
-	.float-panel-side.hide {
-		transform: translateX(10px);
-		opacity: 0;
-		pointer-events: none;
-		visibility: hidden;
-	}
+	.float-panel-side.show { transform: translateX(0); opacity: 1; pointer-events: auto; }
+	.float-panel-side.hide { transform: translateX(10px); opacity: 0; pointer-events: none; visibility: hidden; }
 
-	.toc-scroll-container,
-	.tags-scroll-container {
-		max-height: calc(24rem - 5rem);
-		overflow-y: auto;
-	}
+	.toc-scroll-container, .tags-scroll-container { max-height: calc(24rem - 5rem); overflow-y: auto; }
+	/* ---- Navigate Panel Links ---- */
+	.navigate-scroll-container { max-height: calc(24rem - 5rem); overflow-y: auto; }
+	.navigate-link { display: flex; align-items: center; padding: 0.45rem 0.6rem; border-radius: 0.5rem; font-size: 0.8rem; text-decoration: none; color: var(--deep-text); transition: background 0.15s; }
+	.navigate-link:hover { background: var(--btn-regular-bg); color: var(--primary); }
+	.navigate-link.current { background: var(--primary); color: white; font-weight: 600; }
+	.navigate-link.current .navigate-date { opacity: 0.7 !important; }
 
-	/* ---- Tags Panel Chips ---- */
+	/* Tags chips */
 	.floating-tag-chip {
 		display: inline-flex;
 		align-items: center;
@@ -274,42 +307,18 @@ function tagHue(name: string): number {
 		cursor: pointer;
 		line-height: 1.3;
 	}
-
-	.floating-tag-chip:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-		border-color: var(--primary);
-		color: var(--primary);
-	}
-
-	.floating-tag-chip:active {
-		transform: scale(0.95);
-	}
-
+	.floating-tag-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: var(--primary); color: var(--primary); }
+	.floating-tag-chip:active { transform: scale(0.95); }
 	.floating-tag-count {
-		font-size: 0.7rem;
-		opacity: 0.55;
-		font-weight: 700;
-		background: rgba(0,0,0,0.06);
-		padding: 0.1rem 0.4rem;
-		border-radius: 999px;
-		min-width: 1.2rem;
-		text-align: center;
+		font-size: 0.7rem; opacity: 0.55; font-weight: 700;
+		background: rgba(0,0,0,0.06); padding: 0.1rem 0.4rem;
+		border-radius: 999px; min-width: 1.2rem; text-align: center;
 	}
-
-	html.dark .floating-tag-chip {
-		background: var(--tag-dark);
-	}
-	html.dark .floating-tag-count {
-		background: rgba(255,255,255,0.1);
-	}
+	html.dark .floating-tag-chip { background: var(--tag-dark); }
+	html.dark .floating-tag-count { background: rgba(255,255,255,0.1); }
 
 	@media (max-width: 1024px) {
-		.float-panel-side {
-			width: calc(100vw - 2rem);
-			max-width: 20rem;
-			max-height: 20rem;
-		}
+		.float-panel-side { width: calc(100vw - 2rem); max-width: 20rem; max-height: 20rem; }
 	}
 	@media (max-width: 768px) {
 		.fab-container { right: 0.75rem; bottom: 4rem; }
@@ -327,123 +336,76 @@ function tagHue(name: string): number {
 	var container = document.getElementById('fab-container');
 	var trigger = document.getElementById('fab-trigger');
 	if (!container || !trigger) return;
-
-	var btnTop      = document.getElementById('fab-item-top');
-	var btnHome     = document.getElementById('fab-item-home');
-	var btnTOC      = document.getElementById('fab-item-toc');
-	var btnTags     = document.getElementById('fab-item-tags');
-	var btnComment  = document.getElementById('fab-item-comment');
+	var btnPrev = document.getElementById('fab-item-prev');
+	var btnNext = document.getElementById('fab-item-next');
+	var btnNavigate = document.getElementById('fab-item-navigate');
+	var btnTop = document.getElementById('fab-item-top');
+	var btnHome = document.getElementById('fab-item-home');
+	var btnTOC = document.getElementById('fab-item-toc');
+	var btnTags = document.getElementById('fab-item-tags');
+	var btnComment = document.getElementById('fab-item-comment');
 	var btnNotebook = document.getElementById('fab-item-notebook');
-	var isExpanded  = false;
-
-	function expand()   { container.classList.add('expanded');    isExpanded = true;  }
+	var isExpanded = false;
+	function expand() { container.classList.add('expanded'); isExpanded = true; }
 	function collapse() { container.classList.remove('expanded'); isExpanded = false; }
-	function toggle()   { isExpanded ? collapse() : expand(); }
-
+	function toggle() { isExpanded ? collapse() : expand(); }
 	trigger.addEventListener('click', function(e) { e.stopPropagation(); toggle(); });
-
-	if (btnTop) btnTop.addEventListener('click', function(e) {
-		e.stopPropagation();
-		window.scroll({ top: 0, behavior: 'smooth' });
-		collapse();
-	});
-
-	if (btnHome) btnHome.addEventListener('click', function(e) {
-		e.stopPropagation();
-		if (window.swup) window.swup.navigate('/');
-		else window.location.href = '/';
-		collapse();
-	});
-
-	if (btnComment) btnComment.addEventListener('click', function(e) {
-		e.stopPropagation();
-		var el = document.getElementById('scissor-divider') || document.querySelector('[id*="comment"]');
-		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		else window.scrollTo({ top: document.body.scrollHeight * 0.85, behavior: 'smooth' });
-		collapse();
-	});
-
-	if (btnNotebook) btnNotebook.addEventListener('click', function(e) {
-		e.stopPropagation();
-		window.location.href = '/life/notebooks/';
-		collapse();
-	});
-
-	// TOC panel
-	function toggleTOCPanel() {
-		var p = document.getElementById('floating-toc-panel');
-		if (!p) return;
-		if (p.classList.contains('hide') || !p.classList.contains('show')) {
-			p.classList.remove('hide'); p.classList.add('show');
-		} else {
-			p.classList.remove('show'); p.classList.add('hide');
-		}
-	}
-	function closeTOCPanel() {
-		var p = document.getElementById('floating-toc-panel');
-		if (p) { p.classList.remove('show'); p.classList.add('hide'); }
-	}
+	function navigateTo(url) { if (!url) return; if (window.swup) window.swup.navigate(url); else window.location.href = url; collapse(); }
+	if (btnPrev) btnPrev.addEventListener('click', function(e) { e.stopPropagation(); navigateTo(container.dataset.prevUrl); });
+	if (btnNext) btnNext.addEventListener('click', function(e) { e.stopPropagation(); navigateTo(container.dataset.nextUrl); });
+	if (btnNavigate) btnNavigate.addEventListener('click', function(e) { e.stopPropagation(); toggleNavigatePanel(); collapse(); });
+	if (btnTop) btnTop.addEventListener('click', function(e) { e.stopPropagation(); window.scroll({ top: 0, behavior: 'smooth' }); collapse(); });
+	if (btnHome) btnHome.addEventListener('click', function(e) { e.stopPropagation(); (window.swup ? window.swup.navigate('/') : window.location.href = '/'); collapse(); });
+	if (btnComment) btnComment.addEventListener('click', function(e) { e.stopPropagation(); var el = document.getElementById('scissor-divider') || document.querySelector('[id*="comment"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); else window.scrollTo({ top: document.body.scrollHeight * 0.85, behavior: 'smooth' }); collapse(); });
+	if (btnNotebook) btnNotebook.addEventListener('click', function(e) { e.stopPropagation(); window.location.href = '/life/notebooks/'; collapse(); });
+	function toggleTOCPanel() { var p = document.getElementById('floating-toc-panel'); if (!p) return; if (p.classList.contains('hide') || !p.classList.contains('show')) { p.classList.remove('hide'); p.classList.add('show'); } else { p.classList.remove('show'); p.classList.add('hide'); } }
+	function closeTOCPanel() { var p = document.getElementById('floating-toc-panel'); if (p) { p.classList.remove('show'); p.classList.add('hide'); } }
 	window.closeTOCPanel = closeTOCPanel;
 	if (btnTOC) btnTOC.addEventListener('click', function(e) { e.stopPropagation(); toggleTOCPanel(); collapse(); });
-
-	// Tags panel
-	function toggleTagsPanel() {
-		var p = document.getElementById('floating-tags-panel');
-		if (!p) return;
-		if (p.classList.contains('hide') || !p.classList.contains('show')) {
-			p.classList.remove('hide'); p.classList.add('show');
-		} else {
-			p.classList.remove('show'); p.classList.add('hide');
-		}
-	}
-	function closeTagsPanel() {
-		var p = document.getElementById('floating-tags-panel');
-		if (p) { p.classList.remove('show'); p.classList.add('hide'); }
-	}
+	function toggleTagsPanel() { var p = document.getElementById('floating-tags-panel'); if (!p) return; if (p.classList.contains('hide') || !p.classList.contains('show')) { p.classList.remove('hide'); p.classList.add('show'); } else { p.classList.remove('show'); p.classList.add('hide'); } }
+	function closeTagsPanel() { var p = document.getElementById('floating-tags-panel'); if (p) { p.classList.remove('show'); p.classList.add('hide'); } }
 	window.closeTagsPanel = closeTagsPanel;
 	if (btnTags) btnTags.addEventListener('click', function(e) { e.stopPropagation(); toggleTagsPanel(); collapse(); });
-
-	// Click outside
-	document.addEventListener('click', function(e) {
-		if (isExpanded && !container.contains(e.target)) collapse();
-	});
-
-	// Visibility
+	function toggleNavigatePanel() { var p = document.getElementById('floating-navigate-panel'); if (!p) return; if (p.classList.contains('hide') || !p.classList.contains('show')) { p.classList.remove('hide'); p.classList.add('show'); } else { p.classList.remove('show'); p.classList.add('hide'); } }
+	function closeNavigatePanel() { var p = document.getElementById('floating-navigate-panel'); if (p) { p.classList.remove('show'); p.classList.add('hide'); } }
+	window.closeNavigatePanel = closeNavigatePanel;
+	document.addEventListener('click', function(e) { if (isExpanded && !container.contains(e.target)) collapse(); });
 	function show(el) { if (el) el.classList.remove('hide'); }
 	function hide(el) { if (el) el.classList.add('hide'); }
-
-	function refreshAll() {
-		show(btnNotebook);
-		show(btnTags);
-		var path = window.location.pathname.replace(/\/$/, '') || '/';
-		path === '/' ? hide(btnHome) : show(btnHome);
-		path.indexOf('/posts/') === 0 ? show(btnComment) : hide(btnComment);
-		path.indexOf('/posts/') === 0 ? show(btnTOC) : hide(btnTOC);
+	function syncNavUrls() {
+		var navContainer = document.querySelector('.flex.flex-col.md\:flex-row.justify-between.mb-4');
+		if (!navContainer) return;
+		var links = navContainer.querySelectorAll('a');
+		if (links.length >= 1 && links[0].getAttribute('href') !== '#') { container.dataset.prevUrl = links[0].getAttribute('href') || ''; }
+		else { container.dataset.prevUrl = ''; }
+		if (links.length >= 2 && links[1].getAttribute('href') !== '#') { container.dataset.nextUrl = links[1].getAttribute('href') || ''; }
+		else { container.dataset.nextUrl = ''; }
 	}
-
+	function refreshAll() {
+		show(btnNotebook); show(btnTags);
+		var path = window.location.pathname.replace(/\/$/, '') || '/';
+		var isPost = path.indexOf('/posts/') === 0;
+		path === '/' ? hide(btnHome) : show(btnHome);
+		isPost ? show(btnComment) : hide(btnComment);
+		isPost ? show(btnTOC) : hide(btnTOC);
+		isPost ? show(btnNavigate) : hide(btnNavigate);
+		if (isPost) { container.dataset.prevUrl ? show(btnPrev) : hide(btnPrev); container.dataset.nextUrl ? show(btnNext) : hide(btnNext); }
+		else { hide(btnPrev); hide(btnNext); }
+	}
 	refreshAll();
-
-	document.addEventListener('astro:page-load', function() {
-		collapse();
-		setTimeout(refreshAll, 50);
-	});
-	document.addEventListener('swup:contentReplaced', function() {
-		collapse();
-		setTimeout(refreshAll, 100);
-	});
+	document.addEventListener('astro:page-load', function() { collapse(); setTimeout(refreshAll, 50); });
+	document.addEventListener('swup:contentReplaced', function() { collapse(); syncNavUrls(); setTimeout(refreshAll, 100); });
 })();
 </script>
 
+
 <script>
 	import { TOCManager } from "@/utils/tocUtils";
-
 	const tocPanel = document.getElementById("floating-toc-panel");
 	if (tocPanel) {
 		async function initTOC() {
-			try {
-				const m = new TOCManager({ contentId: "floating-toc-content", maxLevel: 3, scrollOffset: 80 });
-				m.init();
-			} catch (e) { console.error("TOC init failed:", e); }
+			try { const m = new TOCManager({ contentId: "floating-toc-content", maxLevel: 3, scrollOffset: 80, indicatorId: "" }); m.init(); }
+			catch (e) { console.error("TOC init failed:", e); }
 		}
 		initTOC();
 		document.addEventListener("astro:page-load", () => setTimeout(initTOC, 100));

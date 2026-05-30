@@ -49,6 +49,10 @@ interface Props {
 	setOGTypeArticle?: boolean;
 	postSlug?: string;
 	headings?: MarkdownHeading[];
+tprevSlug?: string;
+	prevTitle?: string;
+	nextSlug?: string;
+	nextTitle?: string;
 	bannerPostMeta?: {
 		title: string;
 		published: Date;
@@ -68,6 +72,10 @@ const {
 	setOGTypeArticle,
 	postSlug,
 	headings = [],
+		prevSlug,
+		prevTitle,
+		nextSlug,
+		nextTitle,
 	bannerPostMeta,
 } = Astro.props;
 
@@ -684,7 +692,7 @@ const mobileQuality = Math.round(configQuality * 0.9);
     </div>
 </div>
 
-<FloatingControls headings={headings} />
+<FloatingControls headings={headings} currentSlug={postSlug} prevSlug={prevSlug} prevTitle={prevTitle} nextSlug={nextSlug} nextTitle={nextTitle} />
 
 
 
