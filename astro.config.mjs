@@ -58,7 +58,6 @@ export default defineConfig({
 				"#swup-container",
 				"#left-sidebar-dynamic",
 				"#right-sidebar-dynamic",
-				"#floating-toc-wrapper",
 			],
 			smoothScrolling: false,
 			cache: true,
