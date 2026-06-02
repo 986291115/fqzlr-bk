@@ -9,6 +9,7 @@ import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import FloatingDock from "@/components/controls/FloatingDock.astro";
+import WelcomeToast from "@/components/features/WelcomeToast.astro";
 import TypewriterText from "@/components/features/TypewriterText.astro";
 import CategoryBar from "@/components/layout/CategoryBar.astro";
 import {
@@ -644,6 +645,7 @@ const mobileQuality = Math.round(configQuality * 0.9);
                     <slot></slot>
 
                 </div>
+                <WelcomeToast />
                 <FloatingDock headings={headings} />
             </main>
             </div>

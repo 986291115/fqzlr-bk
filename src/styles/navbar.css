@@ -96,3 +96,8 @@
 }
 .nav-hamburger-btn.hamburger-open .hamburger-icon-menu { display: none; }
 .nav-hamburger-btn.hamburger-open .hamburger-icon-close { display: inline-block; }
+
+/* 去掉站点 Logo 的 hover/click 阴影 */
+.navbar-logo-link::before {
+  content: none;
+}

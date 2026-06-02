@@ -8,8 +8,10 @@ interface Props {
 	class?: string;
 	style?: string;
 	id?: string;
+	externalPlaylist?: string;
+	metingApiBase?: string;
 }
-const { class: className, style, id } = Astro.props;
+const { class: className, style, id, externalPlaylist, metingApiBase } = Astro.props;
 
 const config = musicPlayerConfig;
 
@@ -175,7 +177,7 @@ const widgetId =
 </div>
 </template>
 
-<script define:vars={{ viewConfigStr, widgetId }} is:inline>
+<script define:vars={{ viewConfigStr, widgetId, externalPlaylist, metingApiBase }} is:inline>
 (function () {
     var cfg = JSON.parse(viewConfigStr);
     var widget = document.getElementById(widgetId);
@@ -183,6 +185,34 @@ const widgetId =
 
     var mgr = window.__fireflyMusic;
     if (!mgr) return;
+
+    // Meting API resolution
+    async function resolveMetingTracks(playlist) {
+        var base = (metingApiBase || "https://mu.tsh520.cn/api") + '?server=';
+        for (var i = 0; i < playlist.length; i++) {
+            var track = playlist[i];
+            if (track.metingServer && track.metingId && !track.url) {
+                try {
+                    var s = encodeURIComponent(track.metingServer);
+                    var id = encodeURIComponent(track.metingId);
+                    var res = await fetch(base + s + '&type=song&id=' + id);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    var raw = await res.json();
+                    var data = Array.isArray(raw) ? raw[0] : raw;
+                    if (data) {
+                        if (data.url) track.url = data.url;
+                        if (data.pic && !track.pic) track.pic = data.pic;
+                        if (data.lrc && !track.lrc) track.lrc = data.lrc;
+                        track.artist = track.artist || data.author || data.artist || "";
+                        track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
+                    }
+                } catch(e) {
+                    console.warn('[Meting] failed:', track.name, e);
+                }
+            }
+        }
+        return playlist;
+    }
 
     // ── UI element refs ──────────────────────────────────────
     var ui = {
@@ -661,13 +691,42 @@ const widgetId =
 
     // ── Init: either sync existing state or trigger init ─────
     var currentState = mgr.getState();
+
+    async function loadExternalIfProvided() {
+        if (!externalPlaylist) return false;
+        try {
+            var playlist = JSON.parse(externalPlaylist);
+            if (playlist.length > 0) {
+                var resolved = await resolveMetingTracks(playlist);
+                mgr.loadExternalPlaylist(resolved);
+                return true;
+            }
+        } catch(e) {
+            console.warn('[MusicWidget] Failed to parse external playlist:', e);
+        }
+        return false;
+    }
+
     if (currentState.initialized) {
-        // Manager already initialized (late mount) – sync all UI
-        syncAll();
+        // Manager already initialized (late mount) – try external playlist first
+        loadExternalIfProvided().then(function(loaded) {
+            if (!loaded) syncAll();
+            else syncAll();
+        });
     } else {
-        // First widget to mount – show loading and trigger init
+        // First widget to mount – init, then load external playlist
         setLoading(true);
-        mgr.init();
+        if (externalPlaylist) {
+            mgr.init();
+            window.addEventListener('fm:init', function handler() {
+                window.removeEventListener('fm:init', handler);
+                loadExternalIfProvided().then(function() {
+                    syncAll();
+                });
+            });
+        } else {
+            mgr.init();
+        }
     }
 })();
 </script>

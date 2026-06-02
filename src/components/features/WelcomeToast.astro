@@ -1,0 +1,211 @@
+<style is:inline>
+  #welcome-toasts {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 5.5rem;
+    z-index: 59;
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  #welcome-toasts .wt-toast {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 280px;
+    padding: 0.55rem 1.75rem 0.55rem 0.75rem;
+    border-radius: 0.75rem;
+    border: 2px solid #000;
+    background: #fff;
+    color: #000;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    pointer-events: auto;
+    user-select: none;
+    animation: wt-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+  html.dark #welcome-toasts .wt-toast {
+    border-color: #fff;
+    background: #1a1a1a;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  #welcome-toasts .wt-toast.wt-out {
+    animation: wt-out 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+    pointer-events: none;
+  }
+  @keyframes wt-out {
+    0%   { opacity: 1; transform: translateX(0) scale(1); }
+    30%  { opacity: 1; transform: translateX(-0.25rem) scale(1.02); }
+    100% { opacity: 0; transform: translateX(1.5rem) scale(0.85); filter: blur(4px); }
+  }
+  #welcome-toasts .wt-toast:nth-child(1) { animation-delay: 0.05s; }
+  #welcome-toasts .wt-toast:nth-child(2) { animation-delay: 0.15s; }
+  #welcome-toasts .wt-toast:nth-child(3) { animation-delay: 0.25s; }
+  @keyframes wt-in {
+    from { opacity: 0; transform: translateX(1rem) translateY(-0.25rem); }
+    to   { opacity: 1; transform: translateX(0) translateY(0); }
+  }
+  #welcome-toasts .wt-close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.35;
+    cursor: pointer;
+    font-size: 0.75rem;
+    border-radius: 50%;
+    transition: opacity 0.15s;
+    padding: 0;
+    line-height: 1;
+  }
+  #welcome-toasts .wt-close:hover { opacity: 0.8; background: rgba(0,0,0,0.06); }
+  html.dark #welcome-toasts .wt-close:hover { background: rgba(255,255,255,0.1); }
+  @media (max-width: 480px) {
+    #welcome-toasts { right: 0.75rem; bottom: 5rem; gap: 0.375rem; }
+    #welcome-toasts .wt-toast { max-width: 240px; font-size: 0.75rem; padding: 0.5rem 1.5rem 0.5rem 0.625rem; }
+  }
+</style>
+
+<div id="welcome-toasts">
+  <div class="wt-toast" id="wt-loc">
+    <button class="wt-close" data-target="wt-loc">&times;</button>
+    <span id="wt-loc-text">欢迎远道而来的朋友！</span>
+  </div>
+  <div class="wt-toast" id="wt-greet">
+    <button class="wt-close" data-target="wt-greet">&times;</button>
+    <span id="wt-greet-text">早上好！</span>
+  </div>
+  <div class="wt-toast" id="wt-tip">
+    <button class="wt-close" data-target="wt-tip">&times;</button>
+    <span>点击导航栏菜单和右下角三个点探索更多功能</span>
+  </div>
+</div>
+
+<script is:inline>
+(function() {
+  var KEY = 'wt-dismissed';
+  var COOLDOWN = 86400000;
+
+  try {
+    var d = localStorage.getItem(KEY);
+    if (d && Date.now() - Number(d) < COOLDOWN) return;
+  } catch(e) { return; }
+
+  var box = document.getElementById('welcome-toasts');
+  if (!box) return;
+
+  box.style.display = 'flex';
+
+  // 地理位置
+  var locText = document.getElementById('wt-loc-text');
+  if (locText && navigator.onLine) {
+    // 英文→中文 常用地名映射
+    var zh = {
+      // 国家
+      'China': '中国', 'United States': '美国', 'Japan': '日本', 'South Korea': '韩国',
+      'United Kingdom': '英国', 'France': '法国', 'Germany': '德国', 'Canada': '加拿大',
+      'Australia': '澳大利亚', 'Singapore': '新加坡', 'Malaysia': '马来西亚', 'Thailand': '泰国',
+      'Russia': '俄罗斯', 'India': '印度', 'Taiwan': '中国台湾', 'Hong Kong': '中国香港',
+      'Macau': '中国澳门', 'Vietnam': '越南', 'Indonesia': '印度尼西亚', 'Philippines': '菲律宾',
+      'Italy': '意大利', 'Spain': '西班牙', 'Netherlands': '荷兰', 'Sweden': '瑞典',
+      'Switzerland': '瑞士', 'Brazil': '巴西', 'New Zealand': '新西兰',
+      // 省份
+      'Shanghai': '上海', 'Beijing': '北京', 'Guangdong': '广东', 'Zhejiang': '浙江',
+      'Jiangsu': '江苏', 'Sichuan': '四川', 'Hubei': '湖北', 'Fujian': '福建',
+      'Shandong': '山东', 'Henan': '河南', 'Hunan': '湖南', 'Hebei': '河北',
+      'Shaanxi': '陕西', 'Chongqing': '重庆', 'Tianjin': '天津', 'Guangxi': '广西',
+      'Yunnan': '云南', 'Guizhou': '贵州', 'Anhui': '安徽', 'Jiangxi': '江西',
+      'Liaoning': '辽宁', 'Jilin': '吉林', 'Heilongjiang': '黑龙江', 'Hainan': '海南',
+      'Gansu': '甘肃', 'Shanxi': '山西', 'Inner Mongolia': '内蒙古', 'Xinjiang': '新疆',
+      'Ningxia': '宁夏', 'Qinghai': '青海', 'Tibet': '西藏', 'Xizang': '西藏',
+      'Tokyo': '东京', 'Osaka': '大阪', 'Kyoto': '京都', 'Seoul': '首尔',
+      'New York': '纽约', 'California': '加州', 'London': '伦敦', 'Paris': '巴黎',
+      'Taipei': '台北', 'Taichung': '台中', 'Kaohsiung': '高雄',
+    };
+
+    function zhName(name) {
+      if (!name) return '';
+      return zh[name] || name;
+    }
+
+    // 多 API 兜底，确保联网用户能获取到地理位置
+    function tryFetch(url, ok) {
+      fetch(url).then(function(r) { return r.json(); }).then(ok).catch(function() {});
+    }
+
+    tryFetch('https://api.ip.sb/geoip', function(data) {
+      var parts = [zhName(data.country), zhName(data.region), zhName(data.city)].filter(Boolean);
+      var place = parts.join(' ');
+      if (place) locText.textContent = '欢迎来自 ' + place + ' 的朋友！';
+    });
+    // 备用 API（ip.sb 失败时自动尝试）
+    window.setTimeout(function() {
+      if (locText.textContent !== '欢迎远道而来的朋友！') return;
+      tryFetch('https://ipapi.co/json/', function(data) {
+        var parts = [zhName(data.country_name), zhName(data.region), zhName(data.city)].filter(Boolean);
+        var place = parts.join(' ');
+        if (place) locText.textContent = '欢迎来自 ' + place + ' 的朋友！';
+      });
+    }, 2000);
+  }
+
+  // 时段
+  var greetEl = document.getElementById('wt-greet-text');
+  if (greetEl) {
+    var h = new Date().getHours();
+    var g = '晚上好！';
+    if (h >= 6 && h < 12)      g = '早上好！';
+    else if (h >= 12 && h < 14) g = '中午好！';
+    else if (h >= 14 && h < 18) g = '下午好！';
+    greetEl.textContent = g;
+  }
+
+  // 关闭逻辑
+  var toasts = box.querySelectorAll('.wt-toast');
+  var left = toasts.length;
+
+  function dismiss(el) {
+    if (el._dismissing) return;
+    el._dismissing = true;
+    // 用 JS 直接操控动画，避免 CSS animation-fill-mode:both 锁定状态
+    el.style.animation = 'none';
+    el.offsetHeight; // force reflow
+    el.style.animation = 'wt-out 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards';
+    left--;
+    if (left <= 0) {
+      localStorage.setItem(KEY, String(Date.now()));
+      setTimeout(function() { box.remove(); }, 500);
+    }
+  }
+
+  // 点击空白处关闭全部
+  document.addEventListener('click', function(e) {
+    // 点了 toast 内部或关闭按钮 → 由按钮处理
+    if (e.target.closest && e.target.closest('.wt-toast')) return;
+    // 空白处 → 关闭全部
+    for (var i = 0; i < toasts.length; i++) {
+      dismiss(toasts[i]);
+    }
+  });
+
+  var btns = box.querySelectorAll('.wt-close');
+  for (var j = 0; j < btns.length; j++) {
+    btns[j].addEventListener('click', function() {
+      var id = this.getAttribute('data-target');
+      var el = id ? document.getElementById(id) : null;
+      if (el) dismiss(el);
+    });
+  }
+})();
+</script>
