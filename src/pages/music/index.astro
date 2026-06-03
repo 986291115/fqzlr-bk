@@ -845,8 +845,10 @@ const getStatusText = (type: number) => {
 				lines[i].style.color = '';
 			}
 		}
-			if (index >= 0 && lines[index]) {
-				lines[index].scrollIntoView({ block: "center", behavior: "smooth" });
+			if (index >= 0 && lines[index] && lyricsScroll) {
+				var line = lines[index];
+				var targetScroll = line.offsetTop - lyricsScroll.clientHeight / 2 + line.offsetHeight / 2;
+				lyricsScroll.scrollTo({ top: targetScroll, behavior: "smooth" });
 			}
 		}
 
@@ -921,7 +923,12 @@ const getStatusText = (type: number) => {
 	}
 
 	if (mgr.getState().initialized) {
-		initPlaylist();
+		// Manager already has a playlist — just sync UI, don't reload
+		if (mgr._externalLoaded) {
+			syncAll();
+		} else {
+			initPlaylist();
+		}
 	} else {
 		window.addEventListener('fm:init', function handler() {
 			window.removeEventListener('fm:init', handler);

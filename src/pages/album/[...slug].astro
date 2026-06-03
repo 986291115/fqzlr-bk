@@ -3,6 +3,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import Comment from "@/components/comment/index.astro";
+import DomeGallery from "@/components/features/DomeGallery.astro";
 
 export async function getStaticPaths() {
   const albums = await getCollection("album");
@@ -78,35 +79,23 @@ function getTimeAgo(date: Date): string {
       </div>
     </div>
 
-    <!-- 照片瀑布流 — 用原始比例 -->
-    <div class="photo-section">
+    <!-- 3D 球面照片墙 -->
+    <div class="dome-section">
       {photos.length > 0 ? (
-        <div class="photo-masonry" id="photo-masonry">
-          {photos.map((photo: any) => (
-            <div
-              class="photo-item"
-              data-index={photo.index}
-              data-src={photo.src}
-              data-alt={photo.alt}
-              data-caption={photo.caption}
-              data-width={photo.width}
-              data-height={photo.height}
-            >
-              <img
-                src={photo.src}
-                alt={photo.alt}
-                class="photo-img"
-                loading="lazy"
-              />
-              <div class="photo-overlay">
-                <Icon name="material-symbols:zoom-in" class="text-2xl" />
-              </div>
-              {photo.caption && (
-                <div class="photo-caption">{photo.caption}</div>
-              )}
-            </div>
-          ))}
-        </div>
+        <DomeGallery
+          images={photos.map((p: any) => p.src)}
+          fit={0.5}
+          minRadius={850}
+          segments={25}
+          grayscale={false}
+          imageBorderRadius="16px"
+          openedImageBorderRadius="20px"
+          openedImageWidth="350px"
+          openedImageHeight="500px"
+          overlayBlurColor="rgba(255,255,255,0.85)"
+          maxVerticalRotationDeg={8}
+          dragSensitivity={15}
+        />
       ) : (
         <div class="empty-state">
           <Icon name="material-symbols:photo-album-outline" class="text-6xl text-neutral-300 dark:text-neutral-600 mb-4" />
@@ -123,45 +112,6 @@ function getTimeAgo(date: Date): string {
 
 </MainGridLayout>
 
-<!-- Lightbox -->
-<div id="photo-lightbox" class="lightbox" aria-hidden="true">
-  <div class="lightbox-toolbar">
-    <div class="toolbar-left">
-      <span id="lightbox-counter" class="counter-text">1 / 1</span>
-    </div>
-    <div class="toolbar-right">
-      <button id="lightbox-info-toggle" class="toolbar-btn" title="显示详情">
-        <Icon name="material-symbols:info-outline" class="text-xl" />
-      </button>
-      <button id="lightbox-close" class="toolbar-btn" title="关闭 (Esc)">
-        <Icon name="material-symbols:close" class="text-2xl" />
-      </button>
-    </div>
-  </div>
-
-  <button id="lightbox-prev" class="nav-btn nav-prev" aria-label="上一张">
-    <Icon name="material-symbols:chevron-left" class="text-4xl" />
-  </button>
-  <button id="lightbox-next" class="nav-btn nav-next" aria-label="下一张">
-    <Icon name="material-symbols:chevron-right" class="text-4xl" />
-  </button>
-
-  <div class="lightbox-content">
-    <img id="lightbox-image" src="" alt="" class="lightbox-img" />
-  </div>
-
-  <div id="lightbox-info" class="lightbox-info">
-    <div class="info-main">
-      <span id="lightbox-caption" class="caption-text"></span>
-      <span id="lightbox-dimensions" class="dimensions-text"></span>
-    </div>
-    <div class="info-actions">
-      <button id="lightbox-download" class="action-btn" title="下载原图">
-        <Icon name="material-symbols:download" class="text-xl" />
-      </button>
-    </div>
-  </div>
-</div>
 
 <style>
   .nav-back {
@@ -208,6 +158,18 @@ function getTimeAgo(date: Date): string {
     background: var(--border); border-radius: 50%;
   }
 
+  .dome-section {
+    width: 100%;
+    height: 70vh;
+    min-height: 500px;
+    border-radius: var(--radius-large);
+    overflow: visible;
+    background: #ffffff;
+  }
+  :root.dark .dome-section {
+    background: #050505;
+  }
+
   .photo-section { animation: fadeIn 0.5s ease-out; }
 
   @keyframes fadeIn {
@@ -215,319 +177,13 @@ function getTimeAgo(date: Date): string {
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* 瀑布流 — 图片用自然比例，col 不裁剪 */
-  .photo-masonry { column-count: 4; column-gap: 6px; }
-
-  @media (max-width: 1400px) { .photo-masonry { column-count: 4; } }
-  @media (max-width: 1024px) { .photo-masonry { column-count: 3; } }
-  @media (max-width: 640px)  { .photo-masonry { column-count: 2; column-gap: 4px; } }
-
-  .photo-item {
-    position: relative; border-radius: 4px; overflow: hidden;
-    cursor: pointer; transition: all 0.3s ease;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    break-inside: avoid; margin-bottom: 6px;
-    line-height: 0;
-  }
-
-  .photo-item:hover {
-    transform: scale(1.02); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    z-index: 1;
-  }
-  :root.dark .photo-item:hover {
-    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
-  }
-
-  .photo-img {
-    width: 100%; height: auto;
-    display: block;
-    transition: transform 0.4s ease;
-  }
-
-  .photo-item:hover .photo-img { transform: scale(1.05); }
-
-  .photo-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.3s; color: white;
-    pointer-events: none;
-  }
-
-  .photo-item:hover .photo-overlay { opacity: 1; }
-
-  .photo-caption {
-    position: absolute; bottom: 0; left: 0; right: 0; padding: 10px;
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    color: white; font-size: 12px; opacity: 0;
-    transform: translateY(5px); transition: all 0.3s;
-  }
-
-  .photo-item:hover .photo-caption { opacity: 1; transform: translateY(0); }
-
   .empty-state { text-align: center; padding: 60px 20px; }
-
-  /* Lightbox */
-  .lightbox {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0, 0, 0, 0.95);
-    display: flex; flex-direction: column;
-    opacity: 0; visibility: hidden; transition: all 0.3s ease;
-  }
-
-  .lightbox.active { opacity: 1; visibility: visible; }
-
-  .lightbox-toolbar {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 20px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
-    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-  }
-
-  .counter-text {
-    color: white; font-size: 14px; font-weight: 500;
-    padding: 6px 14px; background: rgba(255,255,255,0.1);
-    border-radius: 20px; backdrop-filter: blur(8px);
-  }
-
-  .toolbar-right { display: flex; gap: 8px; }
-
-  .toolbar-btn {
-    width: 40px; height: 40px; display: flex;
-    align-items: center; justify-content: center; color: white;
-    background: rgba(255,255,255,0.1); border-radius: 50%;
-    transition: all 0.2s; backdrop-filter: blur(8px);
-  }
-
-  .toolbar-btn:hover {
-    background: rgba(255,255,255,0.2); transform: scale(1.05);
-  }
-
-  .nav-btn {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 56px; height: 56px; display: flex;
-    align-items: center; justify-content: center; color: white;
-    background: rgba(255,255,255,0.1); border-radius: 50%;
-    transition: all 0.3s; backdrop-filter: blur(8px); z-index: 10;
-  }
-
-  .nav-btn:hover {
-    background: rgba(255,255,255,0.2); transform: translateY(-50%) scale(1.1);
-  }
-
-  .nav-prev { left: 20px; }
-  .nav-next { right: 20px; }
-
-  .lightbox-content {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    padding: 80px 100px; min-height: 0;
-  }
-
-  .lightbox-img {
-    max-width: 100%; max-height: 100%; object-fit: contain;
-    border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    transition: transform 0.3s ease;
-  }
-
-  .lightbox-info {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
-    position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
-  }
-
-  .info-main { display: flex; flex-direction: column; gap: 4px; }
-  .caption-text { color: white; font-size: 15px; max-width: 600px; }
-  .dimensions-text { color: rgba(255,255,255,0.6); font-size: 12px; }
-  .info-actions { display: flex; gap: 8px; }
-
-  .action-btn {
-    width: 44px; height: 44px; display: flex;
-    align-items: center; justify-content: center; color: white;
-    background: rgba(255,255,255,0.15); border-radius: 50%;
-    transition: all 0.2s;
-  }
-
-  .action-btn:hover {
-    background: rgba(255,255,255,0.25); transform: scale(1.05);
-  }
 
   @media (max-width: 768px) {
     .album-header { padding: 0 0 16px 0; }
     .album-meta { gap: 12px; }
     .meta-item { font-size: 13px; }
-    .lightbox-content { padding: 60px 60px; }
-    .nav-btn { width: 44px; height: 44px; }
-    .nav-prev { left: 8px; }
-    .nav-next { right: 8px; }
+    .dome-section { height: 60vh; min-height: 400px; }
   }
 </style>
 
-<script is:inline>
-  (function() {
-    var currentPhotoIndex = 0;
-    var isInfoVisible = true;
-
-    function getLightbox() { return document.getElementById('photo-lightbox'); }
-
-    // ===== Photo click — document-level delegation, always works =====
-    document.addEventListener('click', function(e) {
-      var item = e.target.closest('#photo-masonry .photo-item');
-      if (!item) return;
-      var allItems = Array.from(document.querySelectorAll('#photo-masonry .photo-item'));
-      var idx = allItems.indexOf(item);
-      if (idx >= 0) openLightbox(idx, allItems);
-    });
-
-    // ===== Lightbox background click =====
-    document.addEventListener('click', function(e) {
-      var lb = getLightbox();
-      if (lb && e.target === lb && lb.classList.contains('active')) closeLightbox();
-    });
-
-    // ===== Lazy-bind controls on open =====
-    function bindControls() {
-      var prev = document.getElementById('lightbox-prev');
-      var next = document.getElementById('lightbox-next');
-      var close = document.getElementById('lightbox-close');
-      var infoToggle = document.getElementById('lightbox-info-toggle');
-      if (prev) prev.onclick = onPrev;
-      if (next) next.onclick = onNext;
-      if (close) close.onclick = closeLightbox;
-      if (infoToggle) infoToggle.onclick = toggleInfo;
-    }
-
-    function onPrev() {
-      var allItems = Array.from(document.querySelectorAll('#photo-masonry .photo-item'));
-      if (allItems.length === 0) return;
-      currentPhotoIndex = (currentPhotoIndex - 1 + allItems.length) % allItems.length;
-      updateLightbox(allItems);
-    }
-
-    function onNext() {
-      var allItems = Array.from(document.querySelectorAll('#photo-masonry .photo-item'));
-      if (allItems.length === 0) return;
-      currentPhotoIndex = (currentPhotoIndex + 1) % allItems.length;
-      updateLightbox(allItems);
-    }
-
-    function openLightbox(index, allItems) {
-      currentPhotoIndex = index;
-      updateLightbox(allItems);
-      var lb = getLightbox();
-      if (lb) { lb.classList.add('active'); lb.setAttribute('aria-hidden', 'false'); }
-      document.body.style.overflow = 'hidden';
-      bindControls();
-    }
-
-    function closeLightbox() {
-      var lb = getLightbox();
-      if (lb) { lb.classList.remove('active'); lb.setAttribute('aria-hidden', 'true'); }
-      var img = document.getElementById('lightbox-image');
-      if (img) { img.removeAttribute('src'); img.src = ''; }
-      document.body.style.overflow = '';
-    }
-
-    function updateLightbox(allItems) {
-      var photo = allItems[currentPhotoIndex];
-      if (!photo) return;
-
-      var src = photo.dataset.src || '';
-      var alt = photo.dataset.alt || '';
-      var caption = photo.dataset.caption || '';
-      var width = photo.dataset.width || '';
-      var height = photo.dataset.height || '';
-
-      var img = document.getElementById('lightbox-image');
-      var cap = document.getElementById('lightbox-caption');
-      var dim = document.getElementById('lightbox-dimensions');
-      var counter = document.getElementById('lightbox-counter');
-      var dl = document.getElementById('lightbox-download');
-
-      if (img) { img.src = src; img.alt = alt; }
-      if (cap) {
-        cap.textContent = caption;
-        cap.style.display = caption ? 'block' : 'none';
-      }
-      if (dim) {
-        if (width && height) {
-          dim.textContent = width + ' x ' + height;
-          dim.style.display = 'block';
-        } else {
-          dim.style.display = 'none';
-        }
-      }
-      if (counter) {
-        counter.textContent = (currentPhotoIndex + 1) + ' / ' + allItems.length;
-      }
-      if (dl) {
-        dl.onclick = function() {
-          var a = document.createElement('a');
-          a.href = src;
-          a.download = alt || 'photo-' + (currentPhotoIndex + 1);
-          a.target = '_blank';
-          a.click();
-        };
-      }
-    }
-
-    function toggleInfo() {
-      isInfoVisible = !isInfoVisible;
-      var infoEl = document.getElementById('lightbox-info');
-      if (infoEl) {
-        infoEl.style.opacity = isInfoVisible ? '1' : '0';
-        infoEl.style.pointerEvents = isInfoVisible ? 'auto' : 'none';
-      }
-    }
-
-    // Keyboard
-    document.addEventListener('keydown', function(e) {
-      var lb = getLightbox();
-      if (!lb || !lb.classList.contains('active')) return;
-      var allItems = Array.from(document.querySelectorAll('#photo-masonry .photo-item'));
-      switch (e.key) {
-        case 'Escape': closeLightbox(); break;
-        case 'ArrowLeft':
-          currentPhotoIndex = (currentPhotoIndex - 1 + allItems.length) % allItems.length;
-          updateLightbox(allItems);
-          break;
-        case 'ArrowRight':
-          currentPhotoIndex = (currentPhotoIndex + 1) % allItems.length;
-          updateLightbox(allItems);
-          break;
-        case 'i': toggleInfo(); break;
-      }
-    });
-
-    // ===== Cleanup stale lightboxes =====
-    function cleanupStale() {
-      var allLbs = document.querySelectorAll('#photo-lightbox');
-      for (var i = 0; i < allLbs.length - 1; i++) {
-        var stale = allLbs[i];
-        var img = stale.querySelector('#lightbox-image, .lightbox-img');
-        if (img) { img.removeAttribute('src'); img.src = ''; }
-        if (stale.parentNode) stale.parentNode.removeChild(stale);
-      }
-    }
-
-    function destroyLightbox() {
-      var lb = getLightbox();
-      if (lb) {
-        closeLightbox();
-        if (lb.parentNode) lb.parentNode.removeChild(lb);
-      }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', cleanupStale);
-    } else {
-      setTimeout(cleanupStale, 10);
-    }
-
-    document.addEventListener('astro:page-load', function() { setTimeout(cleanupStale, 10); });
-    document.addEventListener('swup:contentReplaced', function() { setTimeout(cleanupStale, 10); });
-    document.addEventListener('swup:willReplaceContent', destroyLightbox);
-    document.addEventListener('astro:before-swap', destroyLightbox);
-  })();
-</script>

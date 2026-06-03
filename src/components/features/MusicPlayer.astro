@@ -694,11 +694,14 @@ const widgetId =
 
     async function loadExternalIfProvided() {
         if (!externalPlaylist) return false;
+        // Skip if external playlist already loaded (Swup page navigation remount)
+        if (mgr._externalLoaded) return false;
         try {
             var playlist = JSON.parse(externalPlaylist);
             if (playlist.length > 0) {
                 var resolved = await resolveMetingTracks(playlist);
                 mgr.loadExternalPlaylist(resolved);
+                mgr._externalLoaded = true;
                 return true;
             }
         } catch(e) {
@@ -708,11 +711,15 @@ const widgetId =
     }
 
     if (currentState.initialized) {
-        // Manager already initialized (late mount) – try external playlist first
-        loadExternalIfProvided().then(function(loaded) {
-            if (!loaded) syncAll();
-            else syncAll();
-        });
+        // Manager already initialized (late mount / Swup remount)
+        if (mgr._externalLoaded || !externalPlaylist) {
+            // Already loaded or no external playlist – just sync UI
+            syncAll();
+        } else {
+            loadExternalIfProvided().then(function() {
+                syncAll();
+            });
+        }
     } else {
         // First widget to mount – init, then load external playlist
         setLoading(true);

@@ -428,6 +428,7 @@ const managerConfigStr = JSON.stringify({
     }
 
     window.__fireflyMusic = {
+        _externalLoaded: false,
         init: init,
         getState: function () {
             var track = state.playlist[state.currentIndex] || null;
