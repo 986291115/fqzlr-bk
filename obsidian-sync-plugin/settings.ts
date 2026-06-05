@@ -10,6 +10,12 @@ export interface SyncPluginSettings {
   enableCheck: boolean;
   /** 检查失败时是否继续执行构建 */
   continueOnCheckFail: boolean;
+  /** Dev 测试命令 */
+  devCommand: string;
+  /** 是否启用 Dev 测试 */
+  enableDev: boolean;
+  /** Dev 启动等待秒数（几秒不崩溃就算成功） */
+  devWaitSeconds: number;
   /** 构建命令 */
   buildCommand: string;
   /** 是否启用构建命令（false则只跑检查） */
@@ -24,9 +30,12 @@ export interface SyncPluginSettings {
 
 export const DEFAULT_SETTINGS: SyncPluginSettings = {
   projectPath: "",
-  checkCommand: "astro check",
+  checkCommand: "pnpm check",
   enableCheck: true,
   continueOnCheckFail: true,
+  devCommand: "pnpm dev",
+  enableDev: false,
+  devWaitSeconds: 5,
   buildCommand: "pnpm build",
   enableBuild: true,
   commitMessage: "chore: sync {date} {time}",
@@ -98,6 +107,50 @@ export class SyncPluginSettingTab extends PluginSettingTab {
           this.plugin.settings.continueOnCheckFail = value;
           await this.plugin.saveSettings();
         })
+      );
+
+    containerEl.createEl("h3", { text: "Dev 测试" });
+
+    // 启用 Dev 测试
+    new Setting(containerEl)
+      .setName("启用 Dev 测试")
+      .setDesc("同步前先启动 dev 服务器，几秒不崩溃就认为项目正常")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.enableDev).onChange(async (value) => {
+          this.plugin.settings.enableDev = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    // Dev 命令
+    new Setting(containerEl)
+      .setName("Dev 命令")
+      .setDesc("启动开发服务器的命令")
+      .addText((text) =>
+        text
+          .setPlaceholder("pnpm dev")
+          .setValue(this.plugin.settings.devCommand)
+          .onChange(async (value) => {
+            this.plugin.settings.devCommand = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Dev 等待时间
+    new Setting(containerEl)
+      .setName("Dev 等待秒数")
+      .setDesc("启动后等待几秒不崩溃就算成功")
+      .addText((text) =>
+        text
+          .setPlaceholder("5")
+          .setValue(String(this.plugin.settings.devWaitSeconds))
+          .onChange(async (value) => {
+            const num = parseInt(value, 10);
+            if (!isNaN(num) && num > 0) {
+              this.plugin.settings.devWaitSeconds = num;
+              await this.plugin.saveSettings();
+            }
+          })
       );
 
     // 启用构建命令

@@ -1,4 +1,4 @@
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import { Plugin } from "obsidian";
 import {
   DEFAULT_SETTINGS,
@@ -6,7 +6,7 @@ import {
   SyncPluginSettingTab,
 } from "./settings";
 
-type SyncStatus = "idle" | "checking" | "building" | "pushing" | "success" | "error";
+type SyncStatus = "idle" | "checking" | "dev-testing" | "building" | "pushing" | "success" | "error";
 
 export default class SyncPlugin extends Plugin {
   settings: SyncPluginSettings;
@@ -92,6 +92,56 @@ export default class SyncPlugin extends Plugin {
     });
   }
 
+  /** 测试 Dev 服务器（启动几秒后不崩溃就认为成功） */
+  private testDevServer(cwd: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const waitSeconds = this.settings.devWaitSeconds || 5;
+      const parts = this.settings.devCommand.split(/\s+/);
+      const cmd = parts[0];
+      const args = parts.slice(1);
+
+      const child = spawn(cmd, args, {
+        cwd,
+        shell: true,
+        env: { ...process.env },
+      });
+
+      let stderr = "";
+      let resolved = false;
+
+      child.stderr?.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      // 等待指定秒数后，如果没有崩溃就认为成功
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          child.kill();
+          resolve();
+        }
+      }, waitSeconds * 1000);
+
+      child.on("error", (err) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          reject(new Error(err.message));
+        }
+      });
+
+      child.on("exit", (code, signal) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          // 如果在等待期间就退出了，说明启动失败
+          const errMsg = this.stripAnsi(stderr || `进程退出，code: ${code}`);
+          reject(new Error(errMsg));
+        }
+      });
+    });
+  }
+
   /** 更新状态栏 */
   private updateStatusBar(status: SyncStatus, message?: string) {
     this.status = status;
@@ -107,6 +157,11 @@ export default class SyncPlugin extends Plugin {
         break;
       case "checking":
         this.statusBarEl.setText("🔍 检查中...");
+        this.statusBarEl.addClass("sync-building");
+        this.statusBarEl.removeClass("sync-success", "sync-error");
+        break;
+      case "dev-testing":
+        this.statusBarEl.setText("🚀 测试启动中...");
         this.statusBarEl.addClass("sync-building");
         this.statusBarEl.removeClass("sync-success", "sync-error");
         break;
@@ -162,7 +217,21 @@ export default class SyncPlugin extends Plugin {
       }
     }
 
-    // Step 2: 执行构建命令（如果启用）
+    // Step 2: Dev 测试（如果启用）
+    if (this.settings.enableDev && this.settings.devCommand.trim()) {
+      this.updateStatusBar("dev-testing");
+      try {
+        await this.testDevServer(cwd);
+        console.log("[Sync] Dev test passed");
+      } catch (err: any) {
+        const errMsg = err.message?.slice(0, 100) || "启动失败";
+        console.error("[Sync] Dev test failed:", err);
+        this.updateStatusBar("error", `启动失败: ${errMsg}`);
+        return;
+      }
+    }
+
+    // Step 3: 执行构建命令（如果启用）
     if (this.settings.enableBuild && this.settings.buildCommand.trim()) {
       this.updateStatusBar("building");
       try {
@@ -176,7 +245,7 @@ export default class SyncPlugin extends Plugin {
       }
     }
 
-    // Step 3: Git add + commit
+    // Step 4: Git add + commit
     this.updateStatusBar("pushing");
     try {
       await this.execCommand("git add -A", cwd);
