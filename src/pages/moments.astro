@@ -8,11 +8,9 @@ import MomentsCover from "@/components/moments/MomentsCover.astro";
 import Comment from "@/components/comment/index.astro";
 
 const moments = await getCollection("moments");
-const sortedMoments = moments.sort((a, b) => {
-  if (a.data.pinned && !b.data.pinned) return -1;
-  if (!a.data.pinned && b.data.pinned) return 1;
-  return b.data.published.getTime() - a.data.published.getTime();
-});
+const sortedMoments = moments
+  .filter((m) => !m.data.pinned)
+  .sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
 
 // 置顶说说
 const pinnedMoments = moments
@@ -80,7 +78,6 @@ const albums = await getCollection("album");
   {pinnedData.length > 0 && (
     <a href="/moments/pinned/" class="wx-pinned">
       <div class="wx-pinned-tag">
-        <Icon name="material-symbols:push-pin" class="wx-pinned-icon" />
         <span>置顶</span>
       </div>
       <div class="wx-pinned-items">
@@ -183,16 +180,16 @@ const albums = await getCollection("album");
     gap: 0.25rem;
     padding: 0 0.75rem;
     background: #fff;
-    color: var(--text-color);
-    font-size: 0.8125rem;
-    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 1.625rem;
+    font-weight: 400;
     flex-shrink: 0;
     white-space: nowrap;
   }
 
-  .wx-pinned-icon {
-    font-size: 0.875rem;
-    transform: rotate(-45deg);
+  :root.dark .wx-pinned-tag {
+    background: #000;
+    color: #fff;
   }
 
   .wx-pinned-items {
