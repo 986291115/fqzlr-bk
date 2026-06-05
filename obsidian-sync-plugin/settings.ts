@@ -8,6 +8,8 @@ export interface SyncPluginSettings {
   checkCommand: string;
   /** 是否启用检查命令 */
   enableCheck: boolean;
+  /** 检查失败时是否继续执行构建 */
+  continueOnCheckFail: boolean;
   /** 构建命令 */
   buildCommand: string;
   /** 是否启用构建命令（false则只跑检查） */
@@ -24,6 +26,7 @@ export const DEFAULT_SETTINGS: SyncPluginSettings = {
   projectPath: "",
   checkCommand: "astro check",
   enableCheck: true,
+  continueOnCheckFail: true,
   buildCommand: "pnpm build",
   enableBuild: true,
   commitMessage: "chore: sync {date} {time}",
@@ -84,6 +87,17 @@ export class SyncPluginSettingTab extends PluginSettingTab {
             this.plugin.settings.checkCommand = value;
             await this.plugin.saveSettings();
           })
+      );
+
+    // 检查失败时继续
+    new Setting(containerEl)
+      .setName("检查失败时继续")
+      .setDesc("即使检查命令报错也继续执行构建和推送（适合项目有已知警告的情况）")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.continueOnCheckFail).onChange(async (value) => {
+          this.plugin.settings.continueOnCheckFail = value;
+          await this.plugin.saveSettings();
+        })
       );
 
     // 启用构建命令

@@ -153,8 +153,12 @@ export default class SyncPlugin extends Plugin {
       } catch (err: any) {
         const errMsg = err.message?.slice(0, 100) || "检查失败";
         console.error("[Sync] Check failed:", err);
-        this.updateStatusBar("error", `检查失败: ${errMsg}`);
-        return;
+        if (this.settings.continueOnCheckFail) {
+          console.log("[Sync] Check failed but continueOnCheckFail is enabled, continuing...");
+        } else {
+          this.updateStatusBar("error", `检查失败: ${errMsg}`);
+          return;
+        }
       }
     }
 
