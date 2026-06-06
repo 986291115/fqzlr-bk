@@ -1,6 +1,29 @@
 ---
 import { getSortedPostsList } from "@/utils/content-utils";
 import { getPostUrlBySlug, removeFileExtension } from "@/utils/url-utils";
+import { Icon } from "astro-icon/components";
+
+// 文件夹图标映射（Iconify 图标名）
+// key 统一小写，因为 Astro 在 Windows 上会把 content collection ID 转为小写
+const folderIcons: Record<string, string> = {
+	"javawebai": "material-symbols:code-blocks-outline",
+	"java笔记本": "mdi:language-java",
+	"java进阶": "material-symbols:school-outline",
+	"java菜鸟": "material-symbols:child-care-outline",
+	"english笔记本": "material-symbols:translate",
+	"mysql数据库": "simple-icons:mysql",
+	"mysql进阶": "material-symbols:database-outline",
+	"前端基础": "simple-icons:html5",
+	"后端基础": "material-symbols:dns-outline",
+	"博客指南": "material-symbols:menu-book-outline",
+	"技术分享": "material-symbols:share-outline",
+	"资源整理": "material-symbols:folder-special-outline",
+	"测试文件": "material-symbols:science-outline",
+};
+
+function getFolderIcon(name: string): string | undefined {
+	return folderIcons[name.toLowerCase()] || folderIcons[name];
+}
 
 interface Props {
 	currentSlug?: string;
@@ -20,6 +43,9 @@ type DirectoryFolder = {
 	type: "folder";
 	depth: number;
 	name: string;
+	folderId: string;
+	hasCurrent: boolean;
+	icon?: string;
 };
 
 type DirectoryRow = DirectoryArticle | DirectoryFolder;
@@ -34,10 +60,7 @@ const normalizedCurrentSlug = removeFileExtension(currentSlug);
 const posts = await getSortedPostsList();
 
 function createNode(): DirectoryNode {
-	return {
-		folders: new Map(),
-		articles: [],
-	};
+	return { folders: new Map(), articles: [] };
 }
 
 function toDateString(date: Date): string {
@@ -69,27 +92,45 @@ for (const post of posts) {
 	});
 }
 
-function walk(node: DirectoryNode, depth = 0): DirectoryRow[] {
+// 为每个文件夹生成唯一 ID，并判断是否包含当前文章
+let folderCounter = 0;
+function walk(node: DirectoryNode, depth = 0): { rows: DirectoryRow[]; hasCurrent: boolean } {
 	const rows: DirectoryRow[] = [];
+	let subtreeHasCurrent = false;
 
 	const folders = [...node.folders.entries()].sort(([a], [b]) =>
 		a.localeCompare(b, "zh-CN", { numeric: true }),
 	);
 
 	for (const [name, child] of folders) {
-		rows.push({ type: "folder", depth, name });
-		rows.push(...walk(child, depth + 1));
+		const folderId = "folder-" + folderCounter++;
+		const result = walk(child, depth + 1);
+
+		// 检查子文章中是否有当前文章
+		const childHasCurrent = result.rows.some(
+			(r) => r.type === "article" && r.slug === normalizedCurrentSlug,
+		) || result.rows.some(
+			(r) => r.type === "folder" && r.hasCurrent,
+		);
+
+		if (childHasCurrent) subtreeHasCurrent = true;
+
+		rows.push({ type: "folder", depth, name, folderId, hasCurrent: childHasCurrent, icon: getFolderIcon(name) });
+		rows.push(...result.rows);
 	}
 
 	const articles = [...node.articles].sort((a, b) =>
 		a.title.localeCompare(b.title, "zh-CN", { numeric: true }),
 	);
+	for (const a of articles) {
+		if (a.slug === normalizedCurrentSlug) subtreeHasCurrent = true;
+	}
 	rows.push(...articles);
 
-	return rows;
+	return { rows, hasCurrent: subtreeHasCurrent };
 }
 
-const rows = walk(root);
+const { rows } = walk(root);
 ---
 
 <div
@@ -101,27 +142,38 @@ const rows = walk(root);
 			{rows.map((row) =>
 				row.type === "folder" ? (
 					<li
-						class="post-directory-row post-directory-folder"
+						class:list={["pd-folder", { expanded: row.hasCurrent }]}
 						style={`--depth: ${row.depth}`}
+						data-folder-id={row.folderId}
+						data-has-current={String(row.hasCurrent)}
+						role="button"
+						tabindex="0"
 					>
-						<span class="post-directory-icon" aria-hidden="true">▸</span>
-						<span class="post-directory-name">{row.name}</span>
+						{row.icon ? (
+						<Icon name={row.icon} class="pd-icon pd-icon-custom" />
+					) : (
+						<span class="pd-icon" aria-hidden="true">▸</span>
+					)}
+						<span class="pd-name">{row.name}</span>
 					</li>
 				) : (
-					<li class="post-directory-item">
+					<li
+						class="pd-item"
+						data-depth={row.depth}
+					>
 						<a
 							href={row.url}
 							class:list={[
-								"post-directory-row post-directory-link",
+								"pd-row pd-link",
 								{ current: row.slug === normalizedCurrentSlug },
 							]}
 							style={`--depth: ${row.depth}`}
 							data-post-slug={row.slug}
 							title={`${row.title} · ${row.date}`}
 						>
-							<span class="post-directory-icon" aria-hidden="true">•</span>
-							<span class="post-directory-title">{row.title}</span>
-							<span class="post-directory-date">{row.date}</span>
+							<span class="pd-dot" aria-hidden="true">•</span>
+							<span class="pd-title">{row.title}</span>
+							<span class="pd-date">{row.date}</span>
 						</a>
 					</li>
 				)
@@ -150,7 +202,62 @@ const rows = walk(root);
 		list-style: none;
 	}
 
-	.post-directory-row {
+	/* ===== 文件夹行 ===== */
+	.pd-folder {
+		--depth: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-height: 2rem;
+		padding: 0.35rem 0.5rem 0.35rem calc(0.5rem + var(--depth) * 0.85rem);
+		border-radius: 0.65rem;
+		line-height: 1.3;
+		color: var(--primary);
+		font-size: 0.78rem;
+		font-weight: 700;
+		opacity: 0.78;
+		cursor: pointer;
+		user-select: none;
+		transition: background-color 0.15s ease;
+	}
+
+	.pd-folder:hover {
+		background: var(--toc-btn-hover);
+	}
+
+	.pd-icon {
+		width: 0.9rem;
+		flex: 0 0 auto;
+		text-align: center;
+		font-size: 0.75rem;
+		transition: transform 0.2s ease;
+	}
+
+	.pd-folder.expanded .pd-icon:not(.pd-icon-custom) {
+		transform: rotate(90deg);
+	}
+
+	.pd-icon-custom {
+		width: 1rem;
+		height: 1rem;
+		flex: 0 0 auto;
+		opacity: 0.85;
+	}
+
+	.pd-name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* ===== 折叠项（由 JS 控制） ===== */
+	.pd-item.collapsed {
+		display: none;
+	}
+
+	/* ===== 文章行 ===== */
+	.pd-row {
 		--depth: 0;
 		display: flex;
 		align-items: center;
@@ -161,14 +268,7 @@ const rows = walk(root);
 		line-height: 1.3;
 	}
 
-	.post-directory-folder {
-		color: var(--primary);
-		font-size: 0.78rem;
-		font-weight: 700;
-		opacity: 0.78;
-	}
-
-	.post-directory-link {
+	.pd-link {
 		color: var(--deep-text);
 		text-decoration: none;
 		transition:
@@ -177,22 +277,22 @@ const rows = walk(root);
 			transform 0.15s ease;
 	}
 
-	.post-directory-link:hover {
+	.pd-link:hover {
 		background: var(--toc-btn-hover);
 		color: var(--primary);
 	}
 
-	.post-directory-link:active {
+	.pd-link:active {
 		transform: scale(0.98);
 	}
 
-	.post-directory-link.current {
+	.pd-link.current {
 		background: var(--toc-btn-active);
 		color: var(--primary);
 		font-weight: 700;
 	}
 
-	.post-directory-icon {
+	.pd-dot {
 		width: 0.9rem;
 		flex: 0 0 auto;
 		text-align: center;
@@ -200,20 +300,16 @@ const rows = walk(root);
 		font-size: 0.75rem;
 	}
 
-	.post-directory-title,
-	.post-directory-name {
+	.pd-title {
 		min-width: 0;
+		flex: 1 1 auto;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-
-	.post-directory-title {
-		flex: 1 1 auto;
 		font-size: 0.82rem;
 	}
 
-	.post-directory-date {
+	.pd-date {
 		flex: 0 0 auto;
 		font-size: 0.68rem;
 		color: currentColor;
@@ -234,28 +330,128 @@ const rows = walk(root);
 			var index = path.indexOf("/posts/");
 			if (index < 0) return "";
 			var slug = path.slice(index + 7).replace(/^\/+|\/+$/g, "");
-			try {
-				return decodeURIComponent(slug);
-			} catch (_) {
-				return slug;
-			}
+			try { return decodeURIComponent(slug); } catch (_) { return slug; }
 		}
 
+		/**
+		 * 切换文件夹展开/收起
+		 * 扁平列表结构：folder 行后面跟着若干 pd-item，
+		 * 直到下一个 pd-folder（depth <= 当前）为止
+		 */
+		function toggleFolder(folder, expand) {
+			var depth = parseInt(folder.style.getPropertyValue("--depth")) || 0;
+			var el = folder.nextElementSibling;
+			while (el) {
+				if (el.classList.contains("pd-folder")) {
+					var elDepth = parseInt(el.style.getPropertyValue("--depth")) || 0;
+					if (elDepth <= depth) break; // 遇到同级或上级文件夹，停止
+				}
+				if (el.classList.contains("pd-item")) {
+					el.classList.toggle("collapsed", !expand);
+				}
+				el = el.nextElementSibling;
+			}
+			folder.classList.toggle("expanded", expand);
+		}
+
+		/* 手风琴：点击文件夹 */
+		function bindAccordion(root) {
+			root.querySelectorAll(".pd-folder").forEach(function (folder) {
+				if (folder._accordionBound) return;
+				folder._accordionBound = true;
+
+				folder.addEventListener("click", function () {
+					var isExpanding = !folder.classList.contains("expanded");
+
+					if (isExpanding) {
+						// 先收起同级其他已展开的文件夹（手风琴效果）
+						var depth = parseInt(folder.style.getPropertyValue("--depth")) || 0;
+						var prev = folder.previousElementSibling;
+						while (prev) {
+							if (prev.classList.contains("pd-folder")) {
+								var prevDepth = parseInt(prev.style.getPropertyValue("--depth")) || 0;
+								if (prevDepth < depth) break;
+								if (prevDepth === depth && prev.classList.contains("expanded")) {
+									toggleFolder(prev, false);
+								}
+							}
+							prev = prev.previousElementSibling;
+						}
+						var next = folder.nextElementSibling;
+						while (next) {
+							if (next.classList.contains("pd-folder")) {
+								var nextDepth = parseInt(next.style.getPropertyValue("--depth")) || 0;
+								if (nextDepth < depth) break;
+								if (nextDepth === depth && next.classList.contains("expanded")) {
+									toggleFolder(next, false);
+								}
+							}
+							next = next.nextElementSibling;
+						}
+					}
+
+					toggleFolder(folder, isExpanding);
+				});
+
+				folder.addEventListener("keydown", function (e) {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						folder.click();
+					}
+				});
+			});
+		}
+
+		/* 初始化文件夹状态：hasCurrent=true 的展开，其余收起 */
+		function initFolderStates(root) {
+			// 先收起所有文件夹
+			root.querySelectorAll(".pd-folder").forEach(function (folder) {
+				var hasCurrent = folder.getAttribute("data-has-current") === "true";
+				if (!hasCurrent) {
+					toggleFolder(folder, false);
+				} else {
+					// 确保展开
+					folder.classList.add("expanded");
+				}
+			});
+		}
+
+		/* 高亮当前文章 */
 		function updatePostDirectories() {
 			var slug = currentPostSlug();
 			document.querySelectorAll(".post-directory-list").forEach(function (root) {
-				root.querySelectorAll(".post-directory-link.current").forEach(function (link) {
+				bindAccordion(root);
+
+				// 清除旧高亮
+				root.querySelectorAll(".pd-link.current").forEach(function (link) {
 					link.classList.remove("current");
 				});
+
+				// 初始化文件夹状态
+				initFolderStates(root);
 
 				if (!slug) return;
 
 				var current = root.querySelector(
-					'.post-directory-link[data-post-slug="' + CSS.escape(slug) + '"]',
+					'.pd-link[data-post-slug="' + CSS.escape(slug) + '"]',
 				);
 				if (!current) return;
 
 				current.classList.add("current");
+
+				// 确保当前文章所在文件夹链全部展开
+				var item = current.closest(".pd-item");
+				if (item) {
+					var prev = item.previousElementSibling;
+					while (prev) {
+						if (prev.classList.contains("pd-folder") && !prev.classList.contains("expanded")) {
+							toggleFolder(prev, true);
+						}
+						prev = prev.previousElementSibling;
+					}
+				}
+
+				// 滚动到当前文章
 				var scroll = root.querySelector(".post-directory-scroll");
 				if (scroll) {
 					var top = current.offsetTop - scroll.clientHeight / 2 + current.clientHeight / 2;

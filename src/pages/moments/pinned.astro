@@ -4,6 +4,7 @@ import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import MomentCard from "@/components/moments/MomentCard.astro";
 import Comment from "@/components/comment/index.astro";
+import { externalMomentsConfig } from "@/config/externalMomentsConfig";
 
 const moments = await getCollection("moments");
 const pinnedMoments = moments
@@ -54,6 +55,251 @@ const pinnedMoments = moments
     <Comment customPath="/moments/pinned/" />
   </div>
 </MainGridLayout>
+
+{externalMomentsConfig.enable && externalMomentsConfig.gistId && (
+<script is:inline
+  data-gist={externalMomentsConfig.gistId}
+  data-file={externalMomentsConfig.fileName}
+  data-author={externalMomentsConfig.defaultAuthor}
+  data-avatar={externalMomentsConfig.defaultAvatar}>
+(function() {
+  var _s = document.currentScript;
+  var gistId = _s.getAttribute("data-gist");
+  var fileName = _s.getAttribute("data-file");
+  var defaultAuthor = _s.getAttribute("data-author");
+  var defaultAvatar = _s.getAttribute("data-avatar");
+  var feed = document.getElementById("pinned-feed");
+  if (!feed) return;
+
+  var cacheKey = "__externalMomentsCache";
+  var MARKER = "data-ext-inserted";
+
+  function formatTimeAgo(date) {
+    var now = new Date();
+    var diff = now - date;
+    var minutes = Math.floor(diff / 60000);
+    var hours = Math.floor(diff / 3600000);
+    var days = Math.floor(diff / 86400000);
+    if (minutes < 1) return "刚刚";
+    if (minutes < 60) return minutes + "分钟前";
+    if (hours < 24) return hours + "小时前";
+    if (days < 30) return days + "天前";
+    return date.getFullYear() + "-" + String(date.getMonth()+1).padStart(2,"0") + "-" + String(date.getDate()).padStart(2,"0");
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement("div"); div.textContent = text; return div.innerHTML;
+  }
+
+  function renderMarkdown(text) {
+    return escapeHtml(text)
+      .replace(/\n/g, "<br>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">$1</a>');
+  }
+
+  function getGridCols(count) {
+    if (count === 1) return 1;
+    if (count === 2 || count === 4) return 2;
+    return 3;
+  }
+
+  function parseImages(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (typeof raw === "string" && raw.trim()) {
+      return raw.split(/[,;]/).map(function(s) { return s.trim(); }).filter(Boolean);
+    }
+    return [];
+  }
+
+  function createCard(m) {
+    var author = m.author || defaultAuthor;
+    var avatar = m.avatar || defaultAvatar;
+    var date = new Date(m.published);
+    var timeStr = formatTimeAgo(date);
+    var content = renderMarkdown(m.content || "");
+    var images = parseImages(m.images);
+    var tags = m.tags || [];
+    var location = m.location || "";
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "moment-item-wrapper";
+
+    var card = document.createElement("div");
+    card.className = "moment-card";
+
+    var accent = document.createElement("div");
+    accent.className = "card-accent-bar";
+    card.appendChild(accent);
+
+    var header = document.createElement("div");
+    header.className = "card-header";
+
+    var avatarDiv = document.createElement("div");
+    avatarDiv.className = "card-avatar";
+    var avatarImg = document.createElement("img");
+    avatarImg.src = avatar;
+    avatarImg.alt = author;
+    avatarImg.className = "avatar-img";
+    avatarImg.loading = "lazy";
+    avatarDiv.appendChild(avatarImg);
+
+    var userInfo = document.createElement("div");
+    userInfo.className = "card-user-info";
+
+    var userRow = document.createElement("div");
+    userRow.className = "user-row";
+    var userName = document.createElement("span");
+    userName.className = "user-name";
+    userName.textContent = author;
+    userRow.appendChild(userName);
+
+    var badge = document.createElement("span");
+    badge.className = "pinned-badge";
+    badge.innerHTML = '<svg class="pinned-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a1 1 0 0 1 1-1h1a1 1 0 0 0 0-8H7a1 1 0 0 0 0 8h1a1 1 0 0 1 1 1z"/></svg>';
+    var badgeText = document.createElement("span");
+    badgeText.textContent = "置顶";
+    badge.appendChild(badgeText);
+    userRow.appendChild(badge);
+
+    var metaRow = document.createElement("div");
+    metaRow.className = "meta-row";
+    var time = document.createElement("time");
+    time.textContent = timeStr;
+    metaRow.appendChild(time);
+    if (location) {
+      var dot = document.createElement("span");
+      dot.className = "meta-dot";
+      dot.textContent = "·";
+      metaRow.appendChild(dot);
+      var loc = document.createElement("span");
+      loc.className = "location";
+      loc.innerHTML = '<svg class="location-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+      loc.appendChild(document.createTextNode(location));
+      metaRow.appendChild(loc);
+    }
+
+    userInfo.appendChild(userRow);
+    userInfo.appendChild(metaRow);
+    header.appendChild(avatarDiv);
+    header.appendChild(userInfo);
+    card.appendChild(header);
+
+    var contentDiv = document.createElement("div");
+    contentDiv.className = "card-content";
+    var markdownDiv = document.createElement("div");
+    markdownDiv.className = "moment-markdown";
+    markdownDiv.style.cssText = "color:var(--text-color);font-size:0.9375rem;line-height:1.75;";
+    markdownDiv.innerHTML = content;
+    contentDiv.appendChild(markdownDiv);
+    card.appendChild(contentDiv);
+
+    if (images.length > 0) {
+      var cols = getGridCols(images.length);
+      var imagesDiv = document.createElement("div");
+      imagesDiv.className = "card-images image-cols-" + cols;
+      images.slice(0, 9).forEach(function(url, i) {
+        var imgItem = document.createElement("div");
+        imgItem.className = "image-item";
+        var img = document.createElement("img");
+        img.src = url;
+        img.alt = "";
+        img.className = "image-img";
+        img.loading = "lazy";
+        img.onerror = function() { imgItem.style.display = "none"; };
+        imgItem.appendChild(img);
+        imagesDiv.appendChild(imgItem);
+      });
+      card.appendChild(imagesDiv);
+    }
+
+    if (tags.length > 0) {
+      var tagsDiv = document.createElement("div");
+      tagsDiv.className = "card-tags";
+      tags.forEach(function(t) {
+        var a = document.createElement("a");
+        a.href = "/archive/?tag=" + encodeURIComponent(t.trim());
+        a.className = "tag-item";
+        a.textContent = "#" + t.trim();
+        tagsDiv.appendChild(a);
+      });
+      card.appendChild(tagsDiv);
+    }
+
+    wrapper.appendChild(card);
+    return wrapper;
+  }
+
+  function hasExternalPinned() {
+    return feed.hasAttribute(MARKER) ||
+      feed.querySelector("[" + MARKER + "]") !== null;
+  }
+
+  function insertPinnedExternal(extMoments) {
+    var pinned = extMoments.filter(function(m) { return m.pinned; });
+    if (pinned.length === 0) return;
+
+    // 移除空状态
+    var emptyEl = feed.querySelector(".empty-state");
+    if (emptyEl) emptyEl.remove();
+
+    pinned.sort(function(a, b) { return new Date(b.published) - new Date(a.published); });
+    pinned.forEach(function(m) {
+      var el = createCard(m);
+      el.setAttribute(MARKER, "1");
+      feed.appendChild(el);
+    });
+    feed.setAttribute(MARKER, "1");
+
+    // 更新计数
+    var countEl = document.querySelector(".pinned-count");
+    if (countEl) {
+      var existing = parseInt(countEl.textContent) || 0;
+      countEl.textContent = (existing + pinned.length) + " 条";
+    }
+  }
+
+  function fetchPinned() {
+    if (hasExternalPinned()) return;
+
+    if (window[cacheKey] && window[cacheKey].time > Date.now() - 300000) {
+      insertPinnedExternal(window[cacheKey].data);
+      return;
+    }
+
+    var token = localStorage.getItem("gh_moments_token") || "";
+    var headers = { "Accept": "application/vnd.github+json" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+
+    fetch("https://api.github.com/gists/" + gistId, { headers: headers })
+      .then(function(r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function(gist) {
+        var file = gist.files[fileName];
+        if (!file) return;
+        var moments = JSON.parse(file.content || "[]");
+        if (!moments.length) return;
+        window[cacheKey] = { data: moments, time: Date.now() };
+        insertPinnedExternal(moments);
+      })
+      .catch(function(e) {
+        console.warn("[外部置顶说说] 加载失败:", e.message);
+      });
+  }
+
+  fetchPinned();
+
+  // Swup 页面切换后重新检查
+  document.addEventListener("swup:content:replace", function() {
+    if (!hasExternalPinned()) fetchPinned();
+  });
+})();
+</script>
+)}
 
 <style>
   /* 页面头部 */
@@ -215,5 +461,92 @@ const pinnedMoments = moments
       left: 0.75rem;
       right: 0.75rem;
     }
+  }
+</style>
+
+<style is:global>
+  /* JS 动态创建的外部置顶卡片样式 */
+  #pinned-feed .moment-card {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    padding: 1.25rem 1.25rem 1.25rem 2.25rem;
+    border: 2px solid #000;
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  }
+  :root.dark #pinned-feed .moment-card { border-color: #3f3f46; }
+  #pinned-feed .moment-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+  :root.dark #pinned-feed .moment-card:hover {
+    border-color: #fff;
+    box-shadow: 0 4px 24px rgba(255,255,255,0.08);
+  }
+  #pinned-feed .card-accent-bar {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--primary); opacity: 0.35; border-radius: 0 2px 2px 0;
+  }
+  #pinned-feed .card-header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem; }
+  #pinned-feed .card-avatar { flex-shrink: 0; }
+  #pinned-feed .avatar-img {
+    width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--primary); box-sizing: border-box;
+  }
+  #pinned-feed .card-user-info { flex: 1; min-width: 0; }
+  #pinned-feed .user-row { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.125rem; }
+  #pinned-feed .pinned-badge {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.125rem 0.5rem; background: var(--btn-regular-bg);
+    color: var(--btn-content); border-radius: var(--radius);
+    font-size: 0.75rem; font-weight: 600;
+  }
+  #pinned-feed .pinned-icon { width: 14px; height: 14px; }
+  #pinned-feed .user-name { font-size: 0.9375rem; font-weight: 600; color: var(--primary); }
+  #pinned-feed .meta-row { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--content-meta); }
+  #pinned-feed .meta-dot { opacity: 0.5; }
+  #pinned-feed .location {
+    display: inline-flex; align-items: center; gap: 0.125rem;
+    max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #pinned-feed .location-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; height: 14px; }
+  #pinned-feed .card-content { margin-bottom: 0.75rem; }
+  #pinned-feed .moment-markdown { word-break: break-word; }
+  #pinned-feed .moment-markdown p { margin-bottom: 0.375rem; }
+  #pinned-feed .moment-markdown p:last-child { margin-bottom: 0; }
+  #pinned-feed .moment-markdown img { border-radius: var(--radius); margin: 0.5rem 0; max-width: 100%; }
+  #pinned-feed .moment-markdown a { color: var(--primary); text-decoration: underline; }
+  #pinned-feed .card-images { display: grid; gap: 0.375rem; margin-bottom: 0.75rem; }
+  #pinned-feed .image-cols-1 { grid-template-columns: 100px; }
+  #pinned-feed .image-cols-2 { grid-template-columns: repeat(2, 100px); }
+  #pinned-feed .image-cols-3 { grid-template-columns: repeat(3, 90px); }
+  #pinned-feed .image-item {
+    position: relative; border-radius: var(--radius); overflow: hidden;
+    cursor: pointer; background: var(--btn-regular-bg); aspect-ratio: 1;
+  }
+  #pinned-feed .image-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+  #pinned-feed .image-item:hover .image-img { transform: scale(1.03); }
+  #pinned-feed .card-tags {
+    display: flex; flex-wrap: wrap; gap: 0.375rem;
+    padding-top: 0.625rem; border-top: 1px solid var(--border);
+  }
+  #pinned-feed .tag-item {
+    padding: 0.25rem 0.625rem; background: transparent;
+    border: 1px solid var(--primary); border-radius: 9999px;
+    font-size: 0.75rem; color: var(--primary);
+    transition: all 0.2s ease;
+  }
+  #pinned-feed .tag-item:hover {
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+  @media (max-width: 480px) {
+    #pinned-feed .moment-card { padding: 0.875rem 0.875rem 0.875rem 1.75rem; }
+    #pinned-feed .avatar-img { width: 2.25rem; height: 2.25rem; }
+    #pinned-feed .user-name { font-size: 0.875rem; }
+    #pinned-feed .meta-row { font-size: 0.6875rem; }
+    #pinned-feed .location { max-width: 80px; }
+    #pinned-feed .card-images { gap: 0.25rem; }
   }
 </style>

@@ -75,33 +75,31 @@ const albums = await getCollection("album");
   <!-- 微信朋友圈风格封面 -->
   <MomentsCover />
 
-  <!-- 置顶说说 -->
-  {pinnedData.length > 0 && (
-    <a href="/moments/pinned/" class="wx-pinned">
-      <div class="wx-pinned-tag">
-        <span>置顶</span>
-      </div>
-      <div class="wx-pinned-items">
-        {pinnedData.map((item) => (
-          <div class="wx-pinned-preview">
-            {item.images.length > 0 ? (
-              <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
-                {item.images.slice(0, 9).map((img) => (
-                  typeof img === "string" ? (
-                    <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                  ) : (
-                    <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                  )
-                ))}
-              </div>
-            ) : (
-              <p class="wx-ptxt">{item.body.slice(0, 60)}{item.body.length > 60 ? '...' : ''}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </a>
-  )}
+  <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
+  <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
+    <div class="wx-pinned-tag">
+      <span>置顶</span>
+    </div>
+    <div class="wx-pinned-items" id="pinned-items">
+      {pinnedData.map((item) => (
+        <div class="wx-pinned-preview">
+          {item.images.length > 0 ? (
+            <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
+              {item.images.slice(0, 9).map((img) => (
+                typeof img === "string" ? (
+                  <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
+                ) : (
+                  <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
+                )
+              ))}
+            </div>
+          ) : (
+            <p class="wx-ptxt">{item.body.slice(0, 60)}{item.body.length > 60 ? '...' : ''}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  </a>
 
   <!-- 说说列表（本地 + 外部合并，按时间排序） -->
   <div class="wx-feed" id="moments-feed">
@@ -166,8 +164,9 @@ const albums = await getCollection("album");
   var feed = document.getElementById("moments-feed");
   if (!feed) return;
 
-  // 使用缓存避免 Swup 切换页面时重复请求
   var cacheKey = "__externalMomentsCache";
+  // 标记：防止 Swup 回退缓存 DOM 后重复插入
+  var MARKER = "data-ext-inserted";
 
   function formatTimeAgo(date) {
     var now = new Date();
@@ -223,6 +222,7 @@ const albums = await getCollection("album");
     var item = document.createElement("div");
     item.className = "wx-feed-item";
     item.setAttribute("data-published", date.toISOString());
+    item.setAttribute(MARKER, "1");
 
     var card = document.createElement("div");
     card.className = "moment-card";
@@ -347,10 +347,62 @@ const albums = await getCollection("album");
     return item;
   }
 
-  // 按时间顺序将外部说说插入到主 feed 中
+  // 为置顶块创建缩略图预览（和 SSR 端结构一致）
+  function createPinnedPreview(m) {
+    var images = parseImages(m.images);
+    var body = m.content || "";
+    var preview = document.createElement("div");
+    preview.className = "wx-pinned-preview";
+
+    if (images.length > 0) {
+      var count = Math.min(images.length, 9);
+      var gridDiv = document.createElement("div");
+      gridDiv.className = "wx-pimgs wx-pimgs-" + count;
+      images.slice(0, 9).forEach(function(src) {
+        var img = document.createElement("img");
+        img.src = src;
+        img.alt = "";
+        img.className = "wx-pinned-img";
+        img.loading = "lazy";
+        gridDiv.appendChild(img);
+      });
+      preview.appendChild(gridDiv);
+    } else {
+      var p = document.createElement("p");
+      p.className = "wx-ptxt";
+      var text = body.slice(0, 60);
+      if (body.length > 60) text += "...";
+      p.textContent = text;
+      preview.appendChild(p);
+    }
+    return preview;
+  }
+
+  // 按时间顺序将外部说说插入到主 feed 中，置顶的插入置顶块
   function insertExternalMoments(extMoments) {
     if (!extMoments || extMoments.length === 0) return;
     extMoments.sort(function(a, b) { return new Date(b.published) - new Date(a.published); });
+
+    // 分离置顶和非置顶
+    var pinned = [];
+    var normal = [];
+    extMoments.forEach(function(m) {
+      if (m.pinned) { pinned.push(m); } else { normal.push(m); }
+    });
+
+    // 处理外部置顶说说 → 插入置顶块
+    if (pinned.length > 0) {
+      var pinnedBlock = document.getElementById("pinned-block");
+      var pinnedItems = document.getElementById("pinned-items");
+      if (pinnedBlock && pinnedItems) {
+        pinnedBlock.style.display = "";
+        pinned.forEach(function(m) {
+          var el = createPinnedPreview(m);
+          el.setAttribute(MARKER, "1");
+          pinnedItems.appendChild(el);
+        });
+      }
+    }
 
     // 移除空状态提示
     var emptyEl = document.getElementById("moments-empty");
@@ -363,7 +415,7 @@ const albums = await getCollection("album");
       localTimes.push({ el: el, time: new Date(el.getAttribute("data-published")).getTime() });
     });
 
-    extMoments.forEach(function(m) {
+    normal.forEach(function(m) {
       var card = createCard(m);
       var extTime = new Date(m.published).getTime();
       var inserted = false;
@@ -381,10 +433,20 @@ const albums = await getCollection("album");
     });
   }
 
+  // 检查是否已有外部说说（Swup 回退缓存 DOM 时避免重复）
+  function hasExternalMoments() {
+    return feed.hasAttribute(MARKER) ||
+      feed.querySelector("[" + MARKER + "]") !== null;
+  }
+
   function fetchMoments() {
-    // 检查缓存（5分钟内有效）
+    // 如果已有外部说说（Swup 缓存恢复），跳过
+    if (hasExternalMoments()) return;
+
+    // 检查内存缓存（5分钟内有效）
     if (window[cacheKey] && window[cacheKey].time > Date.now() - 300000) {
       insertExternalMoments(window[cacheKey].data);
+      feed.setAttribute(MARKER, "1");
       return;
     }
 
@@ -404,150 +466,30 @@ const albums = await getCollection("album");
         if (!moments.length) return;
         window[cacheKey] = { data: moments, time: Date.now() };
         insertExternalMoments(moments);
+        feed.setAttribute(MARKER, "1");
       })
       .catch(function(e) {
         console.warn("[外部说说] 加载失败:", e.message);
       });
   }
 
-  // 初始化
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", fetchMoments);
-  } else {
-    fetchMoments();
-  }
+  // 首次加载：立即获取
+  fetchMoments();
 
-  // Swup 页面切换后从缓存恢复
+  // Swup 页面切换后：从缓存恢复（仅当 DOM 中没有外部说说时）
   document.addEventListener("swup:content:replace", function() {
-    if (window[cacheKey]) insertExternalMoments(window[cacheKey].data);
+    // Swup 回退时 DOM 已有外部说说 → 跳过
+    if (hasExternalMoments()) return;
+    // 重新获取
+    fetchMoments();
   });
 })();
 </script>
 )}
 
 <style>
-  /* ============================================
-   * 置顶说说
-   * ============================================ */
-  .wx-pinned {
-    display: flex;
-    align-items: stretch;
-    background: var(--card-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1.25rem;
-    min-height: 4.5rem;
-    text-decoration: none;
-    color: var(--text-color);
-    border: 1.5px solid transparent;
-    transition: border-color 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
-  }
-
-  .wx-pinned:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-  }
-
-  .wx-pinned-tag {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0 0.75rem;
-    background: #fff;
-    color: #1a1a1a;
-    font-size: 1.625rem;
-    font-weight: 400;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-
-  :root.dark .wx-pinned-tag {
-    background: #000;
-    color: #fff;
-  }
-
-  .wx-pinned-items {
-    display: flex;
-    flex: 1;
-    justify-content: flex-end;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    gap: 0;
-  }
-
-  .wx-pinned-items::-webkit-scrollbar {
-    display: none;
-  }
-
-  .wx-pinned-preview {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    min-width: 4rem;
-    max-width: 7.5rem;
-    flex: 1;
-    border-left: 1px solid var(--border);
-    overflow: hidden;
-  }
-
-  .wx-pinned-preview:first-child {
-    border-left: none;
-  }
-
-  /* 图片缩略图网格 */
-  .wx-pimgs {
-    display: grid;
-    gap: 2px;
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .wx-pimgs-1 { grid-template-columns: 1fr; }
-  .wx-pimgs-2 { grid-template-columns: 1fr 1fr; }
-  .wx-pimgs-3 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-  .wx-pimgs-3 .wx-pinned-img:first-child { grid-row: 1 / 3; }
-  .wx-pimgs-4 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-  .wx-pimgs-5,
-  .wx-pimgs-6 {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-  .wx-pimgs-7,
-  .wx-pimgs-8,
-  .wx-pimgs-9 {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-  }
-
-  .wx-pinned-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* 无图片文字预览 */
-  .wx-ptxt {
-    margin: 0;
-    font-size: 0.625rem;
-    color: var(--content-meta);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-all;
-  }
+  /* 置顶块样式在底部 <style is:global> 中，
+     因为 JS 动态创建的外部置顶元素没有 Astro scoped 属性 */
 
   /* ============================================
    * 说说列表
@@ -637,21 +579,133 @@ const albums = await getCollection("album");
       left: 0.75rem;
       right: 0.75rem;
     }
+  }
+</style>
 
+<style is:global>
+  /* ============================================
+   * 置顶块样式（需要 is:global，
+   * 因为 JS 动态创建的外部置顶元素没有 Astro scoped 属性）
+   * ============================================ */
+  .wx-pinned {
+    display: flex;
+    align-items: stretch;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    min-height: 4.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1.5px solid transparent;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+  }
+  .wx-pinned:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  .wx-pinned-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 1.625rem;
+    font-weight: 400;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  :root.dark .wx-pinned-tag {
+    background: #000;
+    color: #fff;
+  }
+  .wx-pinned-items {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .wx-pinned-items::-webkit-scrollbar {
+    display: none;
+  }
+  .wx-pinned-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    min-width: 4rem;
+    max-width: 7.5rem;
+    flex: 1;
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .wx-pinned-preview:first-child {
+    border-left: none;
+  }
+  .wx-pimgs {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .wx-pimgs-1 { grid-template-columns: 1fr; }
+  .wx-pimgs-2 { grid-template-columns: 1fr 1fr; }
+  .wx-pimgs-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-3 .wx-pinned-img:first-child { grid-row: 1 / 3; }
+  .wx-pimgs-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-5,
+  .wx-pimgs-6 {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-7,
+  .wx-pimgs-8,
+  .wx-pimgs-9 {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+  }
+  .wx-pinned-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wx-ptxt {
+    margin: 0;
+    font-size: 0.625rem;
+    color: var(--content-meta);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-all;
+  }
+  @media (max-width: 480px) {
     .wx-pinned-preview {
       min-width: 3.5rem;
       max-width: 6rem;
       padding: 0.375rem;
     }
-
     .wx-ptxt {
       font-size: 0.5625rem;
       -webkit-line-clamp: 3;
     }
   }
-</style>
 
-<style is:global>
   /* ============================================
    * JS 动态插入的说说卡片样式
    * 需要 is:global 因为卡片 DOM 由 JS 动态创建
