@@ -318,6 +318,16 @@ enum I18nKey {
 
 	// 相关阅读
 	relatedPosts = "relatedPosts",
+
+	// 欢迎卡片
+	welcomeCardLocation = "welcomeCardLocation",
+	welcomeCardGreeting = "welcomeCardGreeting",
+	welcomeCardRecentUpdates = "welcomeCardRecentUpdates",
+	welcomeCardFlipHint = "welcomeCardFlipHint",
+	welcomeCardDragHint = "welcomeCardDragHint",
+	welcomeCardClose = "welcomeCardClose",
+	welcomeCardLearnMore = "welcomeCardLearnMore",
+	welcomeCardRecentLabel = "welcomeCardRecentLabel",
 }
 
 export default I18nKey;

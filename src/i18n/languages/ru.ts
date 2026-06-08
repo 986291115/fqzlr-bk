@@ -319,4 +319,14 @@ export const ru: Translation = {
 
 	// Похожие посты
 	[Key.relatedPosts]: "Похожие посты",
+
+	// Карточка приветствия
+	[Key.welcomeCardLocation]: "далека",
+	[Key.welcomeCardGreeting]: "!",
+	[Key.welcomeCardRecentUpdates]: "Последние обновления:",
+	[Key.welcomeCardFlipHint]: "Нажмите, чтобы перевернуть",
+	[Key.welcomeCardDragHint]: "Перетащите, чтобы закрыть",
+	[Key.welcomeCardClose]: "Закрыть",
+	[Key.welcomeCardLearnMore]: "Подробнее",
+	[Key.welcomeCardRecentLabel]: "Последние обновления",
 };

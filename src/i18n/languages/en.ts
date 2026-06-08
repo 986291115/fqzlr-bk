@@ -322,4 +322,14 @@ export const en: Translation = {
 
 	// Related Posts
 	[Key.relatedPosts]: "Related Posts",
+
+	// Welcome Card
+	[Key.welcomeCardLocation]: "somewhere",
+	[Key.welcomeCardGreeting]: "!",
+	[Key.welcomeCardRecentUpdates]: "Recent updates:",
+	[Key.welcomeCardFlipHint]: "Tap to flip",
+	[Key.welcomeCardDragHint]: "Drag to dismiss",
+	[Key.welcomeCardClose]: "Close",
+	[Key.welcomeCardLearnMore]: "Learn More",
+	[Key.welcomeCardRecentLabel]: "Recent Updates",
 };

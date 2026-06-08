@@ -311,4 +311,14 @@ export const zh_TW: Translation = {
 
 	// 相關閱讀
 	[Key.relatedPosts]: "相關閱讀",
+
+	// 歡迎卡片
+	[Key.welcomeCardLocation]: "遠方",
+	[Key.welcomeCardGreeting]: "的朋友！",
+	[Key.welcomeCardRecentUpdates]: "最近我更新了這些內容：",
+	[Key.welcomeCardFlipHint]: "點擊翻轉查看更多",
+	[Key.welcomeCardDragHint]: "拖拽關閉",
+	[Key.welcomeCardClose]: "關閉",
+	[Key.welcomeCardLearnMore]: "了解更多",
+	[Key.welcomeCardRecentLabel]: "最近更新",
 };

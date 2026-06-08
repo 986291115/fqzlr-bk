@@ -324,4 +324,14 @@ export const zh_CN: Translation = {
 
 	// 相关阅读
 	[Key.relatedPosts]: "相关阅读",
+
+	// 欢迎卡片
+	[Key.welcomeCardLocation]: "远方",
+	[Key.welcomeCardGreeting]: "的朋友！",
+	[Key.welcomeCardRecentUpdates]: "最近我更新了这些内容：",
+	[Key.welcomeCardFlipHint]: "点击翻转查看更多",
+	[Key.welcomeCardDragHint]: "拖拽关闭",
+	[Key.welcomeCardClose]: "关闭",
+	[Key.welcomeCardLearnMore]: "了解更多",
+	[Key.welcomeCardRecentLabel]: "最近更新",
 };

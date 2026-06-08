@@ -317,4 +317,14 @@ export const ja: Translation = {
 
 	// 関連投稿
 	[Key.relatedPosts]: "関連投稿",
+
+	// ウェルカムカード
+	[Key.welcomeCardLocation]: "遠方",
+	[Key.welcomeCardGreeting]: "の友人へ！",
+	[Key.welcomeCardRecentUpdates]: "最近の更新：",
+	[Key.welcomeCardFlipHint]: "タップして裏返す",
+	[Key.welcomeCardDragHint]: "ドラッグして閉じる",
+	[Key.welcomeCardClose]: "閉じる",
+	[Key.welcomeCardLearnMore]: "詳しく見る",
+	[Key.welcomeCardRecentLabel]: "最近の更新",
 };
