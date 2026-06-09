@@ -1,0 +1,24 @@
+{
+  "id": "conv-1781013261576-1gvsfav9l",
+  "providerId": "claude",
+  "title": "整理一下",
+  "titleGenerationStatus": "failed",
+  "createdAt": 1781013261577,
+  "updatedAt": 1781014406964,
+  "lastResponseAt": 1781013283027,
+  "sessionId": "cc8700a5-70a0-4d3f-a080-4f7032b2acf2",
+  "providerState": {
+    "providerSessionId": "cc8700a5-70a0-4d3f-a080-4f7032b2acf2"
+  },
+  "currentNote": "notes/草稿/记笔记方法规范.md",
+  "usage": {
+    "model": "haiku",
+    "inputTokens": 488,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 28224,
+    "contextWindow": 200000,
+    "contextTokens": 28712,
+    "percentage": 14,
+    "contextWindowIsAuthoritative": true
+  }
+}
