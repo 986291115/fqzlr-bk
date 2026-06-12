@@ -767,6 +767,16 @@ function disableAnimation() {
         navEl.setAttribute("data-is-home", isHome.toString());
       }
 
+      // 同步门户区可见性
+      const portalZone = document.getElementById("portal-zone");
+      if (portalZone) {
+        if (isHome) {
+          portalZone.style.display = "";
+        } else {
+          portalZone.style.display = "none";
+        }
+      }
+
       // 更新侧边栏组件的可见性（根据新页面的 URL）
       updateSidebarComponentsVisibility();
 
