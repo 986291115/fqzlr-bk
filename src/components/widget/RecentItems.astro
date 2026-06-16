@@ -329,35 +329,50 @@ const style = Astro.props.style;
 
   function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-  function render() {
-    allRemote.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+  function collectLocalItems() {
+    var items = [];
+    document.querySelectorAll("#recent-items-list > a.recent-item").forEach(function(el) {
+      var titleEl = el.querySelector(".recent-title");
+      var dateEl = el.querySelector(".recent-date");
+      var imgEl = el.querySelector(".recent-thumb img");
+      var badgeEl = el.querySelector(".recent-badge");
+      var dateText = dateEl ? dateEl.textContent.replace(/[^\d-]/g, "").trim() : "";
+      if (dateText.length >= 10) dateText = dateText.substring(0, 10);
+      items.push({
+        title: titleEl ? titleEl.textContent.trim() : "",
+        date: dateText,
+        url: el.getAttribute("href") || "",
+        image: imgEl ? imgEl.getAttribute("src") : "",
+        badge: badgeEl ? badgeEl.textContent.trim() : ""
+      });
+    });
+    return items;
+  }
 
-    // 远程最多3条，其余留给本地
-    var maxRemote = 3;
-    var remoteCount = Math.min(allRemote.length, maxRemote);
-    var top = allRemote.slice(0, remoteCount);
+  function render() {
+    var localItems = collectLocalItems();
+    var all = allRemote.concat(localItems);
+    all.sort(function(a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+    var total = Math.min(all.length, 10);
+    var top = all.slice(0, total);
     var defaultImg = "https://re.0824.uk/zl/tx.webp";
-    var html = top.map(function(m) {
+    var html = top.map(function(m, i) {
       var img = m.image || defaultImg;
-      return '<a href="' + esc(m.url) + '" class="recent-item" style="animation-delay:0ms">' +
+      return '<a href="' + esc(m.url) + '" class="recent-item" style="animation-delay:' + (i * 50) + 'ms">' +
         '<div class="recent-thumb"><img src="' + img + '" alt="" class="w-full h-full object-cover" onerror="this.onerror=null;this.src=\'' + defaultImg + '\';" loading="lazy"></div>' +
         '<div class="recent-body"><span class="recent-title">' + esc(m.title) + '</span>' +
         '<span class="recent-date"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ' + m.date + ' <span class="recent-badge">' + esc(m.badge) + '</span></span></div></a>';
     }).join("");
 
-    // 更新所有实例（桌面端 + 移动端）
-    containers.forEach(function(c) {
-      if (!allRemote.length) { c.style.display = "none"; return; }
-      c.innerHTML = html;
+    // 隐藏原始本地条目
+    document.querySelectorAll("#recent-items-list > a.recent-item").forEach(function(el) {
+      el.style.display = "none";
     });
 
-    // 隐藏多余的本地条目（所有 recent-items 容器内的）
-    var localKeep = Math.max(0, 10 - remoteCount);
-    document.querySelectorAll("#recent-items-list").forEach(function(list) {
-      var localItems = list.querySelectorAll(":scope > a.recent-item");
-      for (var i = localKeep; i < localItems.length; i++) {
-        localItems[i].style.display = "none";
-      }
+    // 渲染合并后的列表到所有实例（桌面端 + 移动端）
+    containers.forEach(function(c) {
+      c.innerHTML = html;
     });
   }
 
@@ -407,7 +422,7 @@ const style = Astro.props.style;
       .finally(done);
   });
 
-  if (total === 0) { container.style.display = "none"; return; }
+  if (total === 0) { containers.forEach(function(c) { c.style.display = "none"; }); return; }
 
   // 超时保护
   setTimeout(function() { if (fetched < total) { fetched = total; render(); } }, 5000);

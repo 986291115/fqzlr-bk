@@ -501,6 +501,12 @@ const { class: className } = Astro.props;
     var overlay = document.getElementById("cat-bubble-overlay");
     if (!btn || !overlay) return;
 
+    // 移到 body 避免父容器 transform 破坏 position:fixed
+    if (overlay.parentElement !== document.body) {
+      overlay.setAttribute("data-original-parent", "true");
+      document.body.appendChild(overlay);
+    }
+
     isOpen = true;
     btn.classList.add("open");
     btn.setAttribute("aria-expanded", "true");
@@ -538,6 +544,14 @@ const { class: className } = Astro.props;
     setTimeout(function() {
       overlay.classList.remove("show");
       overlay.setAttribute("aria-hidden", "true");
+      // 关闭后移回原处，若原处已不存在则移除自身
+      var tools = document.getElementById("category-tools");
+      if (tools) {
+        tools.after(overlay);
+        overlay.removeAttribute("data-original-parent");
+      } else if (overlay.parentElement === document.body) {
+        overlay.remove();
+      }
     }, 250);
   }
 
