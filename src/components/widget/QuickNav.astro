@@ -3,24 +3,64 @@ import { Icon } from "astro-icon/components";
 import { siteConfig } from "@/config";
 
 interface NavItem {
-  icon: string;
-  label: string;
-  url: string;
-  show: boolean;
+	icon: string;
+	label: string;
+	url: string;
+	show: boolean;
 }
 
 const navItems: NavItem[] = [
-  { icon: "material-symbols:article-outline", label: "文章", url: "/posts/", show: true },
-  { icon: "material-symbols:book-5", label: "书架", url: "/books/", show: !!siteConfig.pages.books },
-  { icon: "material-symbols:movie", label: "影视与游戏", url: "/movies-games/", show: !!siteConfig.pages.moviesGames },
-  { icon: "material-symbols:music-note", label: "音乐", url: "/music/", show: !!siteConfig.pages.musicPage },
-  { icon: "material-symbols:chat", label: "留言板", url: "/guestbook/", show: !!siteConfig.pages.guestbook },
-  { icon: "material-symbols:chat-bubble-outline", label: "说说", url: "/moments/", show: true },
-  { icon: "material-symbols:photo-album-outline", label: "相册", url: "/album/", show: true },
-  { icon: "material-symbols:group", label: "友链", url: "/friends/", show: true },
+	{
+		icon: "material-symbols:article-outline",
+		label: "文章",
+		url: "/posts/",
+		show: true,
+	},
+	{
+		icon: "material-symbols:book-5",
+		label: "书架",
+		url: "/books/",
+		show: !!siteConfig.pages.books,
+	},
+	{
+		icon: "material-symbols:movie",
+		label: "影视与游戏",
+		url: "/movies-games/",
+		show: !!siteConfig.pages.moviesGames,
+	},
+	{
+		icon: "material-symbols:music-note",
+		label: "音乐",
+		url: "/music/",
+		show: !!siteConfig.pages.musicPage,
+	},
+	{
+		icon: "material-symbols:chat",
+		label: "留言板",
+		url: "/guestbook/",
+		show: !!siteConfig.pages.guestbook,
+	},
+	{
+		icon: "material-symbols:chat-bubble-outline",
+		label: "说说",
+		url: "/moments/",
+		show: true,
+	},
+	{
+		icon: "material-symbols:photo-album-outline",
+		label: "相册",
+		url: "/album/",
+		show: true,
+	},
+	{
+		icon: "material-symbols:group",
+		label: "友链",
+		url: "/friends/",
+		show: true,
+	},
 ];
 
-const visibleItems = navItems.filter(item => item.show);
+const visibleItems = navItems.filter((item) => item.show);
 ---
 
 <div class="quick-nav">

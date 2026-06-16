@@ -48,7 +48,7 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # ── 配置 ──────────────────────────────────────────────
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BLOG_BANGUMI_DIR = os.path.join(BASE_DIR, "src", "content", "bangumi", "anime")
 COVER_DIR = os.path.join(os.path.dirname(__file__), "img-anime")
 CDN_BASE = "https://ph.0824.uk/file/anime"

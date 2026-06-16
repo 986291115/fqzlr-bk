@@ -15,7 +15,7 @@ export default {
   obsidianVaultPath: 'B:/GitHub/dumplingandcake_warehouse/网络笔记',
 
   // 博客项目 content 文件夹路径（通常不需要修改）
-  projectContentPath: path.resolve(__dirname, '../src/content'),
+  projectContentPath: path.resolve(__dirname, '../../src/content'),
 
   // 是否在控制台输出详细信息
   verbose: true,

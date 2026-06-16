@@ -39,5 +39,5 @@ package/
 .obsidian/
 
 # AI 摘要补全脚本（包含 API 密钥，不上传 GitHub）
-scripts/fill-descriptions.ts
+scripts/fill-descriptions/index.ts
 

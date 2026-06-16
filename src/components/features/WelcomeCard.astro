@@ -124,22 +124,18 @@ try {
 } catch {}
 
 allItems.sort((a, b) => b.date.getTime() - a.date.getTime());
-const recentBrief = allItems
-	.slice(0, 3)
-	.map((i) => ({
-		type: i.type,
-		title: i.title,
-		date: i.date.toISOString().substring(0, 10),
-		url: i.url,
-	}));
-const recentDetail = allItems
-	.slice(0, 8)
-	.map((i) => ({
-		type: i.type,
-		title: i.title,
-		date: i.date.toISOString().substring(0, 10),
-		url: i.url,
-	}));
+const recentBrief = allItems.slice(0, 3).map((i) => ({
+	type: i.type,
+	title: i.title,
+	date: i.date.toISOString().substring(0, 10),
+	url: i.url,
+}));
+const recentDetail = allItems.slice(0, 8).map((i) => ({
+	type: i.type,
+	title: i.title,
+	date: i.date.toISOString().substring(0, 10),
+	url: i.url,
+}));
 const totalUpdates = allItems.length;
 // 内联 SVG 图标（Material Symbols 风格，24x24 viewBox）
 const typeIconSVG: Record<string, string> = {

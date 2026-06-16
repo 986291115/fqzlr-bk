@@ -58,7 +58,7 @@ NETEASE_SEARCH_ONLY = {"https://meting.mikus.ink/api"}
 # 运行时自动探测后写入，按可用性排序
 API_BASE = API_ENDPOINTS[0]
 
-BLOG_CONTENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "content", "bangumi", "music"))
+BLOG_CONTENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src", "content", "bangumi", "music"))
 AUDIO_BASE = "https://ph.0824.uk/file/music/"
 DEFAULT_OUT = os.path.abspath(os.path.join(os.path.dirname(__file__), "downloads"))
 

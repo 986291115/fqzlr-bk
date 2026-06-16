@@ -6,7 +6,7 @@ echo ========================================
 echo.
 
 cd /d "%~dp0"
-node sync.js
+node index.js
 
 echo.
 pause

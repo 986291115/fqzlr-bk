@@ -13,7 +13,7 @@
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
-import config from './sync.config.js';
+import config from './config.js';
 
 // 颜色定义
 const colors = {

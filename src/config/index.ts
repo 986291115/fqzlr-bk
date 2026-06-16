@@ -34,6 +34,7 @@ export { folderIconConfig } from "./folderIconConfig"; // 文件夹图标配置
 export { fontConfig } from "./fontConfig"; // 字体配置
 export { footerConfig } from "./footerConfig"; // 页脚配置
 export { friendsPageConfig } from "./friendsConfig"; // 友链配置
+export { homePortfolioShutterConfig } from "./homePortfolioShutterConfig";
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
 // 组件配置
 export { musicPlayerConfig } from "./musicConfig"; // 音乐播放器配置
@@ -46,6 +47,5 @@ export { sakuraConfig } from "./sakuraConfig"; // 樱花特效配置
 export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 // 核心配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
-export { sponsorConfig } from "./sponsorConfig"; // 赞助配置
-export { homePortfolioShutterConfig } from "./homePortfolioShutterConfig";
 export { skillsConfig } from "./skillsConfig";
+export { sponsorConfig } from "./sponsorConfig"; // 赞助配置

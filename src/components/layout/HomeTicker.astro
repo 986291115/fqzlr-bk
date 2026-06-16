@@ -7,7 +7,7 @@ import { getPostUrlBySlug } from "@/utils/url-utils";
 const summaryParts: string[] = [];
 
 // 欢迎语（位置由客户端 JS 填入）
-summaryParts.push(`[欢迎] 欢迎来自远方的朋友！`);
+summaryParts.push("[欢迎] 欢迎来自远方的朋友！");
 
 // 公告
 if (announcementConfig.content) {
@@ -24,31 +24,44 @@ try {
 	const posts = await getCollection("posts", ({ data }) =>
 		import.meta.env.PROD ? data.draft !== true : true,
 	);
-	const count = posts.filter((p) => new Date(p.data.published) >= threeDaysAgo).length;
+	const count = posts.filter(
+		(p) => new Date(p.data.published) >= threeDaysAgo,
+	).length;
 	if (count > 0) updateParts.push(`${count} 篇文章`);
 } catch {}
 
 try {
 	const moments = await getCollection("moments");
-	const count = moments.filter((m) => new Date(m.data.published) >= threeDaysAgo).length;
+	const count = moments.filter(
+		(m) => new Date(m.data.published) >= threeDaysAgo,
+	).length;
 	if (count > 0) updateParts.push(`${count} 条动态`);
 } catch {}
 
 try {
 	const bangumi = await getCollection("bangumi");
-	const count = bangumi.filter((b) => b.data.published && new Date(b.data.published) >= threeDaysAgo).length;
+	const count = bangumi.filter(
+		(b) => b.data.published && new Date(b.data.published) >= threeDaysAgo,
+	).length;
 	if (count > 0) updateParts.push(`${count} 部影视`);
 } catch {}
 
 try {
 	const notebooks = await getCollection("notebooks");
-	const count = notebooks.filter((n) => !n.id.includes("_index") && n.data.date && new Date(n.data.date) >= threeDaysAgo).length;
+	const count = notebooks.filter(
+		(n) =>
+			!n.id.includes("_index") &&
+			n.data.date &&
+			new Date(n.data.date) >= threeDaysAgo,
+	).length;
 	if (count > 0) updateParts.push(`${count} 篇笔记`);
 } catch {}
 
 try {
 	const changelog = await getCollection("changelog");
-	const count = changelog.filter((c) => new Date(c.data.date) >= threeDaysAgo).length;
+	const count = changelog.filter(
+		(c) => new Date(c.data.date) >= threeDaysAgo,
+	).length;
 	if (count > 0) updateParts.push(`${count} 条日志`);
 } catch {}
 

@@ -17,14 +17,14 @@ const commands = [
 		name: "sync",
 		desc: "同步 Obsidian 笔记到博客",
 		usage: "pnpm cli sync [-a] [-f] [-s skip|incremental|force]",
-		run: (args) => spawn("node", [resolve(__dirname, "sync.js"), ...args], { stdio: "inherit" }),
+		run: (args) => spawn("node", [resolve(__dirname, "sync", "index.js"), ...args], { stdio: "inherit" }),
 		// sync 自带交互菜单，无需额外询问
 	},
 	{
 		name: "new",
 		desc: "创建新文章",
 		usage: 'pnpm cli new <文件名>',
-		run: (args) => spawn("node", [resolve(__dirname, "new-post.js"), ...args], { stdio: "inherit" }),
+		run: (args) => spawn("node", [resolve(__dirname, "new-post", "index.js"), ...args], { stdio: "inherit" }),
 		prompt: async (q) => {
 			const name = await q("文章文件名: ");
 			return name ? [name] : null;
@@ -34,7 +34,7 @@ const commands = [
 		name: "media",
 		desc: "下载影视封面 + 生成博客 md（TMDB）",
 		usage: 'pnpm cli media "片名" [--type=movie|tv] [-y]',
-		run: (args) => spawn("python", [resolve(__dirname, "fetch-media.py"), ...args], { stdio: "inherit" }),
+		run: (args) => spawn("python", [resolve(__dirname, "fetch-media", "index.py"), ...args], { stdio: "inherit" }),
 		prompt: async (q) => {
 			const name = await q("影视名称: ");
 			if (!name) return null;
@@ -50,7 +50,7 @@ const commands = [
 		name: "music",
 		desc: "下载音乐（Meting API 搜索下载，含歌词/封面/md）",
 		usage: 'pnpm cli music "歌名" ["歌手"] --md',
-		run: (args) => spawn("python", [resolve(__dirname, "fetch-lrc.py"), ...args], { stdio: "inherit" }),
+		run: (args) => spawn("python", [resolve(__dirname, "fetch-music", "fetch-lrc.py"), ...args], { stdio: "inherit" }),
 		prompt: async (q) => {
 			const name = await q("歌名: ");
 			if (!name) return null;
@@ -67,7 +67,7 @@ const commands = [
 		name: "lrc",
 		desc: "从本地 M4A 文件提取歌词/封面",
 		usage: "pnpm cli lrc <文件或目录>",
-		run: (args) => spawn("python", [resolve(__dirname, "extract-lrc.py"), ...args], { stdio: "inherit" }),
+		run: (args) => spawn("python", [resolve(__dirname, "fetch-music", "extract-lrc.py"), ...args], { stdio: "inherit" }),
 		prompt: async (q) => {
 			const path = await q("M4A 文件或目录路径: ");
 			return path ? [path] : null;
@@ -77,7 +77,7 @@ const commands = [
 		name: "desc",
 		desc: "AI 批量生成文章摘要（调用千问 API）",
 		usage: "pnpm cli desc",
-		run: () => spawn("npx", ["tsx", resolve(__dirname, "fill-descriptions.ts")], { stdio: "inherit" }),
+		run: () => spawn("npx", ["tsx", resolve(__dirname, "fill-descriptions", "index.ts")], { stdio: "inherit" }),
 	},
 	{
 		name: "dev",
