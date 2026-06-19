@@ -180,8 +180,14 @@ const sortedEntriesWithImages = isNotebookIndex
 							const itemSlug = fileName;
 							const contentBody = noteItem.body ? noteItem.body.split("\n").filter((line: string) => !line.trim().startsWith("---")).join("\n").trim() : "";
 							const htmlPreview = contentBody ? marked.parse(contentBody.slice(0, 300), { mangle: false, headerIds: false }) : "";
-							const plainPreview = htmlPreview.replace(/<[^>]*>/g, "").trim();
-							const preview = plainPreview.slice(0, 100) + (plainPreview.length > 100 ? "..." : "");
+							const previewHtml = htmlPreview
+									.replace(/<\/p>\s*<p>/g, '<br>')
+									.replace(/<\/?p>/g, '')
+									.replace(/<h[1-6][^>]*>/g, '').replace(/<\/h[1-6]>/g, '<br>')
+									.replace(/<pre[\s\S]*?<\/pre>/g, '')
+									.replace(/<img[^>]*>/g, '')
+									.trim();
+							const preview = previewHtml.slice(0, 300) + (previewHtml.length > 300 ? "..." : "");
 							const noteImages = noteItem.images as string[];
 
 							return (
@@ -189,7 +195,7 @@ const sortedEntriesWithImages = isNotebookIndex
 									<div class="entry-card-inner">
 										<div class="entry-card-text">
 											<span class="entry-card-date">{noteItem.data.date instanceof Date ? noteItem.data.date.toISOString().split("T")[0] : "未填写日期"}</span>
-											{preview && <p class="entry-card-preview">{preview}</p>}
+											{preview && <p class="entry-card-preview" set:html={preview} />}
 										</div>
 										{noteImages.length > 0 && (
 											<div class="entry-card-images">
@@ -241,10 +247,22 @@ const sortedEntriesWithImages = isNotebookIndex
 
 								function esc(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
 
+								function renderPreview(text) {
+									var html = esc(text)
+										.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+										.replace(/\*(.+?)\*/g, '<em>$1</em>')
+										.replace(/`([^`]+)`/g, '<code>$1</code>')
+										.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--primary);text-decoration:underline;">$1</a>')
+										.replace(/  \n/g, '<br>')
+										.replace(/\n\n+/g, '<br><br>')
+										.replace(/\n/g, '<br>');
+									return html;
+								}
+
 								filtered.forEach(function(entry) {
 									var date = entry.date || "";
-									var contentBody = (entry.content || "").replace(/[#*`>\-\[\]!]/g, "").replace(/\n/g, " ");
-									var preview = contentBody.slice(0, 100) + (contentBody.length > 100 ? "..." : "");
+									var contentBody = (entry.content || "").replace(/^---[\s\S]*?---\n?/g, "").trim();
+									var preview = contentBody.slice(0, 200) + (contentBody.length > 200 ? "..." : "");
 
 									var card = document.createElement("a");
 									card.href = "/life/notebooks/remote-entry/?nb=" + encodeURIComponent(NOTEBOOK) + "&id=" + encodeURIComponent(entry.id);
@@ -253,7 +271,7 @@ const sortedEntriesWithImages = isNotebookIndex
 										'<div class="entry-card-inner">' +
 										'<div class="entry-card-text">' +
 										'<span class="entry-card-date">' + esc(date) + '</span>' +
-										'<p class="entry-card-preview">' + esc(entry.title || preview) + '</p>' +
+										'<p class="entry-card-preview">' + renderPreview(preview) + '</p>' +
 										'</div>' +
 										'</div>';
 									list.appendChild(card);
