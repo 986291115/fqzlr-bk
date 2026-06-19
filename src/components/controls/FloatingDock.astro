@@ -305,22 +305,7 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
       }
     }, { signal });
 
-    // 主题切换（太阳/月亮按钮）
-    const themeBtn = document.getElementById("sun-moon-theme-btn");
-    if (themeBtn) {
-      themeBtn.addEventListener("click", () => {
-        const isDark = document.documentElement.classList.contains("dark");
-        const next = isDark ? "light" : "dark";
-        localStorage.setItem("theme", next);
-        if (next === "dark") {
-          document.documentElement.classList.add("dark");
-          document.documentElement.setAttribute("data-theme", "one-dark-pro");
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.setAttribute("data-theme", "one-light");
-        }
-      });
-    }
+    // 主题切换已移至事件委托（见脚本底部）
 
     // 笔记本
     document.getElementById("dock-notebook-btn")?.addEventListener("click", (e) => {
@@ -399,4 +384,20 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
 
   // 初始化
   bindDockEvents();
+
+  // 主题切换事件委托（注册在 document 上，不受 Swup DOM 替换影响）
+  document.addEventListener("click", (e) => {
+    const themeBtn = (e.target as HTMLElement)?.closest?.("#sun-moon-theme-btn");
+    if (!themeBtn) return;
+    const isDark = document.documentElement.classList.contains("dark");
+    const next = isDark ? "light" : "dark";
+    localStorage.setItem("theme", next);
+    if (next === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "one-dark-pro");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.setAttribute("data-theme", "one-light");
+    }
+  });
 </script>
