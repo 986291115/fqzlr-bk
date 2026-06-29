@@ -93,7 +93,7 @@ const siteLang = lang.replace("_", "-");
 ---
 
 <!doctype html>
-<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]">
+<html lang={siteLang} class:list={["bg-(--page-bg) text-[14px] md:text-[16px]", {"is-navigating-to-music": Astro.url.pathname === "/music/" || Astro.url.pathname === "/music", "dark": Astro.url.pathname === "/music/" || Astro.url.pathname === "/music"}]}>
   <head>
     <meta charset="UTF-8" />
     {siteConfig.analytics?.googleAnalyticsId && (
@@ -709,6 +709,18 @@ function disableAnimation() {
     });
   }
 
+  // Capture 阶段全局 click 监听：点击音乐链接时立即隐藏侧边栏并切换暗色主题（比 Swup link:click 更早）
+  document.addEventListener("click", function(e) {
+    var link = e.target && (e.target.closest ? e.target.closest('a[href]') : null);
+    if (!link) return;
+    var href = link.getAttribute("href") || "";
+    if (href === "/music/" || href === "/music") {
+      document.documentElement.classList.add("is-navigating-to-music");
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "one-dark-pro");
+    }
+  }, true);
+
   const setup = () => {
     // TODO: temp solution to change the height of the banner
     /*
@@ -722,7 +734,7 @@ function disableAnimation() {
 		}
 	})
 */
-    window.swup.hooks.on("link:click", (_visit: any, { el }: { el: HTMLAnchorElement }) => {
+    window.swup.hooks.on("link:click", (visit: any, { el }: { el: HTMLAnchorElement }) => {
       // Remove the delay for the first time page load
       document.documentElement.style.setProperty("--content-delay", "0ms");
 
@@ -741,6 +753,12 @@ function disableAnimation() {
         document.documentElement.classList.add("is-page-transitioning");
       }
 
+      // 导航到音乐页面时，立即隐藏侧边栏等组件，防止闪烁
+      const toPath = visit?.to?.url || targetPathname;
+      if (toPath === "/music/" || toPath === "/music") {
+        document.documentElement.classList.add("is-navigating-to-music");
+      }
+
       // 简化navbar处理逻辑
       if (bannerEnabled) {
         const navbar = document.getElementById("navbar-wrapper");
@@ -749,6 +767,24 @@ function disableAnimation() {
           if (document.documentElement.scrollTop >= threshold) {
             navbar.classList.add("navbar-hidden");
           }
+        }
+      }
+    });
+
+    // Swup 内容替换后移除音乐页面过渡类，并恢复主题
+    window.swup.hooks.on("content:replace", () => {
+      document.documentElement.classList.remove("is-navigating-to-music");
+      // 如果离开音乐页面，恢复用户原始主题
+      const isMusicPage = window.location.pathname === "/music/" || window.location.pathname === "/music";
+      if (!isMusicPage) {
+        const storedTheme = localStorage.getItem("theme") || "system";
+        let isDark = storedTheme === "dark" || (storedTheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "one-dark-pro");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.setAttribute("data-theme", "one-light");
         }
       }
     });

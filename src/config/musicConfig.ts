@@ -16,29 +16,47 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		fallbackApis: ["https://mu.tsh520.cn/api?server=:server&type=:type&id=:id"],
 	},
 
+	// 本地播放列表为空 — 音乐数据全部从 bangumi content collection 加载
 	local: {
-		playlist: [
-			{
-				name: "知我",
-				artist: "国风堂",
-				url: "https://re.tsh520.cn/music/%E7%9F%A5%E6%88%91.mp3",
-				cover: "https://re.0824.uk/zl/tx.webp",
-				lrc: "https://re.tsh520.cn/music/%E7%9F%A5%E6%88%91.lrc",
+		playlist: [],
+	},
+
+	// 3D 可视化器配置
+	visualizer: {
+		background: {
+			dark: "#0a0a15",
+			light: "#2D2D2D",
+		},
+		camera: {
+			position: {
+				x: 0,
+				y: 32,
+				z: 52,
 			},
-			{
-				name: "女孩",
-				artist: "韦礼安",
-				url: "https://re.tsh520.cn/music/%E5%A5%B3%E5%AD%A9.mp3",
-				cover: "https://re.0824.uk/zl/tx.webp",
-				lrc: "https://re.tsh520.cn/music/%E5%A5%B3%E5%AD%A9.lrc",
-			},
-			{
-				name: "爱得起",
-				artist: "郑秀文",
-				url: "https://re.tsh520.cn/music/%E7%88%B1%E5%BE%97%E8%B5%B7.mp3",
-				cover: "https://re.0824.uk/zl/tx.webp",
-				lrc: "https://re.tsh520.cn/music/%E7%88%B1%E5%BE%97%E8%B5%B7.lrc",
-			},
-		],
+		},
+		autoRotate: true,
+		autoRotateSpeed: 0.3,
+		height: {
+			idle: 0.6,
+			subBass: 4.0,
+			bass: 3.0,
+			lowMid: 2.0,
+			mid: 2.5,
+			highMid: 2.0,
+			energy: 4.0,
+			ripple: 3.0,
+			rippleAccent: 1.0,
+		},
+		theme: {
+			base1: "#050810",
+			base2: "#0a0f1a",
+			coolCore: "#2255ff",
+			coolEdge: "#8844ff",
+			warmCore: "#ff4422",
+			warmEdge: "#ffaa00",
+			rippleColor: "#44ddff",
+			fogColor: "#050810",
+			glowIntensity: 1.2,
+		},
 	},
 };
