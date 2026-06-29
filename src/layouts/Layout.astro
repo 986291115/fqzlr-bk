@@ -911,6 +911,16 @@ function disableAnimation() {
 
     });
     window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
+      // 音乐页面使用不同的布局结构（Layout vs MainGridLayout），Swup 容器替换无法正确处理
+      // 进出音乐页面时强制整页加载，避免侧边栏残留/消失和音乐资源不加载的问题
+      const fromPath = window.location.pathname;
+      const toPath = new URL(visit.to.url, window.location.origin).pathname;
+      const isMusicPage = (p: string) => p === "/music/" || p === "/music";
+      if (isMusicPage(fromPath) || isMusicPage(toPath)) {
+        window.location.href = visit.to.url;
+        return;
+      }
+
       // Destroy any leftover lightbox DOM to prevent cross-page image bleed
       var allLbs = document.querySelectorAll('#photo-lightbox');
       allLbs.forEach(function(lb) {
