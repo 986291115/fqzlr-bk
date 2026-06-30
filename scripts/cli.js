@@ -74,10 +74,40 @@ const commands = [
 		},
 	},
 	{
+		name: "batch-music",
+		desc: "批量下载音乐（QQ 音乐歌单文本 → 逐首下载）",
+		usage: "pnpm cli batch-music <歌曲列表文件> [--server=netease] [--skip-existing] [--dry-run]",
+		run: (args) => spawn("python", [resolve(__dirname, "fetch-music", "batch-download.py"), ...args], { stdio: "inherit" }),
+		prompt: async (q) => {
+			const file = await q("歌曲列表文件路径 (或回车从剪贴板粘贴): ");
+			const args = file ? [file] : [];
+			const server = await q("平台 (netease/tencent/kugou，默认 netease): ");
+			if (server) args.push(`--server=${server}`);
+			const skip = await q("跳过已下载？(y/n，默认 y): ");
+			if (skip.toLowerCase() !== "n") args.push("--skip-existing");
+			return args;
+		},
+	},
+	{
 		name: "desc",
 		desc: "AI 批量生成文章摘要（调用千问 API）",
 		usage: "pnpm cli desc",
 		run: () => spawn("pnpm", ["exec", "tsx", resolve(__dirname, "fill-descriptions", "index.ts")], { stdio: "inherit", shell: true }),
+	},
+	{
+		name: "gist-migrate",
+		desc: "Gist 数据迁移到本地（说说/友链/影视/笔记本）",
+		usage: "pnpm cli gist-migrate [moments|friends|bangumi|notebooks] [--dry-run]",
+		run: (args) => spawn("node", [resolve(__dirname, "backup-gist", "index.js"), ...args], { stdio: "inherit" }),
+		prompt: async (q) => {
+			console.log("可选类型: moments(说说), friends(友链), bangumi(影视), notebooks(笔记本)");
+			const type = await q("迁移类型 (回车=全部): ");
+			const dryRun = await q("仅预览不实际操作？(y/n，默认 n): ");
+			const args = [];
+			if (type) args.push(type);
+			if (dryRun.toLowerCase() === "y") args.push("--dry-run");
+			return args;
+		},
 	},
 	{
 		name: "dev",
