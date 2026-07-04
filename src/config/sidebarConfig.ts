@@ -73,6 +73,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			showOnNonPostPage: false,
 		},
 		{
+			// 组件类型：编辑按钮
+			type: "editPostButton",
+			enable: true,
+			position: "sticky",
+			showOnPostPage: true,
+			showOnNonPostPage: true,
+		},
+		{
 			// 组件类型：文章目录（已移至右侧边栏，此处禁用）
 			type: "sidebarToc",
 			enable: false,

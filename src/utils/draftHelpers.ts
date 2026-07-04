@@ -1,0 +1,202 @@
+/**
+ * 草稿暂存辅助函数
+ * 为各编辑器提供统一的草稿保存/恢复/提交逻辑
+ */
+import {
+	saveDraft,
+	getDraftsByPage,
+	removeDraft,
+	clearDraftsByPage,
+	registerSubmitHandler,
+	updateRepoFile,
+	createRepoFile,
+	getRepoFile,
+	showToast,
+	type DraftChange,
+} from "./editMode";
+
+// ============ Repo 文件类型编辑器草稿辅助 ============
+
+export interface RepoDraftContext {
+	pageKey: string;
+	pageName: string;
+	getContent: () => string;
+	setContent: (content: string) => void;
+	getPath: () => string;
+	getSha: () => string | null;
+	setSha: (sha: string | null) => void;
+	getOriginalContent: () => string;
+	setOriginalContent: (content: string) => void;
+	getCommitMsg?: (isEdit: boolean) => string;
+	onSubmitted?: () => void;
+}
+
+export function setupRepoDrafts(ctx: RepoDraftContext) {
+	const {
+		pageKey,
+		pageName,
+		getContent,
+		setContent,
+		getPath,
+		getSha,
+		setSha,
+		getOriginalContent,
+		setOriginalContent,
+		onSubmitted,
+	} = ctx;
+
+	function saveToDrafts(): DraftChange | null {
+		const content = getContent();
+		const original = getOriginalContent();
+		if (content === original && getDraftsByPage(pageKey).length === 0) {
+			showToast("没有需要暂存的更改", "info");
+			return null;
+		}
+		clearDraftsByPage(pageKey);
+		const isEdit = !!getSha() || !!original;
+		const change = saveDraft({
+			pageKey,
+			pageName,
+			description: isEdit ? `更新 ${pageName}` : `创建 ${pageName}`,
+			operation: isEdit ? "update" : "create",
+			payload: {
+				type: "repo",
+				path: getPath(),
+				sha: getSha(),
+				content,
+				isEdit,
+			},
+		});
+		showToast(`已暂存 ${pageName} 到本地`, "success");
+		return change;
+	}
+
+	function restoreFromDrafts(): boolean {
+		const drafts = getDraftsByPage(pageKey);
+		if (drafts.length === 0) return false;
+		const latest = drafts[drafts.length - 1];
+		if (
+			latest.payload?.type === "repo" &&
+			latest.payload.content !== undefined
+		) {
+			setContent(String(latest.payload.content));
+			showToast(`已恢复 ${pageName} 的暂存数据`, "info");
+			return true;
+		}
+		return false;
+	}
+
+	async function doSubmit(
+		content: string,
+		sha: string | null,
+		path: string,
+		isEdit: boolean,
+	): Promise<boolean> {
+		const branch =
+			typeof window !== "undefined" ? window.__DEPLOY_BRANCH__ : undefined;
+		const commitMsg = ctx.getCommitMsg
+			? ctx.getCommitMsg(isEdit)
+			: isEdit
+				? `chore: update ${pageName}`
+				: `chore: create ${pageName}`;
+		let ok = false;
+		try {
+			let actualSha = sha;
+			if (isEdit && !actualSha) {
+				const existing = await getRepoFile(path);
+				if (existing && existing.sha) {
+					actualSha = existing.sha;
+				}
+			}
+			if (isEdit && actualSha) {
+				ok = await updateRepoFile(path, content, actualSha, commitMsg);
+			} else {
+				ok = await createRepoFile(path, content, commitMsg);
+			}
+		} catch (error) {
+			console.error("[RepoDrafts] doSubmit error:", error);
+			showToast(
+				`提交 ${pageName} 失败: ${error instanceof Error ? error.message : String(error)}`,
+				"error",
+			);
+			return false;
+		}
+		if (ok) {
+			setOriginalContent(content);
+			try {
+				const fresh = await getRepoFile(path);
+				if (fresh) setSha(fresh.sha);
+			} catch {}
+			showToast(`${pageName} 已提交到 GitHub`, "success");
+		} else {
+			showToast(`提交 ${pageName} 失败`, "error");
+		}
+		return ok;
+	}
+
+	async function submitDrafts(): Promise<boolean> {
+		const drafts = getDraftsByPage(pageKey);
+		let contentToSubmit: string;
+		let shaToUse: string | null;
+		let pathToUse: string;
+		let isEdit: boolean;
+		if (drafts.length > 0) {
+			const latest = drafts[drafts.length - 1];
+			if (
+				latest.payload?.type === "repo" &&
+				latest.payload.content !== undefined
+			) {
+				contentToSubmit = String(latest.payload.content);
+				shaToUse = (latest.payload.sha as string) || null;
+				pathToUse = String(latest.payload.path || getPath());
+				isEdit = !!latest.payload.isEdit;
+			} else {
+				return false;
+			}
+		} else {
+			contentToSubmit = getContent();
+			shaToUse = getSha();
+			pathToUse = getPath();
+			isEdit = !!shaToUse;
+		}
+		if (contentToSubmit === getOriginalContent() && shaToUse) {
+			showToast("没有需要提交的更改", "info");
+			return false;
+		}
+		const ok = await doSubmit(contentToSubmit, shaToUse, pathToUse, isEdit);
+		if (ok) {
+			clearDraftsByPage(pageKey);
+			onSubmitted?.();
+		}
+		return ok;
+	}
+
+	registerSubmitHandler(pageKey, async (draft) => {
+		if (draft.payload?.type === "repo" && draft.payload.content !== undefined) {
+			const path = String(draft.payload.path || getPath());
+			const isEdit = !!draft.payload.sha || !!draft.payload.isEdit;
+			return doSubmit(
+				String(draft.payload.content),
+				(draft.payload.sha as string) || null,
+				path,
+				isEdit,
+			);
+		}
+		return false;
+	});
+
+	function hasLocalChanges(): boolean {
+		return (
+			getDraftsByPage(pageKey).length > 0 ||
+			getContent() !== getOriginalContent()
+		);
+	}
+
+	return {
+		saveToDrafts,
+		restoreFromDrafts,
+		submitDrafts,
+		hasLocalChanges,
+		clearDrafts: () => clearDraftsByPage(pageKey),
+	};
+}

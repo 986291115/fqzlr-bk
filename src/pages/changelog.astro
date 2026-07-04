@@ -5,6 +5,7 @@ import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import ChangelogEditor from "@/components/edit/ChangelogEditor.svelte";
 
 if (!siteConfig.pages.changelog) {
 	return Astro.redirect("/404/");
@@ -103,6 +104,8 @@ const displaySubtitle = i18n(I18nKey.changelogSubtitle);
           </div>
         )}
       </div>
+
+      <ChangelogEditor client:only />
 
     </div>
   </div>

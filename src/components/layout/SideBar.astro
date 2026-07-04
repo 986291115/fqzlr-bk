@@ -4,6 +4,7 @@ import Advertisement from "@/components/widget/Advertisement.astro";
 import Announcement from "@/components/widget/Announcement.astro";
 import Calendar from "@/components/widget/Calendar.astro";
 import Categories from "@/components/widget/Categories.astro";
+import EditPostButtonSvelte from "@/components/widget/EditPostButton.svelte";
 import LifeStats from "@/components/widget/LifeStats.astro";
 import Music from "@/components/widget/Music.astro";
 import PostDirectory from "@/components/widget/PostDirectory.astro";
@@ -27,6 +28,7 @@ interface Props {
 	class?: string;
 	headings?: MarkdownHeading[];
 	side?: "left" | "right" | "bottom";
+	postSlug?: string;
 }
 
 // 侧边栏位置常量
@@ -53,6 +55,7 @@ const componentMap = {
 	tags: Tags,
 	postDirectory: PostDirectory,
 	sidebarToc: SidebarTOC,
+	editPostButton: EditPostButtonSvelte as any,
 	advertisement: Advertisement,
 	stats: SiteStats,
 	calendar: Calendar,
@@ -144,7 +147,12 @@ const getComponentProps = (
 
 	// 特殊处理 SidebarTOC 组件
 	if (config.type === "sidebarToc") {
-		return { ...baseProps, headings: Astro.props.headings || [] };
+		return { ...baseProps, headings: Astro.props.headings || [], postSlug: Astro.props.postSlug };
+	}
+
+	// 特殊处理 EditPostButton 组件
+	if (config.type === "editPostButton") {
+		return { ...baseProps, postSlug: Astro.props.postSlug };
 	}
 
 	// 特殊处理 Advertisement 组件
@@ -190,6 +198,11 @@ const bottomComponents = isMobileBottom ? filteredComponents : [];
 					{topComponents.length > 0 && (
 						<div class="flex flex-col w-full gap-4 mb-4">
 							{topComponents.map((comp, index) => {
+								if (comp.type === "editPostButton") {
+									const props = getComponentProps(comp, index) as any;
+									const { class: compClass, style: compStyle, ...restProps } = props as any;
+									return <div class={compClass} style={compStyle}><EditPostButtonSvelte client:load {...restProps} /></div>;
+								}
 								const Component = componentMap[comp.type];
 								if (!Component) return null;
 								const props = getComponentProps(comp, index) as any;
@@ -209,6 +222,14 @@ const bottomComponents = isMobileBottom ? filteredComponents : [];
 							]}
 						>
 							{stickyComponents.map((comp, index) => {
+								if (comp.type === "editPostButton") {
+									const props = getComponentProps(
+										comp,
+										topComponents.length + index
+									) as any;
+									const { class: compClass, style: compStyle, ...restProps } = props as any;
+									return <div class={compClass} style={compStyle}><EditPostButtonSvelte client:load {...restProps} /></div>;
+								}
 								const Component = componentMap[comp.type];
 								if (!Component) return null;
 								const props = getComponentProps(

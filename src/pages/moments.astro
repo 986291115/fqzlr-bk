@@ -6,6 +6,7 @@ import Comment from "@/components/comment/index.astro";
 import MomentCard from "@/components/moments/MomentCard.astro";
 import MomentsCover from "@/components/moments/MomentsCover.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import MomentsEditor from "@/components/edit/MomentsEditor.svelte";
 
 const moments = await getCollection("moments");
 const sortedMoments = moments
@@ -118,6 +119,8 @@ const albums = await getCollection("album");
       </div>
     )}
   </div>
+
+  <MomentsEditor client:only />
 
   <!-- 评论区 -->
   <div id="moments-comments">

@@ -1,10 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { announcementConfig, profileConfig } from "@/config";
-import { externalBangumiConfig } from "@/config/externalBangumiConfig";
 import { getPostUrlBySlug } from "@/utils/url-utils";
-
-const bangumiGistId = externalBangumiConfig.enable ? externalBangumiConfig.gistId : "";
 
 // 收集统计
 const summaryParts: string[] = [];
@@ -79,7 +76,7 @@ const tickerContent = summaryParts.join(" \u00d7 ");
 
 {
 	tickerContent && (
-		<section class="home-ticker" aria-label="公告跑马灯" id="home-ticker" data-bangumi-gist={bangumiGistId}>
+		<section class="home-ticker" aria-label="公告跑马灯" id="home-ticker">
 			<div class="home-ticker__inner">
 				<div class="home-ticker__track" id="home-ticker-track">
 				{Array.from({ length: 4 }).map(() => (
@@ -118,55 +115,10 @@ const tickerContent = summaryParts.join(" \u00d7 ");
 			.catch(() => {});
 	}
 
-	// 从 Gist 加载影视数据并更新跑马灯
-	function updateTickerBangumi() {
-		var gistId = document.getElementById("home-ticker")?.getAttribute("data-bangumi-gist");
-		if (!gistId) return;
-
-		fetch("https://api.github.com/gists/" + gistId, {
-			headers: { "Accept": "application/vnd.github+json" }
-		})
-			.then(function(r) { if (!r.ok) return null; return r.json(); })
-			.then(function(gist) {
-				var file = gist.files["bangumi.json"];
-				if (!file) return;
-				var items = [];
-				try { items = JSON.parse(file.content || "[]"); } catch(e) { return; }
-				if (!Array.isArray(items) || !items.length) return;
-
-				var threeDaysAgo = new Date();
-				threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-				var count = items.filter(function(item) {
-					return item.updated_at && new Date(item.updated_at) >= threeDaysAgo;
-				}).length;
-
-				if (count <= 0) return;
-
-				// 更新跑马灯文字，在 [更新] 部分追加影视数据
-				document.querySelectorAll(".home-ticker__text").forEach(function(el) {
-					var text = el.textContent || "";
-					if (text.indexOf("部影视") !== -1) return; // 已有影视数据
-					if (text.indexOf("[更新]") !== -1) {
-						// 在 "最近三天更新了" 后面追加
-						text = text.replace(
-							/(\[更新\] 最近三天更新了 )/,
-							"$1" + count + " 部影视、"
-						);
-						// 清理末尾多余的顿号
-						text = text.replace(/、\s*×/g, " ×");
-						el.textContent = text;
-					}
-				});
-			})
-			.catch(function() {});
-	}
-
 	initHomeTicker();
 	updateTickerLocation();
-	updateTickerBangumi();
 	document.addEventListener("astro:page-load", () => {
 		initHomeTicker();
 		updateTickerLocation();
-		updateTickerBangumi();
 	});
 </script>

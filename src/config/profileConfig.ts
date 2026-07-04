@@ -6,13 +6,13 @@ export const profileConfig: ProfileConfig = {
 	// 1. public 目录（以 "/" 开头，不优化）："/assets/images/avatar.webp"
 	// 2. src 目录（不以 "/"开头，自动优化但会增加构建时间，推荐）："assets/images/avatar.webp"
 	// 3. 远程 URL："https://example.com/avatar.jpg"
-	avatar: "https://re.tsh520.cn/zl/tx.webp",
+	avatar: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 
 	// 下班时间头像（为空则始终使用上方 avatar）
 	avatarOffWork: "",
 
 	// 名字
-	name: "团子和蛋糕",
+	name: "番茄主理人",
 
 	// 首页展示名字（留空则使用 name）
 	displayName: "Dumpling",

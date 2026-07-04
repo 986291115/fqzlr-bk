@@ -95,21 +95,6 @@ const commands = [
 		run: () => spawn("pnpm", ["exec", "tsx", resolve(__dirname, "fill-descriptions", "index.ts")], { stdio: "inherit", shell: true }),
 	},
 	{
-		name: "gist-migrate",
-		desc: "Gist 数据迁移到本地（说说/友链/影视/笔记本）",
-		usage: "pnpm cli gist-migrate [moments|friends|bangumi|notebooks] [--dry-run]",
-		run: (args) => spawn("node", [resolve(__dirname, "backup-gist", "index.js"), ...args], { stdio: "inherit" }),
-		prompt: async (q) => {
-			console.log("可选类型: moments(说说), friends(友链), bangumi(影视), notebooks(笔记本)");
-			const type = await q("迁移类型 (回车=全部): ");
-			const dryRun = await q("仅预览不实际操作？(y/n，默认 n): ");
-			const args = [];
-			if (type) args.push(type);
-			if (dryRun.toLowerCase() === "y") args.push("--dry-run");
-			return args;
-		},
-	},
-	{
 		name: "dev",
 		desc: "启动本地开发服务器",
 		usage: "pnpm cli dev",

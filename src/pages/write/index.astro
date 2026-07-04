@@ -1,0 +1,41 @@
+---
+import WriteEditor from "@/components/edit/WriteEditor.svelte";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
+import { siteConfig } from "@/config";
+
+const title = "写文章";
+const description = "撰写和编辑博客文章，支持 Markdown 语法";
+const themeHue = siteConfig.themeColor?.hue || 165;
+---
+
+<MainGridLayout title={title} description={description}>
+  <div class="flex w-full rounded-(--radius-large) relative">
+    <div class="card-base z-10 relative w-full overflow-hidden" style:border-radius="var(--radius-large);">
+      <!-- 页面标题 -->
+      <div class="px-6 pt-6 pb-4">
+        <div class="flex-1 min-w-0">
+          <PageTitle title={title} eyebrow="Write" variant="stacked" />
+          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mt-2">
+            支持 Markdown 语法，编辑后通过 GitHub API 提交到仓库。
+          </p>
+        </div>
+      </div>
+
+      <!-- 编辑器容器 -->
+      <div id="write-editor-container" class="write-editor-wrapper" data-theme-hue={themeHue}>
+        <WriteEditor client:only />
+      </div>
+    </div>
+  </div>
+</MainGridLayout>
+
+<!-- Iconify for editor icons -->
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js" async></script>
+
+<style>
+  .write-editor-wrapper {
+    --editor-theme-hue: var(--theme-hue);
+    min-height: 70vh;
+  }
+</style>

@@ -9,6 +9,7 @@ import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
 import { removeFileExtension } from "@/utils/url-utils";
+import BangumiEditor from "@/components/edit/BangumiEditor.svelte";
 
 if (!siteConfig.pages.books) {
 	return Astro.redirect("/404/");
@@ -45,6 +46,23 @@ const bookItems = customBangumi
 const readingCount = bookItems.filter((b) => b.status === 3).length;
 const readCount = bookItems.filter((b) => b.status === 2).length;
 const wishCount = bookItems.filter((b) => b.status === 1).length;
+
+const editorInitialItems = bookItems.map((item) => {
+	const slug = item.link.replace(/^\/books\//, "").replace(/\/$/, "");
+	return {
+		id: slug,
+		slug,
+		title: item.title,
+		name_cn: item.title,
+		category: "book",
+		status: item.status,
+		score: item.score || 0,
+		image: item.coverImage as string,
+		tags: [],
+		comment: "",
+		published: new Date().toISOString().slice(0, 10),
+	};
+});
 ---
 
 <MainGridLayout title={i18n(I18nKey.booksTitle)} description={i18n(I18nKey.booksSubtitle)}>
@@ -85,6 +103,15 @@ const wishCount = bookItems.filter((b) => b.status === 1).length;
 				</div>
 			</div>
 		</header>
+
+			<div data-no-swup>
+				<BangumiEditor
+					client:only
+					defaultCategory="book"
+					customPageName="书架"
+					initialItems={editorInitialItems as any}
+				/>
+			</div>
 
 			{bookItems.length > 0 ? (
 				<Bookshelf books={bookItems} />

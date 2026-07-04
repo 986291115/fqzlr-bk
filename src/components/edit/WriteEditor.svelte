@@ -1,0 +1,1891 @@
+<script lang="ts">
+import { onMount, tick } from "svelte";
+import EditToast from "./EditToast.svelte";
+import { marked } from "marked";
+import {
+	hasValidCredentials,
+	showToast,
+	ensureIconify,
+	getRepoFile,
+	createRepoFile,
+	updateRepoFile,
+	readFileAsText,
+	getStoredAppId,
+	setStoredAppId,
+	getStoredPrivateKey,
+	setStoredPrivateKey,
+	clearStoredCredentials,
+	validateCredentials,
+	invalidateToken,
+	saveDraft,
+	getDraftCount,
+	getDraftsByPage,
+	removeDraft,
+	clearDraftsByPage,
+	registerSubmitHandler,
+	submitAllDrafts,
+	onDraftsChanged,
+} from "@/utils/editMode";
+import { repoConfig } from "@/config/editConfig";
+
+const postFiles = import.meta.glob("../../content/posts/**/*.{md,mdx}", {
+	query: "?raw",
+	import: "default",
+	eager: true,
+}) as Record<string, string>;
+
+// ============ State ============
+let title = $state("");
+let content = $state("");
+let coverUrl = $state("");
+let description = $state("");
+let tagsInput = $state("");
+let category = $state("");
+let pubDate = $state("");
+let isDraft = $state(false);
+let isPinned = $state(false);
+let slug = $state("");
+
+let authed = $state(false);
+let saving = $state(false);
+let loading = $state(false);
+let editMode = $state(false);
+let existingSha = $state<string | null>(null);
+let existingExt = $state<".md" | ".mdx">(".md");
+let savePath = $state<string>("");
+let showPreview = $state(false);
+let saveSuccess = $state(false);
+let pageDraftCount = $state(0);
+let totalDraftCount = $state(0);
+let unsubscribeDrafts: (() => void) | null = null;
+let showKeyModal = $state(false);
+let validating = $state(false);
+let pendingKeyPem = $state("");
+let selectedFileName = $state("");
+let originalArticle = $state<Record<string, any>>({});
+
+// Refs
+let mdFileInput: HTMLInputElement | undefined;
+let contentTextarea: HTMLTextAreaElement | undefined;
+let titleInput: HTMLInputElement | undefined;
+let keyFileInput: HTMLInputElement | undefined;
+
+// When set to true, after key is verified we should auto-publish
+let pendingPublishAfterAuth = $state(false);
+
+// ============ Derived ============
+let tags = $derived(
+	tagsInput
+		.split(/[,，]/)
+		.map((t) => t.trim())
+		.filter(Boolean),
+);
+
+let wordCount = $derived(content.length);
+
+let today = $derived(new Date().toISOString().slice(0, 10));
+
+let articleUrl = $derived.by(() => {
+	if (editMode && savePath) {
+		const pathParts = savePath.replace(/^src\/content\//, "").split("/");
+		if (pathParts[0] === "posts") {
+			pathParts.shift();
+		}
+		return `/posts/${pathParts.join("/")}/`;
+	}
+	return `/posts/blog/${slug}/`;
+});
+
+function snapshotArticle(): Record<string, any> {
+	return {
+		title,
+		content,
+		coverUrl,
+		description,
+		tagsInput,
+		category,
+		pubDate,
+		isDraft,
+		isPinned,
+		slug,
+		existingSha,
+		existingExt,
+		savePath,
+		editMode,
+	};
+}
+
+function applyArticle(snap: Record<string, any>) {
+	if (snap.title !== undefined) title = snap.title;
+	if (snap.content !== undefined) content = snap.content;
+	if (snap.coverUrl !== undefined) coverUrl = snap.coverUrl;
+	if (snap.description !== undefined) description = snap.description;
+	if (snap.tagsInput !== undefined) tagsInput = snap.tagsInput;
+	if (snap.category !== undefined) category = snap.category;
+	if (snap.pubDate !== undefined) pubDate = snap.pubDate;
+	if (snap.isDraft !== undefined) isDraft = snap.isDraft;
+	if (snap.isPinned !== undefined) isPinned = snap.isPinned;
+	if (snap.slug !== undefined) slug = snap.slug;
+	if (snap.existingSha !== undefined) existingSha = snap.existingSha;
+	if (snap.existingExt !== undefined) existingExt = snap.existingExt;
+	if (snap.savePath !== undefined) savePath = snap.savePath;
+	if (snap.editMode !== undefined) editMode = snap.editMode;
+}
+
+function hasArticleChanges(): boolean {
+	const cur = snapshotArticle();
+	return JSON.stringify(cur) !== JSON.stringify(originalArticle);
+}
+
+// ============ Frontmatter Generation ============
+function generateFrontmatter(): string {
+	const dateVal = pubDate || today;
+	const lines: string[] = ["---"];
+	lines.push(`title: "${escapeYaml(title)}"`);
+	lines.push(`published: ${dateVal}`);
+	lines.push(`updated: ${dateVal}`);
+	if (description) {
+		lines.push(`description: "${escapeYaml(description)}"`);
+	}
+	if (coverUrl) {
+		lines.push(`image: "${escapeYaml(coverUrl)}"`);
+	}
+	if (tags.length > 0) {
+		lines.push("tags:");
+		for (const t of tags) {
+			lines.push(`  - ${escapeYaml(t)}`);
+		}
+	}
+	if (category) {
+		lines.push(`category: ${escapeYaml(category)}`);
+	}
+	lines.push(`draft: ${isDraft}`);
+	lines.push(`pinned: ${isPinned}`);
+	lines.push(`author: fqzlr`);
+	lines.push("---");
+	return lines.join("\n");
+}
+
+function escapeYaml(s: string): string {
+	return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function buildFullContent(): string {
+	const fm = generateFrontmatter();
+	const body = content.trimStart();
+	return `${fm}\n\n${body}`;
+}
+
+// ============ Slug Generation ============
+function generateSlugFromTitle(t: string): string {
+	return t
+		.toLowerCase()
+		.trim()
+		.replace(/[\s]+/g, "-")
+		.replace(/[^\w\u4e00-\u9fff-]/g, "")
+		.replace(/-+/g, "-")
+		.replace(/^-|-$/g, "");
+}
+
+function autoFillSlug() {
+	if (!slug && title) {
+		slug = generateSlugFromTitle(title);
+	}
+}
+
+// ============ Parse existing markdown frontmatter ============
+function parseFrontmatter(raw: string): {
+	data: Record<string, any>;
+	body: string;
+} {
+	const normalized = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+	const match = normalized.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+	if (!match) {
+		return { data: {}, body: normalized };
+	}
+	const fmBlock = match[1];
+	const body = match[2];
+	const data: Record<string, any> = {};
+
+	const lines = fmBlock.split("\n");
+	let currentArrayKey: string | null = null;
+	for (const line of lines) {
+		const arrMatch = line.match(/^\s*-\s+(.+)$/);
+		if (arrMatch && currentArrayKey) {
+			if (!Array.isArray(data[currentArrayKey])) {
+				data[currentArrayKey] = [];
+			}
+			data[currentArrayKey].push(parseYamlValue(arrMatch[1]));
+			continue;
+		}
+		const kvMatch = line.match(/^([\w-]+)\s*:\s*(.*)$/);
+		if (kvMatch) {
+			const key = kvMatch[1];
+			const val = kvMatch[2].trim();
+			currentArrayKey = null;
+			if (val === "" || val === "[]") {
+				data[key] = [];
+				currentArrayKey = key;
+			} else if (val.startsWith("[") && val.endsWith("]")) {
+				const inner = val.slice(1, -1).trim();
+				if (inner === "") {
+					data[key] = [];
+				} else {
+					data[key] = inner
+						.split(",")
+						.map((s) => parseYamlValue(s.trim()))
+						.filter((v) => v !== "");
+				}
+			} else {
+				data[key] = parseYamlValue(val);
+			}
+		}
+	}
+	return { data, body };
+}
+
+function parseYamlValue(v: string): any {
+	v = v.trim();
+	if (v === "true") return true;
+	if (v === "false") return false;
+	if (v === "null" || v === "~") return null;
+	if (
+		(v.startsWith('"') && v.endsWith('"')) ||
+		(v.startsWith("'") && v.endsWith("'"))
+	) {
+		return v.slice(1, -1);
+	}
+	if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
+		return v;
+	}
+	if (/^-?\d+(\.\d+)?$/.test(v)) {
+		return Number(v);
+	}
+	return v;
+}
+
+// ============ Load article from local files ============
+function loadArticleFromLocal(pathParam: string): boolean {
+	const possibleKeys: string[] = [];
+	const baseRelPath = `../../content/${pathParam}`;
+	possibleKeys.push(baseRelPath + ".md");
+	possibleKeys.push(baseRelPath + ".mdx");
+	if (!pathParam.includes("/")) {
+		possibleKeys.push(`../../content/posts/${pathParam}.md`);
+		possibleKeys.push(`../../content/posts/${pathParam}.mdx`);
+		possibleKeys.push(`../../content/posts/blog/${pathParam}.md`);
+		possibleKeys.push(`../../content/posts/blog/${pathParam}.mdx`);
+	}
+
+	for (const key of possibleKeys) {
+		if (postFiles[key]) {
+			const rawContent = postFiles[key];
+			const ext = key.endsWith(".mdx") ? ".mdx" : ".md";
+			const { data: fmData, body } = parseFrontmatter(rawContent);
+
+			existingExt = ext;
+			slug = pathParam.includes("/")
+				? pathParam.split("/").pop() || ""
+				: pathParam;
+			savePath = `src/content/${pathParam}`;
+			editMode = true;
+
+			title = fmData.title || "";
+			content = body || "";
+			description = fmData.description || "";
+			coverUrl = fmData.image || "";
+			category = fmData.category || "";
+			isDraft = !!fmData.draft;
+			isPinned = !!fmData.pinned;
+
+			if (Array.isArray(fmData.tags)) {
+				tagsInput = fmData.tags.join(", ");
+			}
+
+			if (fmData.published) {
+				const d =
+					fmData.published instanceof Date
+						? fmData.published
+						: new Date(fmData.published);
+				pubDate = isNaN(d.getTime()) ? today : d.toISOString().slice(0, 10);
+			}
+
+			originalArticle = snapshotArticle();
+			restoreFromDrafts();
+			showToast("文章已加载", "success");
+			return true;
+		}
+	}
+
+	// 大小写不敏感匹配（遍历所有 postFiles）
+	const normalizedPath = pathParam.toLowerCase();
+	for (const [key, rawContent] of Object.entries(postFiles)) {
+		// 去掉前缀和扩展名，得到相对路径
+		const relPath = key
+			.replace("../../content/", "")
+			.replace(/\.(md|mdx)$/, "");
+		if (relPath.toLowerCase() === normalizedPath) {
+			const ext = key.endsWith(".mdx") ? ".mdx" : ".md";
+			const { data: fmData, body } = parseFrontmatter(rawContent);
+
+			existingExt = ext;
+			slug = relPath.includes("/")
+				? relPath.split("/").pop() || ""
+				: relPath;
+			savePath = `src/content/${relPath}`;
+			editMode = true;
+
+			title = fmData.title || "";
+			content = body || "";
+			description = fmData.description || "";
+			coverUrl = fmData.image || "";
+			category = fmData.category || "";
+			isDraft = !!fmData.draft;
+			isPinned = !!fmData.pinned;
+
+			if (Array.isArray(fmData.tags)) {
+				tagsInput = fmData.tags.join(", ");
+			}
+
+			if (fmData.published) {
+				const d =
+					fmData.published instanceof Date
+						? fmData.published
+						: new Date(fmData.published);
+				pubDate = isNaN(d.getTime()) ? today : d.toISOString().slice(0, 10);
+			}
+
+			originalArticle = snapshotArticle();
+			restoreFromDrafts();
+			showToast("文章已加载", "success");
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// ============ Load article from sessionStorage ============
+function loadArticleFromSession(data: any): boolean {
+	if (!data || !data.rawContent) return false;
+	try {
+		const rawContent: string = data.rawContent;
+		const { data: fmData, body } = parseFrontmatter(rawContent);
+
+		const fullPath: string = data.fullPath || "";
+		existingExt = fullPath.endsWith(".mdx") ? ".mdx" : ".md";
+		slug = data.slug || "";
+		savePath = `src/content/${fullPath.replace(/\.(md|mdx)$/, "")}`;
+		editMode = true;
+
+		title = data.title || fmData.title || "";
+		content = body || "";
+		description = data.description || fmData.description || "";
+		coverUrl = data.image || fmData.image || "";
+		category = data.category || fmData.category || "";
+		isDraft = data.draft !== undefined ? !!data.draft : !!fmData.draft;
+		isPinned = data.pinned !== undefined ? !!data.pinned : !!fmData.pinned;
+
+		const tagList = data.tags || fmData.tags;
+		if (Array.isArray(tagList)) {
+			tagsInput = tagList.join(", ");
+		}
+
+		const pubDateVal = data.published || fmData.published;
+		if (pubDateVal) {
+			pubDate =
+				typeof pubDateVal === "string" ? pubDateVal.slice(0, 10) : today;
+		}
+
+		originalArticle = snapshotArticle();
+		restoreFromDrafts();
+		showToast("文章已加载", "success");
+		return true;
+	} catch (err) {
+		console.error("Failed to parse session article data:", err);
+		return false;
+	}
+}
+
+async function tryGetShaFromGitHub(pathParam: string) {
+	try {
+		let paths: { path: string; ext: ".md" | ".mdx" }[] = [];
+		if (pathParam.includes("/")) {
+			const basePath = `src/content/${pathParam}`;
+			paths.push({ path: basePath + ".md", ext: ".md" });
+			paths.push({ path: basePath + ".mdx", ext: ".mdx" });
+		} else {
+			paths.push({ path: `src/content/posts/${pathParam}.md`, ext: ".md" });
+			paths.push({ path: `src/content/posts/${pathParam}.mdx`, ext: ".mdx" });
+			paths.push({
+				path: `src/content/posts/blog/${pathParam}.md`,
+				ext: ".md",
+			});
+			paths.push({
+				path: `src/content/posts/blog/${pathParam}.mdx`,
+				ext: ".mdx",
+			});
+		}
+		for (const p of paths) {
+			const result = await getRepoFile(p.path, repoConfig);
+			if (result) {
+				existingSha = result.sha;
+				if (p.ext !== existingExt) {
+					existingExt = p.ext;
+					savePath = p.path.replace(/\.(md|mdx)$/, "");
+				}
+				break;
+			}
+		}
+	} catch (e) {
+		console.warn("Could not fetch SHA from GitHub:", e);
+	}
+}
+
+// ============ Load article for edit mode ============
+async function loadArticle(pathParam: string) {
+	loading = true;
+	try {
+		if (loadArticleFromLocal(pathParam)) {
+			loading = false;
+			tryGetShaFromGitHub(pathParam);
+			return;
+		}
+
+		try {
+			const sessionData = sessionStorage.getItem("write-editor-article");
+			if (sessionData) {
+				const parsed = JSON.parse(sessionData);
+				sessionStorage.removeItem("write-editor-article");
+				if (parsed.fullPath && pathParam.includes(parsed.slug || "")) {
+					if (loadArticleFromSession(parsed)) {
+						loading = false;
+						tryGetShaFromGitHub(pathParam);
+						return;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn("SessionStorage parse error:", e);
+		}
+
+		let paths: { path: string; ext: ".md" | ".mdx" }[] = [];
+
+		if (pathParam.includes("/")) {
+			const basePath = `src/content/${pathParam}`;
+			paths.push({ path: basePath + ".md", ext: ".md" });
+			paths.push({ path: basePath + ".mdx", ext: ".mdx" });
+		} else {
+			paths.push({ path: `src/content/posts/${pathParam}.md`, ext: ".md" });
+			paths.push({ path: `src/content/posts/${pathParam}.mdx`, ext: ".mdx" });
+			paths.push({
+				path: `src/content/posts/blog/${pathParam}.md`,
+				ext: ".md",
+			});
+			paths.push({
+				path: `src/content/posts/blog/${pathParam}.mdx`,
+				ext: ".mdx",
+			});
+		}
+
+		let result: { content: string; sha: string } | null = null;
+		let ext: ".md" | ".mdx" = ".md";
+		let foundPath = "";
+
+		for (const p of paths) {
+			result = await getRepoFile(p.path, repoConfig);
+			if (result) {
+				ext = p.ext;
+				foundPath = p.path;
+				break;
+			}
+		}
+
+		if (!result) {
+			showToast(`未找到文章: ${pathParam}`, "error");
+			loading = false;
+			return;
+		}
+
+		existingSha = result.sha;
+		existingExt = ext;
+		const pathParts = foundPath.split("/");
+		const fileName = pathParts[pathParts.length - 1];
+		slug = fileName.replace(/\.(md|mdx)$/, "");
+		savePath = foundPath.replace(/\.(md|mdx)$/, "");
+		editMode = true;
+
+		const { data, body } = parseFrontmatter(result.content);
+		title = data.title || "";
+		content = body || "";
+		description = data.description || "";
+		coverUrl = data.image || "";
+		category = data.category || "";
+		isDraft = !!data.draft;
+		isPinned = !!data.pinned;
+
+		if (Array.isArray(data.tags)) {
+			tagsInput = data.tags.join(", ");
+		}
+
+		if (data.published) {
+			pubDate =
+				typeof data.published === "string"
+					? data.published.slice(0, 10)
+					: today;
+		}
+
+		originalArticle = snapshotArticle();
+		restoreFromDrafts();
+		showToast("文章已加载", "success");
+	} catch (err) {
+		showToast("加载文章失败", "error");
+	} finally {
+		loading = false;
+	}
+}
+
+// ============ Draft Functions ============
+function restoreFromDrafts() {
+	const drafts = getDraftsByPage("write");
+	if (drafts.length === 0) return;
+	const latest = drafts[drafts.length - 1];
+	if (latest && latest.payload) {
+		applyArticle(latest.payload);
+		showToast(
+			`已从本地草稿恢复（${new Date(latest.timestamp).toLocaleString()}）`,
+			"info",
+		);
+	}
+}
+
+function handleSaveDraft() {
+	const payload = snapshotArticle();
+	saveDraft({
+		pageKey: "write",
+		pageName: "文章写作",
+		description: title ? `文章: ${title}` : "未命名文章",
+		operation: editMode ? "update" : "create",
+		payload,
+	});
+	showToast("草稿已保存到本地", "success");
+}
+
+async function handleBatchSubmit() {
+	if (!authed) {
+		showToast("请先导入密钥", "warning");
+		triggerKeyImport();
+		return;
+	}
+	saving = true;
+	try {
+		const result = await submitAllDrafts();
+		if (result.failed === 0)
+			showToast(`批量提交成功，共${result.success}项`, "success");
+		else
+			showToast(
+				`提交完成：成功${result.success}，失败${result.failed}`,
+				"warning",
+			);
+	} finally {
+		saving = false;
+	}
+}
+
+async function publishDraftPayload(
+	payload: Record<string, any>,
+): Promise<boolean> {
+	const fmLines: string[] = ["---"];
+	const dVal = payload.pubDate || new Date().toISOString().slice(0, 10);
+	const esc = (s: any) =>
+		String(s ?? "")
+			.replace(/\\/g, "\\\\")
+			.replace(/"/g, '\\"');
+	fmLines.push(`title: "${esc(payload.title)}"`);
+	fmLines.push(`published: ${dVal}`);
+	fmLines.push(`updated: ${dVal}`);
+	if (payload.description)
+		fmLines.push(`description: "${esc(payload.description)}"`);
+	if (payload.coverUrl) fmLines.push(`image: "${esc(payload.coverUrl)}"`);
+	const tagList = String(payload.tagsInput || "")
+		.split(/[,，]/)
+		.map((t: string) => t.trim())
+		.filter(Boolean);
+	if (tagList.length > 0) {
+		fmLines.push("tags:");
+		for (const t of tagList) fmLines.push(`  - ${esc(t)}`);
+	}
+	if (payload.category) fmLines.push(`category: ${esc(payload.category)}`);
+	fmLines.push(`draft: ${!!payload.isDraft}`);
+	fmLines.push(`pinned: ${!!payload.isPinned}`);
+	fmLines.push(`author: fqzlr`);
+	fmLines.push("---");
+	const body = String(payload.content || "").trimStart();
+	const fullContent = `${fmLines.join("\n")}\n\n${body}`;
+	const ext: ".md" | ".mdx" = payload.existingExt || ".md";
+	const filePath =
+		payload.editMode && payload.savePath
+			? `${payload.savePath}${ext}`
+			: `src/content/posts/blog/${payload.slug}${ext}`;
+	const commitMsg = payload.editMode
+		? `chore(posts): update "${esc(payload.title)}"`
+		: `chore(posts): create "${esc(payload.title)}"`;
+	if (payload.editMode && payload.existingSha) {
+		return await updateRepoFile(
+			filePath,
+			fullContent,
+			payload.existingSha,
+			commitMsg,
+			repoConfig,
+		);
+	} else {
+		return await createRepoFile(filePath, fullContent, commitMsg, repoConfig);
+	}
+}
+
+// ============ Save / Publish ============
+async function doPublish() {
+	if (!title.trim()) {
+		showToast("请输入标题", "warning");
+		titleInput?.focus();
+		return;
+	}
+	if (!content.trim()) {
+		showToast("请输入文章内容", "warning");
+		contentTextarea?.focus();
+		return;
+	}
+	if (!slug.trim()) {
+		autoFillSlug();
+		if (!slug.trim()) {
+			showToast("请输入文章 slug", "warning");
+			return;
+		}
+	}
+
+	saving = true;
+	try {
+		const ok = await publishDraftPayload(snapshotArticle());
+		if (ok) {
+			showToast(editMode ? "文章已更新！" : "文章已发布！", "success");
+			editMode = true;
+			saveSuccess = true;
+			setTimeout(() => (saveSuccess = false), 5000);
+			const fp =
+				editMode && savePath
+					? `${savePath}${existingExt}`
+					: `src/content/posts/blog/${slug}${existingExt}`;
+			const result = await getRepoFile(fp, repoConfig);
+			if (result) {
+				existingSha = result.sha;
+			}
+			clearDraftsByPage("write");
+			originalArticle = snapshotArticle();
+		} else {
+			showToast("保存失败，请检查 GitHub App 权限配置", "error");
+		}
+	} catch (err) {
+		showToast("保存出错，请检查网络连接", "error");
+	} finally {
+		saving = false;
+	}
+}
+
+async function handleSubmit() {
+	if (!authed) {
+		showToast("请先导入密钥", "warning");
+		return;
+	}
+	await doPublish();
+}
+
+function handlePublish() {
+	handleSubmit();
+}
+
+// ============ Key Import (RyuChan-style simple flow) ============
+function triggerKeyImport() {
+	keyFileInput?.click();
+}
+
+async function handleKeyFileSelect(e: Event) {
+	const input = e.target as HTMLInputElement;
+	const file = input.files?.[0];
+	if (!file) {
+		input.value = "";
+		return;
+	}
+	try {
+		const pem = await readFileAsText(file);
+		const appId = repoConfig.appId;
+		if (!appId) {
+			showToast("请先在 Vercel 环境变量中配置 PUBLIC_GITHUB_APP_ID", "error");
+			input.value = "";
+			return;
+		}
+		showToast("正在验证私钥...", "info");
+		const result = await validateCredentials(appId, pem);
+		if (result.ok) {
+			setStoredAppId(appId);
+			setStoredPrivateKey(pem);
+			authed = true;
+			showToast("私钥导入成功！", "success");
+			if (pendingPublishAfterAuth) {
+				pendingPublishAfterAuth = false;
+				await tick();
+				handlePublish();
+			}
+		} else {
+			showToast(result.error || "私钥验证失败", "error");
+		}
+	} catch (err) {
+		showToast("读取私钥文件失败", "error");
+	} finally {
+		input.value = "";
+	}
+}
+
+function handleLogout() {
+	if (!confirm("确定要清除已保存的私钥吗？清除后需要重新导入才能编辑。"))
+		return;
+	clearStoredCredentials();
+	invalidateToken();
+	authed = false;
+	showToast("已清除私钥", "info");
+}
+
+// ============ Import MD file ============
+function handleImportMd() {
+	mdFileInput?.click();
+}
+
+async function handleMdFileSelect(e: Event) {
+	const input = e.target as HTMLInputElement;
+	const file = input.files?.[0];
+	if (!file) {
+		input.value = "";
+		return;
+	}
+	try {
+		const text = await readFileAsText(file);
+		const { data, body } = parseFrontmatter(text);
+
+		if (data.title) title = data.title;
+		if (body) content = body;
+		if (data.description) description = data.description;
+		if (data.image) coverUrl = data.image;
+		if (data.category) category = data.category;
+		if (typeof data.draft === "boolean") isDraft = data.draft;
+		if (typeof data.pinned === "boolean") isPinned = data.pinned;
+		if (Array.isArray(data.tags)) tagsInput = data.tags.join(", ");
+		if (data.published) {
+			pubDate =
+				typeof data.published === "string" ? data.published.slice(0, 10) : "";
+		}
+
+		if (!slug) {
+			const name = file.name.replace(/\.(md|markdown|mdx)$/i, "");
+			slug = generateSlugFromTitle(name);
+		}
+
+		showToast("Markdown 文件已导入", "success");
+	} catch {
+		showToast("读取文件失败", "error");
+	}
+	input.value = "";
+}
+
+// ============ Markdown editor shortcuts ============
+function handleEditorKeydown(e: KeyboardEvent) {
+	const textarea = e.currentTarget as HTMLTextAreaElement;
+	const ctrl = e.ctrlKey || e.metaKey;
+
+	if (ctrl && !e.shiftKey && !e.altKey) {
+		switch (e.key.toLowerCase()) {
+			case "b":
+				e.preventDefault();
+				applyFormat("bold");
+				break;
+			case "i":
+				e.preventDefault();
+				applyFormat("italic");
+				break;
+			case "k":
+				e.preventDefault();
+				applyFormat("link");
+				break;
+			case "s":
+				e.preventDefault();
+				handleSaveDraft();
+				break;
+		}
+	}
+}
+
+function applyFormat(format: string) {
+	const textarea = contentTextarea;
+	if (!textarea) return;
+	const start = textarea.selectionStart;
+	const end = textarea.selectionEnd;
+	const selected = content.substring(start, end);
+	let before = "";
+	let after = "";
+	let placeholder = "";
+	let cursorOffset = 0;
+
+	switch (format) {
+		case "bold":
+			before = "**";
+			after = "**";
+			placeholder = "加粗文本";
+			break;
+		case "italic":
+			before = "*";
+			after = "*";
+			placeholder = "斜体文本";
+			break;
+		case "strikethrough":
+			before = "~~";
+			after = "~~";
+			placeholder = "删除线文本";
+			break;
+		case "h2":
+			before = "## ";
+			after = "";
+			placeholder = "二级标题";
+			if (start > 0 && content.charAt(start - 1) !== "\n") before = "\n## ";
+			break;
+		case "h3":
+			before = "### ";
+			after = "";
+			placeholder = "三级标题";
+			if (start > 0 && content.charAt(start - 1) !== "\n") before = "\n### ";
+			break;
+		case "quote":
+			before = "> ";
+			after = "";
+			placeholder = "引用文本";
+			if (start > 0 && content.charAt(start - 1) !== "\n") before = "\n> ";
+			break;
+		case "code":
+			before = "`";
+			after = "`";
+			placeholder = "代码";
+			break;
+		case "codeblock":
+			before = "\n```\n";
+			after = "\n```\n";
+			placeholder = "代码块";
+			cursorOffset = -1;
+			break;
+		case "ul":
+			before = "- ";
+			after = "";
+			placeholder = "列表项";
+			if (start > 0 && content.charAt(start - 1) !== "\n") before = "\n- ";
+			break;
+		case "ol":
+			before = "1. ";
+			after = "";
+			placeholder = "列表项";
+			if (start > 0 && content.charAt(start - 1) !== "\n") before = "\n1. ";
+			break;
+		case "link": {
+			const url = prompt("请输入链接地址:", "https://");
+			if (url === null) return;
+			const linkText = selected || "链接文本";
+			const markdown = `[${linkText}](${url})`;
+			const newText =
+				content.substring(0, start) + markdown + content.substring(end);
+			content = newText;
+			tick().then(() => {
+				textarea.focus();
+				textarea.setSelectionRange(start + 1, start + 1 + linkText.length);
+			});
+			return;
+		}
+		case "image": {
+			const url = prompt("请输入图片 URL:", "https://");
+			if (url === null) return;
+			const altText = selected || "图片描述";
+			const markdown = `![${altText}](${url})`;
+			const newText =
+				content.substring(0, start) + markdown + content.substring(end);
+			content = newText;
+			tick().then(() => {
+				textarea.focus();
+				textarea.setSelectionRange(start + 2, start + 2 + altText.length);
+			});
+			return;
+		}
+		case "hr":
+			before = "\n---\n";
+			after = "";
+			placeholder = "";
+			break;
+	}
+
+	const insertText = selected || placeholder;
+	const newText =
+		content.substring(0, start) +
+		before +
+		insertText +
+		after +
+		content.substring(end);
+	content = newText;
+	tick().then(() => {
+		textarea.focus();
+		const selectStart = start + before.length;
+		const selectEnd = selectStart + insertText.length + cursorOffset;
+		textarea.setSelectionRange(
+			selectStart,
+			selectEnd > selectStart ? selectEnd : selectStart,
+		);
+	});
+}
+
+function handlePaste(e: ClipboardEvent) {
+	const items = e.clipboardData?.items;
+	if (!items) return;
+	for (let i = 0; i < items.length; i++) {
+		if (items[i].type.startsWith("image/")) {
+			e.preventDefault();
+			showToast("检测到图片粘贴，请先上传图片到图床获取URL后插入", "warning");
+			return;
+		}
+	}
+}
+
+function renderMarkdown(md: string): string {
+	if (!md) return "";
+	try {
+		return marked.parse(md, {
+			gfm: true,
+			breaks: true,
+		}) as string;
+	} catch (e) {
+		console.error("Markdown parse error:", e);
+		return `<p>${md}</p>`;
+	}
+}
+
+function handleTextareaKeydown(e: KeyboardEvent) {
+	if (e.key === "Tab") {
+		e.preventDefault();
+		const textarea = e.currentTarget as HTMLTextAreaElement;
+		const start = textarea.selectionStart;
+		const end = textarea.selectionEnd;
+		content = content.substring(0, start) + "  " + content.substring(end);
+		tick().then(() => {
+			textarea.focus();
+			textarea.setSelectionRange(start + 2, start + 2);
+		});
+	}
+}
+
+// ============ Init ============
+onMount(async () => {
+	ensureIconify();
+	authed = hasValidCredentials();
+
+	registerSubmitHandler("write", async (draft) => {
+		return await publishDraftPayload(draft.payload || {});
+	});
+
+	totalDraftCount = getDraftCount();
+	pageDraftCount = getDraftsByPage("write").length;
+	unsubscribeDrafts = onDraftsChanged((count) => {
+		totalDraftCount = count;
+		pageDraftCount = getDraftsByPage("write").length;
+	});
+
+	const params = new URLSearchParams(window.location.search);
+	const pathParam = params.get("path");
+	const slugParam = params.get("slug");
+	if (pathParam) {
+		loadArticle(pathParam);
+	} else if (slugParam) {
+		loadArticle(slugParam);
+	} else {
+		pubDate = today;
+		originalArticle = snapshotArticle();
+		restoreFromDrafts();
+	}
+
+	return () => {
+		if (unsubscribeDrafts) {
+			unsubscribeDrafts();
+			unsubscribeDrafts = null;
+		}
+	};
+});
+</script>
+
+<EditToast />
+
+<div class="write-toolbar">
+	<div class="toolbar-left">
+		<a href="/list/" class="toolbar-btn toolbar-back" title="返回文章列表" data-no-swup>
+			<iconify-icon icon="material-symbols:arrow-back-rounded" class="text-lg"></iconify-icon>
+			<span class="btn-text">返回列表</span>
+		</a>
+	</div>
+	<div class="toolbar-right">
+		{#if saveSuccess && authed && editMode}
+			<a href={articleUrl} class="toolbar-btn toolbar-view" target="_blank" title="在新窗口预览文章">
+				<iconify-icon icon="material-symbols:open-in-new-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">查看文章</span>
+			</a>
+		{/if}
+		<button class="toolbar-btn" onclick={handleImportMd} title="导入Markdown文件">
+			<iconify-icon icon="material-symbols:upload-file-rounded" class="text-lg"></iconify-icon>
+			<span class="btn-text">导入MD</span>
+		</button>
+		<button
+			class="toolbar-btn"
+			class:active={showPreview}
+			onclick={() => (showPreview = !showPreview)}
+			title="预览"
+		>
+			<iconify-icon
+				icon={showPreview ? "material-symbols:edit-rounded" : "material-symbols:visibility-rounded"}
+				class="text-lg"
+			></iconify-icon>
+			<span class="btn-text">{showPreview ? "编辑" : "预览"}</span>
+		</button>
+
+		<button class="toolbar-btn toolbar-draft" onclick={handleSaveDraft} disabled={saving} title="保存草稿到本地（不会提交到GitHub）">
+			<iconify-icon icon="material-symbols:save-outline-rounded" class="text-lg"></iconify-icon>
+			<span class="btn-text">保存草稿</span>
+			{#if pageDraftCount > 0}<span class="draft-badge-inline">{pageDraftCount}</span>{/if}
+		</button>
+
+		{#if authed}
+			<button class="toolbar-btn toolbar-key-ok" onclick={handleLogout} title="已认证，点击清除私钥">
+				<iconify-icon icon="material-symbols:vpn-key-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">已认证</span>
+			</button>
+		{:else}
+			<button class="toolbar-btn toolbar-key-err" onclick={triggerKeyImport} title="点击导入 GitHub App 私钥">
+				<iconify-icon icon="material-symbols:key-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">导入密钥</span>
+			</button>
+		{/if}
+
+		{#if totalDraftCount > 0}
+			<button class="toolbar-btn toolbar-batch" onclick={handleBatchSubmit} title={`批量提交所有${totalDraftCount}项更改到GitHub`}>
+				<iconify-icon icon="material-symbols:cloud-upload-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">批量提交</span>
+				<span class="batch-badge-inline">{totalDraftCount}</span>
+			</button>
+		{/if}
+
+		<button
+			class="toolbar-btn toolbar-publish"
+			class:toolbar-publish--disabled={!authed}
+			onclick={handleSubmit}
+			disabled={saving || loading}
+			title={authed ? (editMode ? "提交文章到GitHub" : "发布文章到GitHub") : "请先导入密钥"}
+		>
+			{#if saving}
+				<iconify-icon icon="material-symbols:progress-activity-rounded" class="text-lg animate-spin"></iconify-icon>
+				<span class="btn-text">{editMode ? "提交中..." : "发布中..."}</span>
+			{:else if !authed}
+				<iconify-icon icon="material-symbols:lock-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">需密钥</span>
+			{:else}
+				<iconify-icon icon="material-symbols:send-rounded" class="text-lg"></iconify-icon>
+				<span class="btn-text">{editMode ? "提交" : "发布"}</span>
+			{/if}
+		</button>
+
+		<input
+			bind:this={mdFileInput}
+			type="file"
+			accept=".md,.markdown,.mdx"
+			style="display:none"
+			onchange={handleMdFileSelect}
+		/>
+		<input
+			bind:this={keyFileInput}
+			type="file"
+			accept=".pem,application/x-pem-file,text/plain"
+			style="display:none"
+			onchange={handleKeyFileSelect}
+		/>
+	</div>
+</div>
+
+{#if loading}
+	<div class="loading-state">
+		<iconify-icon icon="material-symbols:progress-activity-rounded" class="text-4xl animate-spin"></iconify-icon>
+		<p>加载文章中...</p>
+	</div>
+{:else}
+	<div class="write-container" class:preview-mode={showPreview}>
+		<div class="editor-panel">
+			{#if !showPreview}
+				<input
+					bind:this={titleInput}
+					bind:value={title}
+					class="title-input"
+					type="text"
+					placeholder="输入文章标题..."
+					onblur={autoFillSlug}
+				/>
+				<div class="md-toolbar">
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("bold")} title="加粗 (Ctrl+B)">
+						<iconify-icon icon="material-symbols:format-bold-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("italic")} title="斜体 (Ctrl+I)">
+						<iconify-icon icon="material-symbols:format-italic-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("strikethrough")} title="删除线">
+						<iconify-icon icon="material-symbols:format-strikethrough-rounded"></iconify-icon>
+					</button>
+					<span class="md-toolbar-divider"></span>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("h2")} title="二级标题">
+						<iconify-icon icon="material-symbols:format-h2-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("h3")} title="三级标题">
+						<iconify-icon icon="material-symbols:format-h3-rounded"></iconify-icon>
+					</button>
+					<span class="md-toolbar-divider"></span>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("quote")} title="引用">
+						<iconify-icon icon="material-symbols:format-quote-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("code")} title="行内代码">
+						<iconify-icon icon="material-symbols:code-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("codeblock")} title="代码块">
+						<iconify-icon icon="material-symbols:data-object-rounded"></iconify-icon>
+					</button>
+					<span class="md-toolbar-divider"></span>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("ul")} title="无序列表">
+						<iconify-icon icon="material-symbols:format-list-bulleted-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("ol")} title="有序列表">
+						<iconify-icon icon="material-symbols:format-list-numbered-rounded"></iconify-icon>
+					</button>
+					<span class="md-toolbar-divider"></span>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("link")} title="链接 (Ctrl+K)">
+						<iconify-icon icon="material-symbols:link-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("image")} title="图片">
+						<iconify-icon icon="material-symbols:image-rounded"></iconify-icon>
+					</button>
+					<button type="button" class="md-toolbar-btn" onclick={() => applyFormat("hr")} title="分割线">
+						<iconify-icon icon="material-symbols:horizontal-rule-rounded"></iconify-icon>
+					</button>
+				</div>
+				<textarea
+					bind:this={contentTextarea}
+					bind:value={content}
+					class="content-textarea"
+					placeholder="开始写作...&#10;&#10;支持 Markdown 语法&#10;快捷键: Ctrl+B 加粗 / Ctrl+I 斜体 / Ctrl+K 链接 / Ctrl+S 保存草稿"
+					onkeydown={(e) => {
+						handleEditorKeydown(e);
+						handleTextareaKeydown(e);
+					}}
+					onpaste={handlePaste}
+					spellcheck={false}
+				></textarea>
+			{:else}
+				<div class="preview-panel">
+					{#if title}
+						<h1 class="preview-title">{title}</h1>
+					{/if}
+					{@html renderMarkdown(content)}
+				</div>
+			{/if}
+			<div class="editor-footer">
+				<span class="word-count">{wordCount} 字</span>
+				<span class="shortcuts-hint">Ctrl+B 加粗 | Ctrl+I 斜体 | Ctrl+K 链接 | Ctrl+S 保存草稿</span>
+			</div>
+		</div>
+
+		<div class="sidebar-panel">
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:image-rounded" class="text-sm"></iconify-icon>
+					封面图片 URL
+				</label>
+				<input
+					bind:value={coverUrl}
+					type="text"
+					class="sidebar-input"
+					placeholder="https://example.com/cover.jpg"
+				/>
+				{#if coverUrl}
+					<div class="cover-preview">
+						<img src={coverUrl} alt="封面预览" loading="lazy" />
+					</div>
+				{/if}
+			</div>
+
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:description-rounded" class="text-sm"></iconify-icon>
+					文章描述
+				</label>
+				<textarea
+					bind:value={description}
+					class="sidebar-textarea"
+					placeholder="简短描述文章内容，用于SEO和列表展示"
+					rows={3}
+				></textarea>
+			</div>
+
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:tag-rounded" class="text-sm"></iconify-icon>
+					标签（逗号分隔）
+				</label>
+				<input
+					bind:value={tagsInput}
+					type="text"
+					class="sidebar-input"
+					placeholder="Astro, 博客, 教程"
+				/>
+				{#if tags.length > 0}
+					<div class="tag-list">
+						{#each tags as tag (tag)}
+							<span class="tag-chip">{tag}</span>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:folder-rounded" class="text-sm"></iconify-icon>
+					分类
+				</label>
+				<input
+					bind:value={category}
+					type="text"
+					class="sidebar-input"
+					placeholder="教程"
+				/>
+			</div>
+
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:calendar-today-rounded" class="text-sm"></iconify-icon>
+					发布日期
+				</label>
+				<input
+					bind:value={pubDate}
+					type="date"
+					class="sidebar-input"
+				/>
+			</div>
+
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:link-rounded" class="text-sm"></iconify-icon>
+					文章 Slug
+				</label>
+				<input
+					bind:value={slug}
+					type="text"
+					class="sidebar-input"
+					placeholder="article-slug"
+				/>
+				<p class="sidebar-hint">留空将自动从标题生成</p>
+			</div>
+
+			<div class="sidebar-section checkbox-section">
+				<label class="checkbox-label">
+					<input type="checkbox" bind:checked={isDraft} />
+					<span class="checkbox-custom"></span>
+					<iconify-icon icon="material-symbols:draft-rounded" class="text-sm"></iconify-icon>
+					草稿（不发布）
+				</label>
+				<label class="checkbox-label">
+					<input type="checkbox" bind:checked={isPinned} />
+					<span class="checkbox-custom"></span>
+					<iconify-icon icon="material-symbols:push-pin-rounded" class="text-sm"></iconify-icon>
+					置顶文章
+				</label>
+			</div>
+
+			<div class="sidebar-section auth-status-section">
+				{#if authed}
+					<div class="auth-indicator auth-ok">
+						<iconify-icon icon="material-symbols:vpn-key-rounded" class="text-base"></iconify-icon>
+						<span>已导入私钥</span>
+						<button class="auth-logout-btn" onclick={handleLogout} title="清除私钥">清除</button>
+					</div>
+				{:else}
+					<div class="auth-indicator auth-err">
+						<iconify-icon icon="material-symbols:key-off-rounded" class="text-base"></iconify-icon>
+						<span>请先点击工具栏「导入密钥」按钮导入私钥</span>
+					</div>
+				{/if}
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style>
+	:global(.write-editor-wrapper) {
+		--theme-hue: var(--editor-theme-hue, 165);
+		--bg-color: var(--card-bg, #ffffff);
+		--bg-secondary: var(--bg-secondary, #f3f4f6);
+		--text-color: var(--text-color, #1a1a2e);
+		--text-secondary: var(--text-secondary, #6b7280);
+		--border: var(--border, #e5e7eb);
+	}
+
+	.write-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 12px 24px;
+		background: var(--bg-color, white);
+		border-top: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+		border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+		min-height: 56px;
+		box-sizing: border-box;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		border-radius: 0;
+		margin: 0;
+	}
+	:global(.dark) .write-toolbar {
+		background: var(--card-bg, #141420);
+		border-top-color: rgba(255, 255, 255, 0.08);
+		border-bottom-color: rgba(255, 255, 255, 0.08);
+	}
+
+	.toolbar-left,
+	.toolbar-right {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.toolbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 7px 14px;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+		border: 1.5px solid transparent;
+		background: transparent;
+		color: var(--text-secondary, #6b7280);
+		white-space: nowrap;
+		text-decoration: none;
+		font-family: inherit;
+	}
+	.toolbar-btn:hover {
+		background: rgba(0, 0, 0, 0.05);
+		color: var(--text-color, #1f2937);
+	}
+	:global(.dark) .toolbar-btn {
+		color: rgba(255, 255, 255, 0.7);
+	}
+	:global(.dark) .toolbar-btn:hover {
+		background: rgba(255, 255, 255, 0.08);
+		color: white;
+	}
+
+	.toolbar-btn.active {
+		background: hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+		color: hsl(var(--theme-hue, 165), 70%, 45%);
+		border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
+	}
+	:global(.dark) .toolbar-btn.active {
+		color: hsl(var(--theme-hue, 165), 70%, 60%);
+	}
+
+	.toolbar-publish {
+		background: hsl(var(--theme-hue, 165), 70%, 50%);
+		color: white !important;
+		font-weight: 600;
+		box-shadow: 0 2px 8px hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
+	}
+	.toolbar-publish:hover:not(:disabled) {
+		background: hsl(var(--theme-hue, 165), 75%, 45%) !important;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 16px hsla(var(--theme-hue, 165), 70%, 50%, 0.4);
+	}
+	.toolbar-publish:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.toolbar-view {
+		background: #22c55e;
+		color: white !important;
+		font-weight: 600;
+		box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+		animation: pulseSuccess 1s ease-in-out infinite alternate;
+	}
+	.toolbar-view:hover {
+		background: #16a34a !important;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+	}
+	@keyframes pulseSuccess {
+		from { box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); }
+		to { box-shadow: 0 2px 16px rgba(34, 197, 94, 0.6); }
+	}
+
+	.write-container {
+		display: flex;
+		min-height: 500px;
+	}
+
+	.editor-panel {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		min-height: 500px;
+		border-right: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+		background: var(--bg-color, white);
+	}
+	:global(.dark) .editor-panel {
+		border-right-color: rgba(255, 255, 255, 0.08);
+		background: var(--card-bg, #141420);
+	}
+
+	.title-input {
+		width: 100%;
+		padding: 28px 40px 16px;
+		border: none;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+		background: transparent;
+		font-size: 28px;
+		font-weight: 700;
+		color: var(--text-color, #1a1a2e);
+		outline: none;
+		font-family: inherit;
+		box-sizing: border-box;
+	}
+	.title-input::placeholder {
+		color: #c0c0c0;
+	}
+	:global(.dark) .title-input {
+		color: #f0f0f0;
+		border-bottom-color: rgba(255, 255, 255, 0.08);
+	}
+	:global(.dark) .title-input::placeholder {
+		color: #555;
+	}
+
+	.md-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 8px 20px;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+		background: rgba(0, 0, 0, 0.02);
+		flex-wrap: wrap;
+	}
+
+	.md-toolbar-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border: none;
+		background: transparent;
+		border-radius: 6px;
+		cursor: pointer;
+		color: #666;
+		font-size: 18px;
+		transition: all 0.15s ease;
+		padding: 0;
+	}
+	.md-toolbar-btn:hover {
+		background: rgba(102, 126, 234, 0.1);
+		color: #667eea;
+	}
+	.md-toolbar-btn:active {
+		background: rgba(102, 126, 234, 0.2);
+	}
+	.md-toolbar-divider {
+		width: 1px;
+		height: 20px;
+		background: rgba(0, 0, 0, 0.1);
+		margin: 0 4px;
+	}
+	:global(.dark) .md-toolbar {
+		border-bottom-color: rgba(255, 255, 255, 0.08);
+		background: rgba(255, 255, 255, 0.03);
+	}
+	:global(.dark) .md-toolbar-btn {
+		color: #888;
+	}
+	:global(.dark) .md-toolbar-btn:hover {
+		background: rgba(102, 126, 234, 0.2);
+		color: #8b9cf7;
+	}
+	:global(.dark) .md-toolbar-divider {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.content-textarea {
+		flex: 1;
+		width: 100%;
+		min-height: 300px;
+		padding: 24px 40px;
+		border: none;
+		background: transparent;
+		font-size: 15px;
+		line-height: 1.8;
+		color: var(--text-color, #1f2937);
+		outline: none;
+		resize: vertical;
+		font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Consolas, "Courier New", monospace;
+		box-sizing: border-box;
+		tab-size: 2;
+	}
+	.content-textarea::placeholder {
+		color: #b0b0b0;
+	}
+	:global(.dark) .content-textarea {
+		color: #e0e0e0;
+	}
+	:global(.dark) .content-textarea::placeholder {
+		color: #505060;
+	}
+
+	.editor-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 40px;
+		border-top: 1px solid rgba(0, 0, 0, 0.06);
+		font-size: 12px;
+		color: #999;
+		background: var(--card-bg, white);
+	}
+	:global(.dark) .editor-footer {
+		border-top-color: rgba(255, 255, 255, 0.08);
+		background: #141420;
+		color: #666;
+	}
+	.shortcuts-hint {
+		font-family: monospace;
+		font-size: 11px;
+	}
+
+	.preview-panel {
+		flex: 1;
+		padding: 28px 40px;
+		overflow-y: auto;
+		font-size: 15px;
+		line-height: 1.8;
+		color: var(--text-color, #1f2937);
+	}
+	:global(.dark) .preview-panel {
+		color: #e0e0e0;
+	}
+	.preview-title {
+		font-size: 28px;
+		font-weight: 700;
+		margin: 0 0 24px;
+		padding-bottom: 16px;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	}
+	:global(.dark) .preview-title {
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+	.preview-panel :global(h1),
+	.preview-panel :global(h2),
+	.preview-panel :global(h3) { margin-top: 1.5em; margin-bottom: 0.5em; }
+	.preview-panel :global(h1) { font-size: 1.8em; }
+	.preview-panel :global(h2) { font-size: 1.5em; }
+	.preview-panel :global(h3) { font-size: 1.25em; }
+	.preview-panel :global(code) {
+		padding: 2px 6px;
+		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.06);
+		font-family: "JetBrains Mono", Consolas, monospace;
+		font-size: 0.9em;
+	}
+	:global(.dark) .preview-panel :global(code) { background: rgba(255, 255, 255, 0.1); }
+	.preview-panel :global(a) { color: hsl(var(--theme-hue, 165), 70%, 45%); text-decoration: none; }
+	.preview-panel :global(a:hover) { text-decoration: underline; }
+	.preview-panel :global(img) { max-width: 100%; border-radius: 8px; margin: 12px 0; }
+	.preview-panel :global(p) { margin: 1em 0; }
+	.preview-panel :global(ul), .preview-panel :global(ol) { margin: 1em 0; padding-left: 2em; }
+	.preview-panel :global(li) { margin: 0.3em 0; }
+	.preview-panel :global(blockquote) {
+		margin: 1em 0;
+		padding: 0.5em 1em;
+		border-left: 4px solid hsl(var(--theme-hue, 165), 70%, 50%);
+		background: hsla(var(--theme-hue, 165), 70%, 50%, 0.05);
+		border-radius: 0 8px 8px 0;
+		color: var(--text-secondary, #6b7280);
+	}
+	:global(.dark) .preview-panel :global(blockquote) { background: hsla(var(--theme-hue, 165), 70%, 50%, 0.1); }
+	.preview-panel :global(pre) {
+		margin: 1em 0;
+		padding: 16px 20px;
+		background: #1e1e2e;
+		border-radius: 8px;
+		overflow-x: auto;
+		font-family: "JetBrains Mono", Consolas, monospace;
+		font-size: 0.9em;
+		line-height: 1.6;
+	}
+	.preview-panel :global(pre code) { padding: 0; background: transparent; color: #e0e0e0; font-size: inherit; }
+	.preview-panel :global(hr) { margin: 2em 0; border: none; border-top: 1px solid var(--border, #e5e7eb); }
+	:global(.dark) .preview-panel :global(hr) { border-top-color: #374151; }
+
+	.sidebar-panel {
+		width: 320px;
+		flex-shrink: 0;
+		padding: 20px;
+		overflow-y: auto;
+		background: var(--card-bg, white);
+		box-sizing: border-box;
+	}
+	:global(.dark) .sidebar-panel { background: #141420; }
+	.sidebar-section { margin-bottom: 20px; }
+	.sidebar-label {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-color, #1a1a2e);
+		margin-bottom: 8px;
+	}
+	:global(.dark) .sidebar-label { color: #d0d0d0; }
+	.sidebar-input {
+		width: 100%;
+		padding: 8px 12px;
+		border: 1.5px solid var(--border, #e5e7eb);
+		border-radius: 8px;
+		font-size: 13px;
+		background: var(--bg-color, white);
+		color: var(--text-color, #1f2937);
+		outline: none;
+		transition: border-color 0.2s;
+		box-sizing: border-box;
+		font-family: inherit;
+	}
+	.sidebar-input:focus {
+		border-color: hsl(var(--theme-hue, 165), 70%, 50%);
+		box-shadow: 0 0 0 3px hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+	}
+	:global(.dark) .sidebar-input { background: #0f0f1a; border-color: #374151; color: #e5e7eb; }
+	.sidebar-textarea {
+		width: 100%;
+		padding: 8px 12px;
+		border: 1.5px solid var(--border, #e5e7eb);
+		border-radius: 8px;
+		font-size: 13px;
+		background: var(--bg-color, white);
+		color: var(--text-color, #1f2937);
+		outline: none;
+		resize: vertical;
+		transition: border-color 0.2s;
+		box-sizing: border-box;
+		font-family: inherit;
+		line-height: 1.6;
+	}
+	.sidebar-textarea:focus {
+		border-color: hsl(var(--theme-hue, 165), 70%, 50%);
+		box-shadow: 0 0 0 3px hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+	}
+	:global(.dark) .sidebar-textarea { background: #0f0f1a; border-color: #374151; color: #e5e7eb; }
+	.sidebar-hint { margin: 4px 0 0; font-size: 11px; color: #999; }
+	:global(.dark) .sidebar-hint { color: #666; }
+	.cover-preview { margin-top: 8px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border, #e5e7eb); }
+	.cover-preview img { width: 100%; height: 120px; object-fit: cover; display: block; }
+	:global(.dark) .cover-preview { border-color: #374151; }
+	.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+	.tag-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 3px 10px;
+		border-radius: 20px;
+		font-size: 12px;
+		background: hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+		color: hsl(var(--theme-hue, 165), 70%, 45%);
+		border: 1px solid hsla(var(--theme-hue, 165), 70%, 50%, 0.2);
+	}
+	:global(.dark) .tag-chip {
+		background: hsla(var(--theme-hue, 165), 70%, 50%, 0.15);
+		color: hsl(var(--theme-hue, 165), 70%, 60%);
+	}
+	.checkbox-section { display: flex; flex-direction: column; gap: 10px; }
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--text-color, #374151);
+		cursor: pointer;
+		user-select: none;
+	}
+	:global(.dark) .checkbox-label { color: #d0d0d0; }
+	.checkbox-label input[type="checkbox"] { display: none; }
+	.checkbox-custom {
+		width: 18px;
+		height: 18px;
+		border-radius: 5px;
+		border: 2px solid var(--border, #d1d5db);
+		background: var(--bg-color, white);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+		flex-shrink: 0;
+	}
+	:global(.dark) .checkbox-custom { background: #0f0f1a; border-color: #4b5563; }
+	.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+		background: hsl(var(--theme-hue, 165), 70%, 50%);
+		border-color: hsl(var(--theme-hue, 165), 70%, 50%);
+	}
+	.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+		content: "";
+		width: 5px;
+		height: 9px;
+		border: solid white;
+		border-width: 0 2px 2px 0;
+		transform: rotate(45deg);
+		margin-top: -2px;
+	}
+
+	.auth-status-section {
+		margin-top: 8px;
+	}
+	.auth-indicator {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 14px;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 500;
+	}
+	.auth-ok {
+		background: rgba(34, 197, 94, 0.1);
+		color: #16a34a;
+		border: 1px solid rgba(34, 197, 94, 0.25);
+	}
+	:global(.dark) .auth-ok {
+		background: rgba(74, 222, 128, 0.1);
+		color: #4ade80;
+		border-color: rgba(74, 222, 128, 0.2);
+	}
+	.auth-err {
+		background: rgba(245, 158, 11, 0.1);
+		color: #d97706;
+		border: 1px solid rgba(245, 158, 11, 0.25);
+	}
+	:global(.dark) .auth-err {
+		background: rgba(251, 191, 36, 0.1);
+		color: #fbbf24;
+		border-color: rgba(251, 191, 36, 0.2);
+	}
+	.auth-logout-btn {
+		margin-left: auto;
+		background: none;
+		border: 1px solid currentColor;
+		border-radius: 6px;
+		color: inherit;
+		font-size: 12px;
+		padding: 3px 10px;
+		cursor: pointer;
+		opacity: 0.7;
+		transition: opacity 0.15s;
+	}
+	.auth-logout-btn:hover { opacity: 1; }
+
+	.loading-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 50vh;
+		padding: 80px 20px;
+		gap: 16px;
+		color: var(--text-secondary, #6b7280);
+		font-size: 14px;
+	}
+
+	@media (max-width: 768px) {
+		.write-container { flex-direction: column; min-height: 50vh; }
+		.editor-panel { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); min-height: 50vh; }
+		:global(.dark) .editor-panel { border-bottom-color: rgba(255,255,255,0.08); }
+		.sidebar-panel { width: 100%; }
+		.title-input { padding: 20px 20px 12px; font-size: 22px; }
+		.content-textarea { padding: 16px 20px; }
+		.editor-footer { padding: 8px 20px; }
+		.preview-panel { padding: 20px; }
+		.btn-text { display: none; }
+		.toolbar-btn { padding: 7px 10px; }
+	}
+	.animate-spin { animation: spin 0.8s linear infinite; }
+	@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+	.toolbar-draft {
+		border-color: rgba(59, 130, 246, 0.4) !important;
+		color: #2563eb !important;
+		background: rgba(59, 130, 246, 0.08) !important;
+	}
+	.toolbar-draft:hover:not(:disabled) {
+		background: rgba(59, 130, 246, 0.15) !important;
+	}
+	:global(.dark) .toolbar-draft { border-color: rgba(96, 165, 250, 0.4) !important; color: #60a5fa !important; background: rgba(96, 165, 250, 0.1) !important; }
+
+	.toolbar-key-ok {
+		border-color: #22c55e !important;
+		color: #16a34a !important;
+		background: rgba(34, 197, 94, 0.1) !important;
+	}
+	:global(.dark) .toolbar-key-ok { border-color: #4ade80 !important; color: #4ade80 !important; background: rgba(74, 222, 128, 0.15) !important; }
+
+	.toolbar-key-err {
+		border-color: #f59e0b !important;
+		color: #d97706 !important;
+		background: rgba(245, 158, 11, 0.12) !important;
+	}
+	:global(.dark) .toolbar-key-err { border-color: #fbbf24 !important; color: #fbbf24 !important; background: rgba(251, 191, 36, 0.15) !important; }
+
+	.toolbar-batch {
+		border-color: rgba(139, 92, 246, 0.4) !important;
+		color: #7c3aed !important;
+		background: rgba(139, 92, 246, 0.08) !important;
+	}
+	.toolbar-batch:hover { background: rgba(139, 92, 246, 0.15) !important; }
+	:global(.dark) .toolbar-batch { border-color: rgba(167, 139, 250, 0.4) !important; color: #a78bfa !important; background: rgba(167, 139, 250, 0.1) !important; }
+
+	.draft-badge-inline, .batch-badge-inline {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
+		border-radius: 9px;
+		font-size: 11px;
+		font-weight: 700;
+		margin-left: 4px;
+	}
+	.draft-badge-inline { background: #2563eb; color: white; }
+	.batch-badge-inline { background: #7c3aed; color: white; }
+	:global(.dark) .draft-badge-inline { background: #60a5fa; color: #0f172a; }
+	:global(.dark) .batch-badge-inline { background: #a78bfa; color: #1e1b4b; }
+
+	.toolbar-publish--disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+</style>

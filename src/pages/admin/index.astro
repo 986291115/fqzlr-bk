@@ -1,6 +1,5 @@
 ---
 // 后台管理入口 - 动画角色登录页
-import { externalMomentsConfig } from "@/config/externalMomentsConfig";
 ---
 
 <html lang="zh-CN">
@@ -382,7 +381,7 @@ import { externalMomentsConfig } from "@/config/externalMomentsConfig";
 
   <button class="dark-fab" onclick="toggleDark()" title="切换暗色模式">🌙</button>
 
-  <script is:inline data-hash={externalMomentsConfig.adminPasswordHash || ""}>
+  <script is:inline data-hash="">
     // ===== 工具 =====
     var passwordHash = document.currentScript.getAttribute("data-hash") || "";
     function $(id) { return document.getElementById(id); }

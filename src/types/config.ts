@@ -423,6 +423,7 @@ export type WidgetComponentType =
 	| "tags"
 	| "postDirectory"
 	| "sidebarToc"
+	| "editPostButton"
 	| "advertisement"
 	| "stats"
 	| "calendar"

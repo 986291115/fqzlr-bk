@@ -4,8 +4,6 @@
  * Lanyard 风格悬挂卡片 — 符合 Firefly 极简无色风格
  */
 import { getCollection } from "astro:content";
-import { externalMomentsConfig } from "@/config/externalMomentsConfig";
-import { externalNotebooksConfig } from "@/config/externalNotebooksConfig";
 import { getPostUrlBySlug } from "@/utils/url-utils";
 
 interface RawItem {
@@ -398,7 +396,7 @@ const typeIconSVG: Record<string, string> = {
   </div>
 </div>
 
-<script is:inline define:vars={{ recentBrief, recentDetail, totalUpdates, typeIconSVG, momentsGistId: externalMomentsConfig.gistId, momentsFileName: externalMomentsConfig.fileName, notebookGists: externalNotebooksConfig.notebookGists }}>
+<script is:inline define:vars={{ recentBrief, recentDetail, totalUpdates, typeIconSVG }}>
 (function() {
   'use strict';
   var DISMISS_KEY = 'wc-dismissed', COOLDOWN = 86400000;
@@ -447,98 +445,6 @@ const typeIconSVG: Record<string, string> = {
         + '</span></div>';
       detailList.appendChild(a);
     }
-  }
-
-  // ===== 获取远程数据（Gist 后端的说说和笔记） =====
-  var allRemoteItems = [];
-  var remoteFetched = 0;
-  var remoteTotal = 0;
-
-  function mergeRemoteItems() {
-    if (remoteFetched < remoteTotal) return;
-    if (!allRemoteItems.length) return;
-
-    // 合并到 recentDetail 并重新排序
-    var merged = recentDetail.concat(allRemoteItems);
-    merged.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    var top8 = merged.slice(0, 8);
-
-    // 重新渲染背面列表
-    var list = document.getElementById('wc-detail-list');
-    if (list) {
-      list.innerHTML = '';
-      for (var j = 0; j < top8.length; j++) {
-        var it = top8[j], a = document.createElement('a');
-        a.href = it.url; a.className = 'wc-detail-item';
-        a.innerHTML = '<div class="wc-detail-thumb">' + typeIcon(it.type) + '</div>'
-          + '<div class="wc-detail-body">'
-          + '<span class="wc-detail-title">' + esc(it.title) + '</span>'
-          + '<span class="wc-detail-meta">'
-          + '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> '
-          + it.date
-          + ' <span class="wc-detail-badge">' + (typeNames[it.type] || it.type) + '</span>'
-          + '</span></div>';
-        list.appendChild(a);
-      }
-    }
-
-    // 重新渲染正面摘要
-    var now = new Date(), threeDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
-    var recent3 = merged.filter(function(it) { return new Date(it.date) >= threeDaysAgo; });
-    var typeCounts = {};
-    recent3.forEach(function(it) { typeCounts[it.type] = (typeCounts[it.type] || 0) + 1; });
-    var typeNamesBrief = { post:'篇文章', moment:'条动态', bangumi:'条记录', notebook:'条笔记', routine:'条规划', changelog:'条日志', album:'个相册', music:'首音乐' };
-    var parts = [];
-    for (var t in typeCounts) parts.push(typeCounts[t] + (typeNamesBrief[t] || '项'));
-    var briefEl = document.getElementById('wc-brief-list');
-    if (briefEl) briefEl.textContent = parts.length > 0 ? parts.join('、') : '暂无更新';
-    var lbl = document.getElementById('wc-recent-label');
-    if (lbl) lbl.textContent = '最近 3 天 · ' + recent3.length + ' 条日志';
-  }
-
-  // 获取远程说说
-  if (momentsGistId) {
-    remoteTotal++;
-    fetch('https://gist.githubusercontent.com/raw/' + momentsGistId + '?t=' + Date.now())
-      .then(function(r) { if (!r.ok) return null; return r.text(); })
-      .then(function(text) {
-        if (!text) return;
-        var moments = [];
-        try { moments = JSON.parse(text); } catch(e) { return; }
-        if (!Array.isArray(moments)) return;
-        moments.forEach(function(m) {
-          var t = (m.content || '').replace(/[#*`]/g, '').trim();
-          if (t.length > 40) t = t.substring(0, 40) + '...';
-          if (!t) t = '日常动态';
-          allRemoteItems.push({ type: 'moment', title: t, date: (m.published || '').substring(0, 10), url: '/moments/' });
-        });
-      })
-      .catch(function() {})
-      .finally(function() { remoteFetched++; mergeRemoteItems(); });
-  }
-
-  // 获取远程笔记
-  if (notebookGists && typeof notebookGists === 'object') {
-    var nbKeys = Object.keys(notebookGists);
-    nbKeys.forEach(function(nbName) {
-      var gistId = notebookGists[nbName];
-      if (!gistId) return;
-      remoteTotal++;
-      fetch('https://gist.githubusercontent.com/raw/' + gistId + '?t=' + Date.now())
-        .then(function(r) { if (!r.ok) return null; return r.text(); })
-        .then(function(text) {
-          if (!text) return;
-          var entries = [];
-          try { entries = JSON.parse(text); } catch(e) { return; }
-          if (!Array.isArray(entries)) return;
-          entries.forEach(function(e) {
-            var slug = (e.id || '').replace(/\.md$/, '');
-            allRemoteItems.push({ type: 'notebook', title: nbName + ' · ' + (e.title || '未命名'), date: (e.date || '').substring(0, 10), url: '/life/notebooks/' + encodeURIComponent(nbName) + '/' });
-          });
-        })
-        .catch(function() {})
-        .finally(function() { remoteFetched++; mergeRemoteItems(); });
-    });
   }
 
   var greetEl = document.getElementById('wc-greeting');

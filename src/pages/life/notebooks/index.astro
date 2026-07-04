@@ -4,6 +4,7 @@ import * as path from "node:path";
 import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import NotebooksEditor from "@/components/edit/NotebooksEditor.svelte";
 
 // 预加载笔记本文件夹内的封面图片
 const notebookCoverFiles = import.meta.glob<ImageMetadata>(
@@ -104,9 +105,27 @@ const notebooksWithCovers = await Promise.all(
 );
 
 const sortedNotebooks = sortByDateDesc(notebooksWithCovers, "updatedAt");
+
+const editorInitialItems = sortedNotebooks.map((nb) => ({
+	id: nb.folderName,
+	folderName: nb.folderName,
+	name: nb.name as string,
+	cover: (nb.coverSrc as string) || "",
+	summary: nb.summary as string,
+	tags: [],
+	entries: nb.entries as number,
+	updatedAt:
+		nb.updatedAt instanceof Date
+			? nb.updatedAt.toISOString().slice(0, 10)
+			: new Date().toISOString().slice(0, 10),
+}));
 ---
 
 <MainGridLayout title="笔记本" description="成长日记、学习复盘、灵感随笔">
+	<div data-no-swup>
+		<NotebooksEditor client:only initialItems={editorInitialItems as any} />
+	</div>
+
 	<div class="diary-page flex w-full flex-col gap-6">
 		<!-- 笔记本网格 -->
 		<section>

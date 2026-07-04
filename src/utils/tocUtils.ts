@@ -3,6 +3,9 @@
  * 用于 SidebarTOC 和 FloatingTOC 的共享逻辑
  */
 
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+
 export interface TOCConfig {
 	contentId: string;
 	indicatorId: string;
@@ -19,6 +22,10 @@ export class TOCManager {
 	private contentId: string;
 	private indicatorId: string;
 	private scrollOffset: number;
+	private boundClickHandlers: Map<HTMLElement, (event: Event) => void> =
+		new Map();
+	private boundMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+	private boundMouseLeaveHandler: (() => void) | null = null;
 
 	constructor(config: TOCConfig) {
 		this.contentId = config.contentId;
@@ -85,6 +92,18 @@ export class TOCManager {
 	}
 
 	/**
+	 * 转义 HTML 属性值，避免标题中的引号破坏属性
+	 */
+	private escapeHtmlAttr(value: string): string {
+		return value
+			.replace(/&/g, "&amp;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
+	}
+
+	/**
 	 * 生成徽章内容
 	 */
 	private generateBadgeContent(depth: number, heading1Count: number): string {
@@ -92,9 +111,16 @@ export class TOCManager {
 			return heading1Count.toString();
 		}
 		if (depth === this.minDepth + 1) {
-			return '<div class="transition w-2 h-2 rounded-[0.1875rem] bg-(--toc-badge-bg)"></div>';
+			return '<span class="toc-badge-dot"></span>';
 		}
-		return '<div class="transition w-1.5 h-1.5 rounded-xs bg-black/5 dark:bg-white/10"></div>';
+		return '<span class="toc-badge-dot toc-badge-dot-sm"></span>';
+	}
+
+	/**
+	 * 空状态文案
+	 */
+	private getEmptyStateHTML(): string {
+		return `<div class="text-center py-8 text-gray-500 dark:text-gray-400"><p>${i18n(I18nKey.tocEmpty)}</p></div>`;
 	}
 
 	/**
@@ -104,14 +130,14 @@ export class TOCManager {
 		const headings = this.getAllHeadings();
 
 		if (headings.length === 0) {
-			return '<div class="text-center py-8 text-gray-500 dark:text-gray-400"><p>当前页面没有目录</p></div>';
+			return this.getEmptyStateHTML();
 		}
 
 		this.minDepth = this.calculateMinDepth(headings);
 		const filteredHeadings = this.filterHeadings(headings);
 
 		if (filteredHeadings.length === 0) {
-			return '<div class="text-center py-8 text-gray-500 dark:text-gray-400"><p>当前页面没有目录</p></div>';
+			return this.getEmptyStateHTML();
 		}
 
 		let tocHTML = "";
@@ -119,12 +145,8 @@ export class TOCManager {
 
 		filteredHeadings.forEach((heading) => {
 			const depth = Number.parseInt(heading.tagName.charAt(1), 10);
-			const depthClass =
-				depth === this.minDepth
-					? ""
-					: depth === this.minDepth + 1
-						? "pl-4"
-						: "pl-8";
+			const depthLevel =
+				depth === this.minDepth ? 0 : depth === this.minDepth + 1 ? 1 : 2;
 
 			if (!heading.id) {
 				return;
@@ -159,23 +181,25 @@ export class TOCManager {
 						: heading.id || "Heading";
 			}
 
+			const escapedHeadingText = this.escapeHtmlAttr(headingText);
+
 			tocHTML += `
         <a 
           href="#${heading.id}" 
-          class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-(--toc-btn-hover) active:bg-(--toc-btn-active) py-2 ${depthClass}"
+			  class="toc-item toc-level-${depthLevel}"
           data-heading-id="${heading.id}"
-          data-depth="${depth}"
-          aria-label="${headingText}"
+		  aria-label="${escapedHeadingText}"
+		  title="${escapedHeadingText}"
         >
-          <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depth === this.minDepth ? "bg-(--toc-badge-bg) text-(--btn-content)" : ""}">
+			  <div class="toc-badge ${depth === this.minDepth ? "toc-badge-index" : ""}">
             ${badgeContent}
           </div>
-          <div class="transition text-sm ${depth <= this.minDepth + 1 ? "text-50" : "text-30"} flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">${headingText}</div>
+			  <div class="toc-label ${depth <= this.minDepth + 1 ? "toc-label-primary" : "toc-label-secondary"}">${headingText}</div>
         </a>
       `;
 		});
 
-		tocHTML += `<div id="${this.indicatorId}" style="opacity: 0;" class="-z-10 absolute bg-(--toc-btn-hover) left-0 right-0 rounded-xl transition-all"></div>`;
+		tocHTML += `<div id="${this.indicatorId}" style="opacity: 0;" class="toc-active-indicator"></div>`;
 
 		return tocHTML;
 	}
@@ -248,34 +272,12 @@ export class TOCManager {
 		});
 
 		const visibleHeadingIds = this.getVisibleHeadingIds();
-		if (visibleHeadingIds.length === 0) {
-			this.updateActiveIndicator([]);
-			return;
-		}
 
-		// 找到可见标题中在 TOC 里最靠前的那一个作为主标题
-		const primaryItem = this.tocItems.find((item) => {
-			const id = item.dataset.headingId;
-			return id && visibleHeadingIds.includes(id);
+		// 找到对应的TOC项并添加活动状态
+		const activeItems = this.tocItems.filter((item) => {
+			const headingId = item.dataset.headingId;
+			return headingId && visibleHeadingIds.includes(headingId);
 		});
-		if (!primaryItem) {
-			this.updateActiveIndicator([]);
-			return;
-		}
-
-		const primaryIndex = this.tocItems.indexOf(primaryItem);
-		const primaryDepth = Number.parseInt(primaryItem.dataset.depth || "1", 10);
-
-		// 从主标题开始，收集它和所有更深级的子标题，直到遇到同级或上级标题
-		const activeItems: HTMLElement[] = [];
-		for (let i = primaryIndex; i < this.tocItems.length; i++) {
-			const item = this.tocItems[i];
-			if (i > primaryIndex) {
-				const d = Number.parseInt(item.dataset.depth || "1", 10);
-				if (d <= primaryDepth) break;
-			}
-			activeItems.push(item);
-		}
 
 		// 添加活动状态
 		activeItems.forEach((item) => {
@@ -311,9 +313,64 @@ export class TOCManager {
 		const top = firstRect.top - contentRect.top;
 		const height = lastRect.bottom - firstRect.top;
 
-		indicator.style.top = `${top}px`;
+		indicator.style.transform = `translateY(${top}px)`;
 		indicator.style.height = `${height}px`;
 		indicator.style.opacity = "1";
+
+		// 绑定鼠标边缘检测（只绑定一次，监听父容器 toc-content）
+		if (!indicator.dataset.edgeBound) {
+			indicator.dataset.edgeBound = "1";
+			const EDGE_THRESHOLD = 0.28;
+
+			if (tocContent) {
+				let edgeRafId: number | null = null;
+				this.boundMouseMoveHandler = (e: MouseEvent) => {
+					if (indicator.style.opacity === "0") return;
+					if (edgeRafId !== null) return;
+					edgeRafId = requestAnimationFrame(() => {
+						edgeRafId = null;
+						const rect = indicator.getBoundingClientRect();
+						if (
+							e.clientX < rect.left ||
+							e.clientX > rect.right ||
+							e.clientY < rect.top ||
+							e.clientY > rect.bottom
+						) {
+							delete indicator.dataset.hoverEdge;
+							return;
+						}
+
+						const x = e.clientX - rect.left;
+						const y = e.clientY - rect.top;
+						const w = rect.width;
+						const h = rect.height;
+						const distTop = y / h;
+						const distBottom = (h - y) / h;
+						const distLeft = x / w;
+						const distRight = (w - x) / w;
+						const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+
+						if (minDist > EDGE_THRESHOLD) {
+							delete indicator.dataset.hoverEdge;
+						} else if (minDist === distTop) {
+							indicator.dataset.hoverEdge = "top";
+						} else if (minDist === distBottom) {
+							indicator.dataset.hoverEdge = "bottom";
+						} else if (minDist === distLeft) {
+							indicator.dataset.hoverEdge = "left";
+						} else {
+							indicator.dataset.hoverEdge = "right";
+						}
+					});
+				};
+				tocContent.addEventListener("mousemove", this.boundMouseMoveHandler);
+
+				this.boundMouseLeaveHandler = () => {
+					delete indicator.dataset.hoverEdge;
+				};
+				tocContent.addEventListener("mouseleave", this.boundMouseLeaveHandler);
+			}
+		}
 
 		// 自动滚动到活动项
 		if (firstActive) {
@@ -419,9 +476,19 @@ export class TOCManager {
 	 * 绑定点击事件
 	 */
 	public bindClickEvents(): void {
+		this.unbindClickEvents();
 		this.tocItems.forEach((item) => {
-			item.addEventListener("click", this.handleClick.bind(this));
+			const handler = this.handleClick.bind(this);
+			this.boundClickHandlers.set(item, handler);
+			item.addEventListener("click", handler);
 		});
+	}
+
+	public unbindClickEvents(): void {
+		this.boundClickHandlers.forEach((handler, item) => {
+			item.removeEventListener("click", handler);
+		});
+		this.boundClickHandlers.clear();
 	}
 
 	/**
@@ -435,6 +502,25 @@ export class TOCManager {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
+		}
+		this.unbindClickEvents();
+		const tocContent = document.getElementById(this.contentId);
+		if (tocContent) {
+			if (this.boundMouseMoveHandler) {
+				tocContent.removeEventListener("mousemove", this.boundMouseMoveHandler);
+				this.boundMouseMoveHandler = null;
+			}
+			if (this.boundMouseLeaveHandler) {
+				tocContent.removeEventListener(
+					"mouseleave",
+					this.boundMouseLeaveHandler,
+				);
+				this.boundMouseLeaveHandler = null;
+			}
+		}
+		const indicator = document.getElementById(this.indicatorId);
+		if (indicator) {
+			delete indicator.dataset.edgeBound;
 		}
 	}
 
