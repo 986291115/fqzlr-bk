@@ -276,6 +276,12 @@ export default defineConfig({
 		plugins: [
 			tailwindcss(),
 		],
+		optimizeDeps: {
+			include: [
+				"three",
+				"three/examples/jsm/controls/OrbitControls.js",
+			],
+		},
 		define: {
 			__VUE_OPTIONS_API__: true,
 			__VUE_PROD_DEVTOOLS__: false,

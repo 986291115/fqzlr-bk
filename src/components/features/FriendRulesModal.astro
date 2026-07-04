@@ -3,13 +3,36 @@ import { Icon } from "astro-icon/components";
 import { friendsPageConfig } from "@/config";
 
 interface Props {
-	applyLink?: string;
+	applyLink?: string | boolean;
 }
 
 const { applyLink = friendsPageConfig.applyLink } = Astro.props;
 
 const siteInfo = (friendsPageConfig as any).siteInfo;
 const notes = (friendsPageConfig as any).notes;
+const githubIssue = (friendsPageConfig as any).githubIssue;
+
+function buildIssueUrl(): string {
+	if (!githubIssue?.repo) return "";
+	const repo = githubIssue.repo;
+	const labels = githubIssue.labels || [];
+	const title = encodeURIComponent("[友链申请] 站点名称");
+	const body = encodeURIComponent(`## 站点信息
+
+- **站点名称**：
+- **站点描述**：
+- **站点链接**：
+- **头像链接**：
+
+## 补充说明
+
+<!-- 在这里补充其他说明 -->
+`);
+	const labelParam = labels.length > 0 ? `&labels=${labels.map(encodeURIComponent).join(",")}` : "";
+	return `https://github.com/${repo}/issues/new?title=${title}${labelParam}&body=${body}`;
+}
+
+const issueUrl = buildIssueUrl();
 ---
 
 <dialog id="friend-rules-modal" class="fr-modal">
@@ -81,19 +104,12 @@ const notes = (friendsPageConfig as any).notes;
             <div class="fr-step-num">2</div>
             <div class="fr-step-line"></div>
             <div class="fr-step-content">
-              <p class="fr-step-title">发送申请邮件</p>
-              <p class="fr-step-desc">将您的站点信息以邮件形式发送给站长</p>
-              {siteInfo?.email && (
-                <div class="fr-template">
-                  <button
-                    class="fr-copy-btn fr-template-copy"
-                    onclick={`navigator.clipboard.writeText('站点名称：您的站点名称\\n站点描述：您的站点描述\\n站点链接：您的站点链接\\n头像链接：您的站点头像');this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),1500)`}
-                    aria-label="复制模板"
-                  >
-                    <Icon name="material-symbols:content-copy-outline-rounded" class="fr-copy-icon" />
-                    <Icon name="material-symbols:check-rounded" class="fr-check-icon" />
-                  </button>
-                  <pre class="fr-template-text">{`站点名称：您的站点名称\n站点描述：您的站点描述\n站点链接：您的站点链接\n头像链接：您的站点头像`}</pre>
+              <p class="fr-step-title">通过 GitHub Issue 申请</p>
+              <p class="fr-step-desc">点击下方按钮，在 GitHub 上提交 Issue 申请，自动填充模板</p>
+              {issueUrl && (
+                <div class="fr-issue-info">
+                  <Icon name="fa7-brands:github" class="fr-issue-icon" />
+                  <span class="fr-issue-text">基于 GitHub Issue 自动化处理</span>
                 </div>
               )}
             </div>
@@ -102,7 +118,7 @@ const notes = (friendsPageConfig as any).notes;
             <div class="fr-step-num">3</div>
             <div class="fr-step-content">
               <p class="fr-step-title">等待审核</p>
-              <p class="fr-step-desc">确认信息无误后会尽快添加您的友链</p>
+              <p class="fr-step-desc">确认信息无误后会尽快添加您的友链，审核通过后自动合并</p>
             </div>
           </div>
         </div>
@@ -129,19 +145,19 @@ const notes = (friendsPageConfig as any).notes;
     </div>
 
     <div class="fr-footer">
-      {applyLink && (
+      {applyLink && issueUrl && (
         <a
-          href={applyLink}
+          href={issueUrl}
           target="_blank"
           rel="noopener noreferrer"
           class="fr-btn fr-btn-primary"
         >
-          <Icon name="material-symbols:edit-square-outline" class="text-base" />
-          自助申请友链（推荐）
+          <Icon name="fa7-brands:github" class="text-base" />
+          通过 Issue 申请友链
         </a>
       )}
       <button class="fr-btn fr-btn-secondary" data-close-modal>
-        <Icon name="material-symbols:mail-outline-rounded" class="text-base" />
+        <Icon name="material-symbols:check-rounded" class="text-base" />
         知道了
       </button>
     </div>
@@ -473,6 +489,34 @@ const notes = (friendsPageConfig as any).notes;
     font-family: monospace;
   }
   :root.dark .fr-template-text { color: #999; }
+
+  .fr-issue-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    background: #f7f7f7;
+    border: 1px solid #ebebeb;
+  }
+  :root.dark .fr-issue-info {
+    background: #1a1a1a;
+    border-color: #333;
+  }
+  .fr-issue-icon {
+    font-size: 1rem;
+    color: #333;
+  }
+  :root.dark .fr-issue-icon {
+    color: #e5e5e5;
+  }
+  .fr-issue-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #666;
+  }
+  :root.dark .fr-issue-text { color: #b3b3b3; }
 
   .fr-notes {
     display: flex;

@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import RoutinesEditor from "@/components/edit/RoutinesEditor.svelte";
 
 const routinesEntries = await getCollection("routines");
 
@@ -60,6 +61,11 @@ const totalEntries = entriesWithContent.length;
           <span class="font-semibold">{lastUpdated?.toLocaleDateString("zh-CN") || "暂无"}</span>
           <span class="text-neutral-500 dark:text-neutral-400">最后更新</span>
         </div>
+      </div>
+
+      <!-- 日常规划编辑器 -->
+      <div data-no-swup>
+        <RoutinesEditor client:only />
       </div>
 
       <!-- 规划列表 -->

@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PlacesEditor from "@/components/edit/PlacesEditor.svelte";
 
 const lifeEntries = await getCollection("life");
 
@@ -78,6 +79,11 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
           <span class="font-semibold">{thisYearVisitCount}</span>
           <span class="text-neutral-500 dark:text-neutral-400">今年出行</span>
         </div>
+      </div>
+
+      <!-- 足迹编辑器 -->
+      <div data-no-swup>
+        <PlacesEditor client:only />
       </div>
 
       <!-- 地图 -->

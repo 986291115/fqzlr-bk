@@ -368,6 +368,7 @@ function showSSRGrid() {
 }
 
 function handleCancel() {
+	editMode = false;
 	friends = deepClone(originalFriends);
 	drafts.clearDrafts();
 	editingIndex = -1;

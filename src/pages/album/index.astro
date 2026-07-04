@@ -1,8 +1,8 @@
 ---
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
-import BounceCards from "@/components/features/BounceCards.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import AlbumEditor from "@/components/edit/AlbumEditor.svelte";
 
 const albums = await getCollection("album", ({ data }) => {
 	return import.meta.env.PROD ? data.draft !== true : true;
@@ -16,118 +16,169 @@ const totalPhotos = sortedAlbums.reduce(
 	(sum, album) => sum + (album.data.photos?.length || 0),
 	0,
 );
-const earliestDate =
-	sortedAlbums.length > 0
-		? sortedAlbums[sortedAlbums.length - 1].data.date
-		: new Date();
-const latestDate =
-	sortedAlbums.length > 0 ? sortedAlbums[0].data.date : new Date();
 
-const formatDateRange = (start: Date, end: Date) => {
-	const format = (d: Date) =>
-		`${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-	return `${format(start)} - ${format(end)}`;
-};
+const allTags = [
+	...new Set(sortedAlbums.flatMap((a) => a.data.tags || [])),
+].sort();
 
-function getPreviewPhotos(album: any) {
+function getAlbumCategory(album: any): string {
+	if (album.data.category) return album.data.category;
 	const photos = album.data.photos || [];
-	return photos.slice(0, 5);
+	if (photos.length > 0) {
+		const first = typeof photos[0] === "string" ? photos[0] : photos[0].src;
+		if (first && (first.startsWith("http://") || first.startsWith("https://"))) {
+			return "network";
+		}
+	}
+	return "local";
+}
+
+const localAlbums = sortedAlbums.filter((a) => getAlbumCategory(a) === "local");
+const networkAlbums = sortedAlbums.filter((a) => getAlbumCategory(a) === "network");
+
+const title = "相册";
+const description = "记录生活中的美好瞬间";
+
+function getCover(album: any): string {
+	const photos = album.data.photos || [];
+	if (photos.length > 0) {
+		const first = photos[0];
+		return typeof first === "string" ? first : first.src;
+	}
+	return "";
+}
+
+function formatDate(date: Date): string {
+	return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 ---
 
-<MainGridLayout title="相册" description="记录生活中的美好瞬间">
-  <div class="flex flex-col w-full relative min-h-[50vh]">
-    <!-- 头部横幅 -->
-    <div class="relative w-full mb-10">
-      <div class="flex items-center gap-4 mb-2">
-        <div class="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center">
-          <Icon name="material-symbols:collections-bookmark" class="text-2xl text-white dark:text-black" />
-        </div>
-        <div>
-          <h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">我的相册</h1>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">记录生活中的美好瞬间</p>
+<MainGridLayout title={title} description={description}>
+  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+    <div class="card-base z-10 px-9 py-6 relative w-full">
+      <div class="mb-4 flex justify-between items-start gap-4 flex-wrap">
+        <div class="flex-1 min-w-0 album-header-wrap">
+          <AlbumEditor client:only="svelte" />
+          <div data-album-ssr class="album-ssr-content">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+                <Icon name="material-symbols:photo-album" class="text-[1.5rem]"></Icon>
+              </div>
+              <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+                {title}
+              </div>
+            </div>
+            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+              {description}
+            </p>
+            <div class="flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
+              <span class="flex items-center gap-1">
+                <Icon name="material-symbols:photo-album" class="text-sm" />
+                {sortedAlbums.length} 个相册
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon name="material-symbols:imagesmode" class="text-sm" />
+                {totalPhotos} 张照片
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 统计信息 -->
-      <div class="flex items-center gap-3 mt-5">
-        <div class="stat-pill">
-          <Icon name="material-symbols:photo-album" class="text-sm" />
-          <span class="font-semibold">{sortedAlbums.length}</span>
-          <span class="text-neutral-500 dark:text-neutral-400">相册</span>
-        </div>
-        <div class="stat-pill">
-          <Icon name="material-symbols:imagesmode" class="text-sm" />
-          <span class="font-semibold">{totalPhotos}</span>
-          <span class="text-neutral-500 dark:text-neutral-400">照片</span>
-        </div>
-        <div class="stat-pill">
-          <Icon name="material-symbols:calendar-month" class="text-sm" />
-          <span class="text-neutral-400 dark:text-neutral-500">{formatDateRange(earliestDate, latestDate)}</span>
-        </div>
+      <!-- 相册分类 Tab -->
+      <div class="album-category-tabs mb-4">
+        <button class="album-category-tab album-category-tab-active" data-category="all">
+          全部
+          <span class="album-category-count">{sortedAlbums.length}</span>
+        </button>
+        <button class="album-category-tab" data-category="local">
+          本地相册
+          <span class="album-category-count">{localAlbums.length}</span>
+        </button>
+        <button class="album-category-tab" data-category="network">
+          网络相册
+          <span class="album-category-count">{networkAlbums.length}</span>
+        </button>
       </div>
 
-    </div>
+      <!-- 标签筛选 -->
+      {sortedAlbums.length > 0 && allTags.length > 0 && (
+        <div class="tools-tab-wrapper mb-4">
+          <div class="tools-tab-pill" data-album-filter>
+            <button
+              data-tag="all"
+              class="tools-tab-btn tools-tab-btn-active"
+            >
+              全部
+            </button>
+            {allTags.map((tag) => (
+              <button
+                data-tag={tag}
+                class="tools-tab-btn tools-tab-btn-inactive"
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-    <!-- 相册网格 -->
-    <div class="albums-grid">
+      <!-- 相册网格 -->
       {sortedAlbums.length > 0 ? (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {sortedAlbums.map((album, index) => {
-            const previewPhotos = getPreviewPhotos(album);
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 my-6">
+          {sortedAlbums.map((album) => {
+            const cover = getCover(album);
             const photoCount = album.data.photos?.length || 0;
-            const photoUrls = previewPhotos.map((p: any) => typeof p === 'string' ? p : p.src);
-            // 根据照片数量生成散开样式
-            const cardTransforms = photoUrls.length === 1
-              ? ["rotate(-2deg)"]
-              : photoUrls.length === 2
-                ? ["rotate(-5deg) translate(-40px)", "rotate(5deg) translate(40px)"]
-                : photoUrls.length === 3
-                  ? ["rotate(-5deg) translate(-70px)", "rotate(0deg)", "rotate(5deg) translate(70px)"]
-                  : photoUrls.length === 4
-                    ? ["rotate(5deg) translate(-105px)", "rotate(0deg) translate(-35px)", "rotate(-5deg) translate(35px)", "rotate(5deg) translate(105px)"]
-                    : ["rotate(10deg) translate(-140px)", "rotate(5deg) translate(-70px)", "rotate(-3deg)", "rotate(-10deg) translate(70px)", "rotate(2deg) translate(140px)"];
             return (
               <a
                 href={`/album/${album.id}/`}
-                class="album-card group onload-animation"
-                style={`animation-delay: calc(var(--content-delay) + ${index * 80}ms)`}
+                data-tags={album.data.tags?.join(",") || ""}
+                data-category={getAlbumCategory(album)}
+                class="album-card group"
               >
-                <!-- BounceCards 照片展示 -->
-                <div class="bounce-stack">
-                  {photoUrls.length > 0 ? (
-                    <BounceCards
-                      id={`bounce-${album.id}`}
-                      images={photoUrls}
-                      containerWidth={280}
-                      containerHeight={180}
-                      animationDelay={0.3 + index * 0.1}
-                      animationStagger={0.08}
-                      enableHover={true}
-                      transformStyles={cardTransforms}
+                <!-- Image wrapper -->
+                <div class="album-card-imgbox">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt={album.data.title}
+                      class="album-card-img"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
-                    <div class="empty-placeholder">
-                      <Icon name="material-symbols:add-photo-alternate-outline" class="text-4xl" />
+                    <div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                      <div class="text-gray-400 text-5xl">&#x1f4f7;</div>
                     </div>
                   )}
-                  {photoCount > 5 && (
-                    <div class="photo-badge">+{photoCount - 5}</div>
+
+                  <!-- Photo count badge -->
+                  <div class="album-card-badge">
+                    {photoCount} 张照片
+                  </div>
+
+                  <!-- Tags overlay -->
+                  {album.data.tags && album.data.tags.length > 0 && (
+                    <div class="album-card-tags-overlay">
+                      {album.data.tags.slice(0, 4).map((tag: string) => (
+                        <span class="album-card-tag-overlay">{tag}</span>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                <!-- 相册信息 -->
-                <div class="card-body">
-                  <h3 class="card-title">{album.data.title}</h3>
-                  <div class="card-meta">
-                    <span class="meta-item">
-                      <Icon name="material-symbols:calendar-today" class="text-xs" />
-                      {album.data.date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
-                    </span>
-                    <span class="meta-item">
-                      <Icon name="material-symbols:imagesmode" class="text-xs" />
-                      {photoCount} 张
-                    </span>
+                <!-- Details -->
+                <div class="album-card-details">
+                  <h3 class="album-card-title">{album.data.title}</h3>
+
+                  <div class="album-card-meta">
+                    {album.data.date && <span>{formatDate(album.data.date)}</span>}
+                    {album.data.location && (
+                      <span class="album-card-location">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+                        {album.data.location}
+                      </span>
+                    )}
                   </div>
                 </div>
               </a>
@@ -135,118 +186,397 @@ function getPreviewPhotos(album: any) {
           })}
         </div>
       ) : (
-        <div class="w-full p-12 text-center">
-          <Icon name="material-symbols:photo-album-outline" class="text-6xl text-neutral-300 dark:text-neutral-600 mb-4" />
-          <p class="text-neutral-500 dark:text-neutral-400">还没有创建任何相册哦~</p>
-          <p class="text-sm text-neutral-400 dark:text-neutral-500 mt-2">快去记录生活中的美好瞬间吧！</p>
+        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
+          <Icon name="material-symbols:photo-library" class="text-6xl mb-4 opacity-50" />
+          <p class="text-lg">暂无相册</p>
         </div>
       )}
     </div>
   </div>
+
+  <!-- 筛选交互 -->
+  <script is:inline>
+    (function() {
+      var currentCategory = "all";
+      var currentTag = "all";
+
+      function applyFilters() {
+        var cards = document.querySelectorAll(".album-card");
+        cards.forEach(function(card) {
+          var category = card.dataset.category || "local";
+          var tags = (card.dataset.tags || "").split(",");
+          var categoryMatch = currentCategory === "all" || category === currentCategory;
+          var tagMatch = currentTag === "all" || (currentTag && tags.includes(currentTag));
+          if (categoryMatch && tagMatch) {
+            card.style.display = "";
+            card.classList.remove("gallery-card-fade-in");
+            void card.offsetHeight;
+            card.classList.add("gallery-card-fade-in");
+          } else {
+            card.style.display = "none";
+            card.classList.remove("gallery-card-fade-in");
+          }
+        });
+      }
+
+      // 分类 Tab 切换
+      document.addEventListener("click", function(e) {
+        var tab = e.target.closest(".album-category-tab");
+        if (!tab) return;
+        var tabs = tab.parentElement.querySelectorAll(".album-category-tab");
+        tabs.forEach(function(t) {
+          t.classList.remove("album-category-tab-active");
+        });
+        tab.classList.add("album-category-tab-active");
+        currentCategory = tab.dataset.category || "all";
+        applyFilters();
+      });
+
+      // 标签筛选
+      document.addEventListener("click", function(e) {
+        var button = e.target.closest("[data-album-filter] .tools-tab-btn");
+        if (!button) return;
+        var container = button.closest("[data-album-filter]");
+        if (!container) return;
+
+        var selectedTag = button.dataset.tag;
+        var filters = container.querySelectorAll(".tools-tab-btn");
+
+        filters.forEach(function(f) {
+          f.classList.remove("tools-tab-btn-active");
+          f.classList.add("tools-tab-btn-inactive");
+        });
+        button.classList.remove("tools-tab-btn-inactive");
+        button.classList.add("tools-tab-btn-active");
+
+        currentTag = selectedTag || "all";
+        applyFilters();
+      });
+    })();
+  </script>
+
+  <style>
+    /* 相册分类 Tab */
+    .album-category-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .album-category-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 2px solid #000;
+      background: transparent;
+      color: var(--btn-content);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    :root.dark .album-category-tab {
+      border-color: #52525b;
+    }
+
+    .album-category-tab:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    :root.dark .album-category-tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .album-category-tab-active {
+      background: #000;
+      color: #fff;
+      border-color: #000;
+    }
+
+    :root.dark .album-category-tab-active {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+    }
+
+    .album-category-count {
+      padding: 1px 7px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.08);
+      color: inherit;
+    }
+
+    .album-category-tab-active .album-category-count {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    :root.dark .album-category-tab-active .album-category-count {
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    /* 筛选标签样式 - 黑色胶囊 */
+    .tools-tab-wrapper {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+
+    .tools-tab-pill {
+      display: inline-flex;
+      background: transparent;
+      border: 1.5px solid #000;
+      border-radius: 9999px;
+      padding: 3px;
+      gap: 2px;
+      position: relative;
+    }
+
+    :root.dark .tools-tab-pill {
+      border-color: #52525b;
+    }
+
+    .tools-tab-btn {
+      padding: 5px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: var(--btn-content);
+      position: relative;
+      z-index: 1;
+    }
+
+    .tools-tab-btn-active {
+      background: #000;
+      color: #fff;
+    }
+
+    :root.dark .tools-tab-btn-active {
+      background: #fff;
+      color: #000;
+    }
+
+    .tools-tab-btn-inactive {
+      background: transparent;
+      color: var(--btn-content);
+    }
+
+    .tools-tab-btn-inactive:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    :root.dark .tools-tab-btn-inactive:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* 淡入动画 */
+    .gallery-card-fade-in {
+      animation: galleryFadeInUp 0.35s ease-out both;
+    }
+
+    @keyframes galleryFadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 相册卡片样式 */
+    .album-card {
+      position: relative;
+      display: block;
+      overflow: visible;
+      width: 100%;
+      height: 254px;
+      background: #1f1f1f;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+      transition: 0.3s;
+      text-decoration: none;
+    }
+
+    :root.dark .album-card {
+      background: #f5f5f5;
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+    }
+
+    .album-card::before,
+    .album-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      background: #1f1f1f;
+      transition: 0.5s;
+      z-index: -1;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    :root.dark .album-card::before,
+    :root.dark .album-card::after {
+      background: #f5f5f5;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .album-card:hover::before {
+      transform: rotate(1.5deg) translateY(1px);
+    }
+
+    .album-card:hover::after {
+      transform: rotate(0.8deg) translateY(0.5px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .15);
+    }
+
+    :root.dark .album-card:hover::after {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .3);
+    }
+
+    .album-card-imgbox {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      bottom: 6px;
+      right: 6px;
+      background: #222;
+      transition: bottom 0.5s;
+      z-index: 1;
+      overflow: hidden;
+      border-radius: 2px;
+    }
+
+    .album-card:hover .album-card-imgbox {
+      bottom: 80px;
+    }
+
+    .album-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      transition: transform 0.5s;
+    }
+
+    .album-card:hover .album-card-img {
+      transform: scale(1.05);
+    }
+
+    .album-card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 2;
+      transition: opacity 0.3s;
+    }
+
+    .album-card:hover .album-card-badge {
+      opacity: 0;
+    }
+
+    .album-card-tags-overlay {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      z-index: 2;
+      transition: opacity 0.3s;
+    }
+
+    .album-card:hover .album-card-tags-overlay {
+      opacity: 0;
+    }
+
+    .album-card-tag-overlay {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .album-card-details {
+      position: absolute;
+      left: -10px;
+      right: 0;
+      bottom: 5px;
+      height: 60px;
+      text-align: center;
+      text-transform: uppercase;
+      z-index: 0;
+    }
+
+    .album-card-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+      color: #fff;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    :root.dark .album-card-title {
+      color: #444;
+    }
+
+    .album-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 0.875rem;
+      color: #ccc;
+      margin-top: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      padding: 0 10px;
+    }
+
+    :root.dark .album-card-meta {
+      color: #555;
+    }
+
+    .album-card-meta > span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .album-card-location {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.125rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+  </style>
 </MainGridLayout>
-
-<style>
-  .albums-grid {
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* 统计胶囊 */
-  .stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: var(--card-bg);
-    border: 2px solid #000;
-    border-radius: 50px;
-    font-size: 13px;
-    color: var(--deep-text);
-  }
-  :root.dark .stat-pill { border-color: #fff; }
-
-  .stat-pill :global(svg) {
-    color: var(--primary);
-  }
-
-  /* 相册卡片 */
-  .album-card {
-    display: flex;
-    flex-direction: column;
-    background: transparent;
-    border-radius: 16px;
-    overflow: visible;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .album-card:hover {
-    transform: translateY(-6px);
-  }
-
-  /* BounceCards 堆叠区域 */
-  .bounce-stack {
-    position: relative;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-  }
-
-  .bounce-stack :global(.bounce-card) {
-    width: 100px;
-    border-width: 3px;
-    border-radius: 14px;
-  }
-
-  .photo-badge {
-    position: absolute;
-    bottom: 8px; right: 12px;
-    background: rgba(0, 0, 0, 0.75);
-    color: white; font-size: 11px; font-weight: 600;
-    padding: 3px 8px; border-radius: 12px;
-    backdrop-filter: blur(4px);
-    z-index: 10;
-  }
-
-  .empty-placeholder {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--primary);
-    opacity: 0.3;
-  }
-
-  .card-body {
-    padding: 14px 8px 8px;
-  }
-
-  .card-title {
-    font-size: 15px; font-weight: 600;
-    color: var(--deep-text);
-    margin-bottom: 6px;
-    transition: color 0.3s;
-  }
-
-  .album-card:hover .card-title {
-    color: var(--primary);
-  }
-
-  .card-meta {
-    display: flex; align-items: center; gap: 14px;
-    font-size: 12px; color: var(--content-meta);
-  }
-
-  .meta-item {
-    display: flex; align-items: center; gap: 4px;
-  }
-
-  @media (max-width: 640px) {
-    .polaroid-stack { height: 180px; }
-    .stat-pill { padding: 6px 12px; font-size: 12px; }
-  }
-</style>

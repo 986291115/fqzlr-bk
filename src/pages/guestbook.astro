@@ -1,8 +1,6 @@
 ---
 import { getEntry } from "astro:content";
 import Comment from "@components/comment/index.astro";
-import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
-import GuestbookDetailModal from "@components/features/GuestbookDetailModal.astro";
 import { Icon } from "astro-icon/components";
 import { commentConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
@@ -40,11 +38,6 @@ const description = i18n(I18nKey.guestbookDescription);
               {title}
             </h1>
           </div>
-          {isCommentEnabled && (
-            <button class="inline-flex items-center gap-2 px-4 py-2 bg-black text-white dark:bg-white dark:text-black text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 active:bg-neutral-700 dark:active:bg-neutral-300 transition-colors" onclick="document.getElementById('scissor-divider')?.scrollIntoView({behavior:'smooth',block:'start'})">
-              <Icon name="material-symbols:edit-outline-rounded" class="text-lg text-white dark:text-black" /> 发表留言
-            </button>
-          )}
         </div>
         {description && (
           <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
@@ -52,9 +45,6 @@ const description = i18n(I18nKey.guestbookDescription);
           </p>
         )}
       </div>
-
-      <!-- 卡片堆叠视图 -->
-      <GuestbookCardStack client:load />
     </div>
   </div>
 
@@ -76,7 +66,4 @@ const description = i18n(I18nKey.guestbookDescription);
       </div>
     )}
   </div>
-
-  <!-- 详情弹窗 -->
-  <GuestbookDetailModal />
 </MainGridLayout>

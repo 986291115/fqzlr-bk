@@ -367,6 +367,7 @@ function showSSRContent() {
 }
 
 function handleCancel() {
+	editMode = false;
 	items = deepClone(originalItems);
 	editingIndex = -1;
 	activeTab = defaultCategory;
