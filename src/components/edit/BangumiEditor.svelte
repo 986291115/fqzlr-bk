@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import {
 	hasValidToken,
 	showToast,
@@ -661,7 +660,6 @@ function handleKeydown(e: KeyboardEvent) {
 }
 </script>
 
-<EditToast />
 
 {#if editMode}
   <div class="bg-editor">

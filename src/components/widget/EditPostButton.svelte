@@ -50,7 +50,6 @@ const writeOnlyPaths = [
 	/^\/posts\/?$/,
 	/^\/categories\//,
 	/^\/archive\//,
-	/^\/tag\//,
 ];
 
 function isPostDetailPage(path: string): boolean {
@@ -166,7 +165,7 @@ function showEditButton(): boolean {
 }
 
 function showWriteButton(): boolean {
-	return currentPage.type !== "none";
+	return currentPage.type === "writeOnly" || currentPage.type === "postDetail";
 }
 
 function currentPageKey(): string {
@@ -214,6 +213,7 @@ function handleCancel() {
 			detail: { pageKey: currentPageKey() },
 		}),
 	);
+	showToast("已取消编辑", "info");
 }
 
 function handleSaveDraft() {

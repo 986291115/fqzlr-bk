@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import {
 	showToast,
 	genId,
@@ -494,7 +493,6 @@ function getTagColor(tag: string) {
 }
 </script>
 
-<EditToast />
 
 <!-- 编辑模式：可编辑网格 -->
 {#if editMode}

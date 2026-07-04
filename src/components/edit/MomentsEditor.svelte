@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import { marked } from "marked";
 import {
 	hasValidToken,
@@ -604,7 +603,6 @@ function getGridCols(count: number) {
 }
 </script>
 
-<EditToast />
 
 {#if editMode}
   <div class="moments-edit-list">

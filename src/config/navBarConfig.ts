@@ -32,6 +32,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 				// 归档
 				LinkPreset.Archive,
+
+				// 写文章
+				{
+					name: "写文章",
+					url: "/write/",
+					icon: "material-symbols:edit-note",
+				},
 			],
 		},
 
@@ -127,6 +134,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 赞助
 			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+
+			// 站点配置
+			{
+				name: "站点配置",
+				url: "/config/",
+				icon: "material-symbols:settings",
+			},
 		],
 	});
 

@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import {
 	hasValidToken,
 	showToast,
@@ -232,6 +231,7 @@ function handleCancel() {
 	notebooks = deepClone(originalNotebooks);
 	editingIndex = -1;
 	drafts.clearDrafts();
+	editMode = false;
 	showSSRContent();
 }
 
@@ -484,7 +484,6 @@ function getGridCols(count: number) {
 }
 </script>
 
-<EditToast />
 
 {#if editMode}
   <div class="nb-editor">

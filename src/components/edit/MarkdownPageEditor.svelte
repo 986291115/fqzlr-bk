@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
-import EditToast from "./EditToast.svelte";
 import { marked } from "marked";
 import {
 	showToast,
@@ -110,7 +109,6 @@ function cancelEdit() {
 	content = originalContent;
 	editMode = false;
 	drafts.clearDrafts();
-	showToast("已取消编辑", "info");
 }
 
 function handleContentChange(e: Event) {
@@ -175,7 +173,6 @@ const renderedHtml = $derived.by(() => {
 });
 </script>
 
-<EditToast />
 
 {#if editMode}
 	<div class="md-editor-container">

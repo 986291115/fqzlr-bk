@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import { marked } from "marked";
 import {
 	hasValidToken,
@@ -551,7 +550,6 @@ registerSubmitHandler(pageKey, async (draft) => {
 });
 </script>
 
-<EditToast />
 
 {#if editMode}
   <div class="cl-edit-list">

@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import EditToast from "./EditToast.svelte";
 import {
 	showToast,
 	genId,
@@ -187,6 +186,7 @@ function handleCancel() {
 	drafts.clearDrafts();
 	editingIndex = -1;
 	activeTab = "all";
+	editMode = false;
 }
 
 function switchTab(tab: string) {
@@ -334,8 +334,6 @@ function isHttpIcon(icon?: string) {
 	return icon && icon.startsWith("http");
 }
 </script>
-
-<EditToast />
 
 <!-- Tab 分类导航 -->
 {#if categories.length > 1}

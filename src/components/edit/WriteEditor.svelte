@@ -1,6 +1,5 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
-import EditToast from "./EditToast.svelte";
 import { marked } from "marked";
 import {
 	hasValidCredentials,
@@ -1021,7 +1020,6 @@ onMount(async () => {
 });
 </script>
 
-<EditToast />
 
 <div class="write-toolbar">
 	<div class="toolbar-left">

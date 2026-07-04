@@ -52,6 +52,7 @@ interface Props {
 	prevTitle?: string;
 	nextSlug?: string;
 	nextTitle?: string;
+	hideSidebar?: boolean;
 	bannerPostMeta?: {
 		title: string;
 		published: Date;
@@ -72,6 +73,7 @@ const {
 	postSlug,
 	headings = [],
 	bannerPostMeta,
+	hideSidebar = false,
 } = Astro.props;
 
 // 检查背景壁纸模式和是否允许切换
@@ -193,15 +195,18 @@ const shouldAddLeftSidebar: boolean =
 	shouldShowBothSidebarsOnPostPage && sidebarLayoutConfig.position === "right";
 
 const effectiveIsBothSidebars: boolean =
-	sidebarConfig.isBothSidebars || shouldShowBothSidebarsOnPostPage;
+	!hideSidebar &&
+	(sidebarConfig.isBothSidebars || shouldShowBothSidebarsOnPostPage);
 const effectiveHasRightComponents: boolean =
-	sidebarConfig.hasRightComponents ||
-	(shouldAddRightSidebar &&
-		sidebarLayoutConfig.rightComponents.some((comp) => comp.enable));
+	!hideSidebar &&
+	(sidebarConfig.hasRightComponents ||
+		(shouldAddRightSidebar &&
+			sidebarLayoutConfig.rightComponents.some((comp) => comp.enable)));
 const effectiveHasLeftComponents: boolean =
-	sidebarConfig.hasLeftComponents ||
-	(shouldAddLeftSidebar &&
-		sidebarLayoutConfig.leftComponents.some((comp) => comp.enable));
+	!hideSidebar &&
+	(sidebarConfig.hasLeftComponents ||
+		(shouldAddLeftSidebar &&
+			sidebarLayoutConfig.leftComponents.some((comp) => comp.enable)));
 
 // 使用effective值重新生成网格类
 // 当position为right且文章页临时显示左侧栏时，tabletSidebar应为right（保持显示主侧栏）
@@ -217,13 +222,25 @@ const updatedGridConfig: ResponsiveSidebarConfig = {
 	tabletSidebar: effectiveTabletSidebar,
 };
 
-const { gridCols: baseGridCols } = generateGridClasses(updatedGridConfig);
-const sidebarClass = generateSidebarClasses(updatedGridConfig);
+const finalGridConfig: ResponsiveSidebarConfig = hideSidebar
+	? {
+			...updatedGridConfig,
+			isBothSidebars: false,
+			hasLeftComponents: false,
+			hasRightComponents: false,
+			mobileShowSidebar: false,
+			tabletShowSidebar: false,
+			desktopShowSidebar: false,
+		}
+	: updatedGridConfig;
+
+const { gridCols: baseGridCols } = generateGridClasses(finalGridConfig);
+const sidebarClass = generateSidebarClasses(finalGridConfig);
 const rightSidebarClass =
-	effectiveIsBothSidebars || sidebarLayoutConfig.position === "right"
-		? generateRightSidebarClasses(updatedGridConfig)
+	finalGridConfig.isBothSidebars || sidebarLayoutConfig.position === "right"
+		? generateRightSidebarClasses(finalGridConfig)
 		: "";
-const mainContentClass = generateMainContentClasses(updatedGridConfig);
+const mainContentClass = generateMainContentClasses(finalGridConfig);
 const staticBarClass = mainContentClass.replace("transition-main", "").trim();
 
 // grid-class-carrier 始终存储非首页的网格类，供 JS 恢复用
@@ -233,20 +250,20 @@ const showSidebars = !isHomePageCheck;
 const footerClass = ["footer", "col-span-1", "onload-animation"];
 
 if (
-	updatedGridConfig.isBothSidebars &&
-	updatedGridConfig.hasLeftComponents &&
-	updatedGridConfig.hasRightComponents
+	finalGridConfig.isBothSidebars &&
+	finalGridConfig.hasLeftComponents &&
+	finalGridConfig.hasRightComponents
 ) {
 	// 双侧栏：平板端跨2列，桌面端在中间列
 	footerClass.push("md:col-span-2 xl:col-start-2 xl:col-span-1");
 } else if (
-	updatedGridConfig.hasLeftComponents &&
-	!updatedGridConfig.hasRightComponents
+	finalGridConfig.hasLeftComponents &&
+	!finalGridConfig.hasRightComponents
 ) {
 	footerClass.push("md:col-span-2 xl:col-start-2 xl:col-span-1");
 } else if (
-	!updatedGridConfig.hasLeftComponents &&
-	updatedGridConfig.hasRightComponents
+	!finalGridConfig.hasLeftComponents &&
+	finalGridConfig.hasRightComponents
 ) {
 	// 仅右侧栏：平板端跨2列，内容在第1列
 	footerClass.push("md:col-span-2 md:col-start-1 xl:col-start-1 xl:col-span-1");
@@ -588,7 +605,7 @@ const mobileQuality = Math.round(configQuality * 0.9);
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
     <div class="relative max-w-(--page-width) mx-auto pointer-events-auto">
         <div id="main-grid"
-          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto px-2 md:px-4 ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''} ${isPostPage ? 'gap-0 is-post-layout' : 'gap-4'}`}
+          class={`transition duration-700 w-full left-0 right-0 grid ${hideSidebar ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1' : gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto px-2 md:px-4 ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''} ${isPostPage ? 'gap-0 is-post-layout' : 'gap-4'}`}
           data-sidebar-position={sidebarLayoutConfig.position}
           data-tablet-sidebar={sidebarLayoutConfig.tabletSidebar ?? "left"}
           data-show-both-sidebars-on-post={sidebarLayoutConfig.showBothSidebarsOnPostPage ? "true" : "false"}
@@ -627,7 +644,7 @@ const mobileQuality = Math.round(configQuality * 0.9);
             )}
                     
             {/* 主内容区包装器 - 包含静态栏位和swup容器，作为单个grid item */}
-            <div id="main-content-wrapper" class={staticBarClass}>
+            <div id="main-content-wrapper" class={`${staticBarClass} ${hideSidebar ? 'md:col-span-1 md:col-start-1 lg:col-span-1 lg:col-start-1 xl:col-span-1 xl:col-start-1' : ''}`}>
                 {/* 主内容区 - 始终渲染，确保 Swup 容器存在 */}
                 <main id="swup-container" class="transition-main">
                 {/* 携带网格布局类名，用于JS更新父容器 */}
@@ -663,13 +680,13 @@ const mobileQuality = Math.round(configQuality * 0.9);
             )}
 
             {/* 移动端底部组件 - CSS .lg\:is-home 控制首页隐藏 */}
-            {sidebarLayoutConfig.mobileBottomComponents && sidebarLayoutConfig.mobileBottomComponents.length > 0 && (
+            {!hideSidebar && sidebarLayoutConfig.mobileBottomComponents && sidebarLayoutConfig.mobileBottomComponents.length > 0 && (
                 <div id="mobile-bottom-sidebar" class="col-span-1 block md:hidden mt-4">
                     <SideBar side="bottom" class={`${transparentClass}`} headings={headings} postSlug={postSlug}></SideBar>
                 </div>
             )}
 
-            <div class={footerClassName}>
+            <div class={`${footerClassName} ${hideSidebar ? 'md:col-span-1 md:col-start-1 lg:col-span-1 lg:col-start-1 xl:col-span-1 xl:col-start-1' : ''}`}>
                 <Footer></Footer>
             </div>
         </div>

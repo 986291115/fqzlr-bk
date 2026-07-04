@@ -1,0 +1,56 @@
+---
+import ConfigEditor from "@/components/edit/ConfigEditor.svelte";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
+import {
+	siteConfig,
+	sidebarLayoutConfig,
+	profileConfig,
+	backgroundWallpaper,
+	sakuraConfig,
+	relationshipConfig,
+	announcementConfig,
+} from "@/config";
+
+const title = "站点配置";
+const description = "可视化编辑站点全局配置";
+---
+
+<MainGridLayout title={title} description={description} hideSidebar={true}>
+  <div class="flex w-full rounded-(--radius-large) relative">
+    <div class="card-base z-10 px-9 py-6 relative w-full">
+      <div class="mb-4 flex justify-between items-start gap-4 flex-wrap">
+        <div class="flex-1 min-w-0">
+          <PageTitle title={title} eyebrow="Config" variant="stacked" />
+          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mt-3">
+            在此页面可视化编辑站点全局配置，修改后通过 GitHub API 提交到仓库。
+          </p>
+        </div>
+        <div class="page-header-toolbar-slot flex-shrink-0"></div>
+      </div>
+
+      <ConfigEditor client:only />
+    </div>
+  </div>
+</MainGridLayout>
+
+<script define:vars={{ siteConfig, sidebarLayoutConfig, profileConfig, backgroundWallpaper, sakuraConfig, relationshipConfig, announcementConfig }}>
+  window.__SITE_CONFIG__ = siteConfig;
+  window.__SIDEBAR_CONFIG__ = sidebarLayoutConfig;
+  window.__PROFILE_CONFIG__ = profileConfig;
+  window.__BACKGROUND_CONFIG__ = backgroundWallpaper;
+  window.__SAKURA_CONFIG__ = sakuraConfig;
+  window.__RELATIONSHIP_CONFIG__ = relationshipConfig;
+  window.__ANNOUNCEMENT_CONFIG__ = announcementConfig;
+</script>
+
+<style>
+  @media (max-width: 768px) {
+    :has(> .page-header-toolbar-slot) {
+      flex-direction: column;
+    }
+    .page-header-toolbar-slot {
+      width: 100%;
+    }
+  }
+</style>
