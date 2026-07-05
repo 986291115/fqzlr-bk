@@ -9,13 +9,16 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import MomentsEditor from "@/components/edit/MomentsEditor.svelte";
 
 const moments = await getCollection("moments");
+
+const coverEntry = moments.find((m) => m.id === "_cover");
+const coverImage = coverEntry?.data?.image || "";
+
 const sortedMoments = moments
-	.filter((m) => !m.data.pinned)
+	.filter((m) => !m.data.pinned && m.id !== "_cover")
 	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
 
-// 置顶说说
 const pinnedMoments = moments
-	.filter((m) => m.data.pinned)
+	.filter((m) => m.data.pinned && m.id !== "_cover")
 	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
 
 // 获取 moments 资产目录下的所有图片
@@ -73,7 +76,7 @@ const albums = await getCollection("album");
 
 <MainGridLayout title="动态" description="记录生活中的点点滴滴">
   <!-- 微信朋友圈风格封面 -->
-  <MomentsCover />
+  <MomentsCover coverImage={coverImage} />
 
   <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
   <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>

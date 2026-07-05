@@ -298,8 +298,12 @@ function closeBatchModal() {
 	document.body.style.overflow = "";
 }
 
-function triggerKeyImport() {
-	keyFileInputEl?.click();
+function handleAdd() {
+	window.dispatchEvent(
+		new CustomEvent("edit:sidebarAdd", {
+			detail: { pageKey: currentPageKey() },
+		}),
+	);
 }
 
 async function handleKeyFileSelect(e: Event) {
@@ -396,7 +400,10 @@ function closeHelpModal() {
 						<span class="tb-text">密钥</span>
 					</button>
 				{/if}
-				<button class="tb-btn tb-btn-submit" onclick={handleSubmit} disabled={saving || (!hasChanges && pageDraftCount === 0)} title="提交">
+				<button class="tb-btn tb-btn-add" onclick={handleAdd} title="添加新项">
+					<iconify-icon icon="material-symbols:add-rounded"></iconify-icon>
+					<span class="tb-text">添加</span>
+				</button>
 					{#if saving}
 						<iconify-icon icon="material-symbols:progress-activity-rounded" class="animate-spin"></iconify-icon>
 					{:else}
@@ -739,6 +746,25 @@ function closeHelpModal() {
 		border-color: #fbbf24 !important;
 		color: #fbbf24 !important;
 		background: rgba(251, 191, 36, 0.15) !important;
+	}
+
+	.tb-btn-add {
+		border-color: rgba(34, 197, 94, 0.3);
+		color: #16a34a;
+		background: rgba(34, 197, 94, 0.08);
+	}
+	.tb-btn-add:hover {
+		border-color: #22c55e;
+		background: rgba(34, 197, 94, 0.15);
+	}
+	:global(.dark) .tb-btn-add {
+		border-color: rgba(74, 222, 128, 0.3);
+		color: #4ade80;
+		background: rgba(74, 222, 128, 0.1);
+	}
+	:global(.dark) .tb-btn-add:hover {
+		border-color: #4ade80;
+		background: rgba(74, 222, 128, 0.2);
 	}
 
 	.tb-btn-submit {

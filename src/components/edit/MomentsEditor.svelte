@@ -42,13 +42,16 @@ let editingIndex = $state(-1);
 let editPreview = $state("");
 let imagesInput = $state("");
 let tagsInput = $state("");
+let coverImage = $state("");
+let originalCoverImage = $state("");
 
 const pageKey = "moments";
 const pageName = "说说";
 
 function serializeMoments(): string {
-	return JSON.stringify(
-		moments.map((m) => ({
+	return JSON.stringify({
+		coverImage,
+		moments: moments.map((m) => ({
 			id: m.id,
 			slug: m.slug,
 			author: m.author,
@@ -63,29 +66,35 @@ function serializeMoments(): string {
 			_draft: m._draft,
 			_deleted: m._deleted,
 		})),
-	);
+	});
 }
 
 function deserializeMoments(json: string) {
 	try {
 		const parsed = JSON.parse(json);
-		if (Array.isArray(parsed)) {
-			moments = parsed.map((e: any) => ({
-				id: e.id || genId("mom"),
-				slug: e.slug || "",
-				author: e.author || "",
-				avatar: e.avatar || "",
-				pinned: !!e.pinned,
-				published: e.published || new Date().toISOString().slice(0, 10),
-				images: Array.isArray(e.images) ? e.images : [],
-				tags: Array.isArray(e.tags) ? e.tags : [],
-				location: e.location || "",
-				device: e.device || "",
-				body: e.body || "",
-				sha: e.sha,
-				_draft: !!e._draft,
-				_deleted: !!e._deleted,
-			}));
+		if (parsed && typeof parsed === "object") {
+			if (parsed.coverImage) {
+				coverImage = parsed.coverImage;
+			}
+			const data = Array.isArray(parsed) ? parsed : parsed.moments;
+			if (Array.isArray(data)) {
+				moments = data.map((e: any) => ({
+					id: e.id || genId("mom"),
+					slug: e.slug || "",
+					author: e.author || "",
+					avatar: e.avatar || "",
+					pinned: !!e.pinned,
+					published: e.published || new Date().toISOString().slice(0, 10),
+					images: Array.isArray(e.images) ? e.images : [],
+					tags: Array.isArray(e.tags) ? e.tags : [],
+					location: e.location || "",
+					device: e.device || "",
+					body: e.body || "",
+					sha: e.sha,
+					_draft: !!e._draft,
+					_deleted: !!e._deleted,
+				}));
+			}
 		}
 	} catch {}
 }
@@ -207,6 +216,12 @@ function collectFromDOM() {
 	if (!feed) return;
 	const result: MomentEntry[] = [];
 
+	const coverImgEl = document.querySelector(".wx-cover-img") as HTMLImageElement | null;
+	if (coverImgEl) {
+		coverImage = coverImgEl.src;
+		originalCoverImage = coverImgEl.src;
+	}
+
 	feed.querySelectorAll<HTMLElement>(".moment-card").forEach((el) => {
 		const id = el.id || "";
 		const slug = id.replace(/\.mdx?$/, "");
@@ -274,6 +289,7 @@ function showSSRContent() {
 
 function handleCancel() {
 	moments = deepClone(originalMoments);
+	coverImage = originalCoverImage;
 	editingIndex = -1;
 	drafts.clearDrafts();
 	showSSRContent();
@@ -466,6 +482,19 @@ async function submitMoments(
 ): Promise<boolean> {
 	let allOk = true;
 
+	if (coverImage && coverImage !== originalCoverImage) {
+		const coverMd = `---\nimage: "${coverImage.replace(/"/g, '\\"')}"\n---\n`;
+		const coverPath = "src/content/moments/_cover.md";
+		const coverFile = await getRepoFile(coverPath, repoConfig);
+		if (coverFile && coverFile.sha) {
+			const ok = await updateRepoFile(coverPath, coverMd, coverFile.sha, "chore(moments): update cover image", repoConfig);
+			if (!ok) allOk = false;
+		} else {
+			const ok = await createRepoFile(coverPath, coverMd, "chore(moments): add cover image", repoConfig);
+			if (!ok) allOk = false;
+		}
+	}
+
 	for (let i = 0; i < momentsToSubmit.length; i++) {
 		const entry = momentsToSubmit[i];
 		if (entry._deleted) {
@@ -606,6 +635,27 @@ function getGridCols(count: number) {
 
 {#if editMode}
   <div class="moments-edit-list">
+    <div class="moments-cover-edit-card">
+      <div class="moments-form-header">
+        <iconify-icon icon="material-symbols:photo-camera-back-outline-rounded"></iconify-icon>
+        <span>封面图设置</span>
+      </div>
+      <div class="moments-form-group">
+        <label>封面图链接</label>
+        <input
+          type="text"
+          class="moments-input"
+          bind:value={coverImage}
+          placeholder="https://example.com/cover.jpg"
+        />
+        {#if coverImage}
+          <div class="moments-cover-preview">
+            <img src={coverImage} alt="封面预览" />
+          </div>
+        {/if}
+      </div>
+    </div>
+
     {#each moments as moment, i (i + "-" + moment.id)}
       {#if !moment._deleted}
         <div
@@ -825,6 +875,30 @@ function getGridCols(count: number) {
     align-items: center;
     justify-content: space-between;
     padding: 12px 20px;
+  }
+
+  .moments-cover-edit-card {
+    border-radius: 16px;
+    background: var(--card-bg, white);
+    border: 1px solid hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
+    padding: 20px;
+  }
+  :global(.dark) .moments-cover-edit-card {
+    background: rgba(23, 23, 23, 0.8);
+    border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
+  }
+
+  .moments-cover-preview {
+    margin-top: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 150px;
+  }
+  .moments-cover-preview img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    max-height: 150px;
   }
 
   .moments-card-actions {
