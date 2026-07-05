@@ -206,6 +206,18 @@ export const siteConfig: SiteConfig = {
 		changelog: true,
 	},
 
+	// 归档页面内容开关 - 控制归档页面显示哪些类型的内容
+	archive: {
+		// 博客文章
+		posts: true,
+		// 说说/动态
+		moments: true,
+		// 番组计划（动漫、书籍、游戏、音乐）
+		bangumi: false,
+		// 生活记录（足迹、笔记本、日常规划）
+		life: true,
+	},
+
 	// 说说页面封面配置（微信朋友圈风格）
 	momentsCover: {
 		enable: true,

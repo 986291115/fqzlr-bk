@@ -52,18 +52,7 @@ let hoveredPostId: string | null = null;
 let highlightedYear: number | null = null;
 let highlightedMonth: string | null = null;
 
-interface HighlightSeg {
-	x: number;
-	top: number;
-	height: number;
-}
-interface HighlightHLine {
-	x: number;
-	y: number;
-	width: number;
-}
-let highlightSegs: HighlightSeg[] = [];
-let highlightHLines: HighlightHLine[] = [];
+let highlightPathD = "";
 
 let panelEl: HTMLElement;
 let yearBlockRefs = new Map<number, HTMLElement>();
@@ -113,6 +102,10 @@ const palette = [
 	"text-lime-400",
 	"text-red-400",
 	"text-violet-400",
+	"text-cyan-500",
+	"text-amber-500",
+	"text-rose-500",
+	"text-emerald-500",
 ];
 
 function formatDate(d: Date): string {
@@ -193,59 +186,69 @@ function formatFilterSummary(fs: ActiveFilter[]): string {
 async function computeHighlight(postId: string) {
 	await tick();
 	if (!panelEl) {
-		highlightSegs = [];
-		highlightHLines = [];
+		highlightPathD = "";
 		return;
 	}
-	let ty: number | null = null,
-		tm: number | null = null;
-	for (const yg of yearGroups)
-		for (const mg of yg.months)
+
+	let targetYear: number | null = null;
+	let targetMonth: number | null = null;
+	for (const yg of yearGroups) {
+		for (const mg of yg.months) {
 			if (mg.posts.some((p) => p.id === postId)) {
-				ty = yg.year;
-				tm = mg.month;
+				targetYear = yg.year;
+				targetMonth = mg.month;
 				break;
 			}
-	if (ty === null || tm === null) {
-		highlightSegs = [];
-		highlightHLines = [];
+		}
+		if (targetYear !== null) break;
+	}
+	if (targetYear === null || targetMonth === null) {
+		highlightPathD = "";
 		highlightedYear = null;
 		highlightedMonth = null;
 		return;
 	}
-	highlightedYear = ty;
-	highlightedMonth = `${ty}-${tm}`;
 
-	const pr = panelEl.getBoundingClientRect();
+	highlightedYear = targetYear;
+	highlightedMonth = `${targetYear}-${targetMonth}`;
+
+	const panelRect = panelEl.getBoundingClientRect();
 	const tw =
 		Number.parseFloat(getComputedStyle(panelEl).getPropertyValue("--tw")) * 16;
-	const yb = yearBlockRefs.get(ty),
-		mb = monthBlockRefs.get(`${ty}-${tm}`),
-		prow = postRowRefs.get(postId);
-	if (!yb || !mb || !prow) {
-		highlightSegs = [];
-		highlightHLines = [];
+	const r = 4;
+
+	const yearBlock = yearBlockRefs.get(targetYear);
+	const monthBlock = monthBlockRefs.get(`${targetYear}-${targetMonth}`);
+	const postRow = postRowRefs.get(postId);
+
+	if (!yearBlock || !monthBlock || !postRow) {
+		highlightPathD = "";
 		return;
 	}
 
-	const yr = yb.getBoundingClientRect(),
-		mr = mb.getBoundingClientRect(),
-		por = prow.getBoundingClientRect();
-	const ylx = yr.left - pr.left + tw / 2,
-		mlx = mr.left - pr.left + tw / 2,
-		plx = por.left - pr.left + tw / 2;
-	const yncy = yr.top - pr.top + tw / 2,
-		mncy = mr.top - pr.top + tw / 2,
-		pncy = por.top - pr.top + por.height / 2;
+	const yr = yearBlock.getBoundingClientRect();
+	const mr = monthBlock.getBoundingClientRect();
+	const pr = postRow.getBoundingClientRect();
 
-	highlightSegs = [
-		{ x: ylx, top: yncy, height: mncy - yncy },
-		{ x: mlx, top: mncy, height: pncy - mncy },
-	];
-	highlightHLines = [
-		{ x: ylx, y: mncy, width: mlx - ylx },
-		{ x: mlx, y: pncy, width: plx - mlx },
-	];
+	const x0 = yr.left - panelRect.left + tw / 2;
+	const y0 = yr.top - panelRect.top + tw / 2;
+	const x1 = mr.left - panelRect.left + tw / 2;
+	const y1 = mr.top - panelRect.top + tw / 2;
+	const x2 = pr.left - panelRect.left + tw / 2;
+	const y2 = pr.top - panelRect.top + pr.height / 2;
+
+	const d = [
+		`M ${x0} ${y0}`,
+		`L ${x0} ${y1 - r}`,
+		`A ${r} ${r} 0 0 0 ${x0 + r} ${y1}`,
+		`L ${x1 - r} ${y1}`,
+		`A ${r} ${r} 0 0 0 ${x1} ${y1 + r}`,
+		`L ${x1} ${y2 - r}`,
+		`A ${r} ${r} 0 0 0 ${x1 + r} ${y2}`,
+		`L ${x2} ${y2}`,
+	].join(" ");
+
+	highlightPathD = d;
 }
 
 async function onPostEnter(id: string) {
@@ -256,8 +259,7 @@ function onPostLeave() {
 	hoveredPostId = null;
 	highlightedYear = null;
 	highlightedMonth = null;
-	highlightSegs = [];
-	highlightHLines = [];
+	highlightPathD = "";
 }
 
 function applyFilters(allPosts: Post[]) {
@@ -351,11 +353,9 @@ onMount(async () => {
                     <a href={getItemUrl(post)} aria-label={post.data.title} class="ap-post-link group btn-plain"
                        on:mouseenter={() => onPostEnter(post.id)} on:mouseleave={onPostLeave}>
                       <span class="ap-date">{formatDate(post.data.published)}</span>
-                      {#if post.type && post.type !== "post"}
-                        <span class="ap-type-badge">{getTypeLabel(post.type)}</span>
-                      {:else}
-                        <span class="ap-type-badge">文章</span>
-                      {/if}
+                      <span class="ap-category {getCatColor(normCategory(post.data.category) || i18n(I18nKey.uncategorized))}">
+                        {normCategory(post.data.category) || i18n(I18nKey.uncategorized)}
+                      </span>
                       <span class="ap-title group-hover:text-(--primary)">{post.data.title}</span>
                     </a>
                   </li>
@@ -368,11 +368,10 @@ onMount(async () => {
     </div>
   {/each}
 
-  {#if highlightSegs.length > 0 || highlightHLines.length > 0}
-    <div class="ap-highlight-layer" aria-hidden="true">
-      {#each highlightSegs as seg}<div class="ap-hl-vline" style="left:{seg.x}px;top:{seg.top}px;height:{seg.height}px"></div>{/each}
-      {#each highlightHLines as hl}<div class="ap-hl-hline" style="left:{hl.x}px;top:{hl.y}px;width:{hl.width}px"></div>{/each}
-    </div>
+  {#if highlightPathD}
+    <svg class="ap-highlight-svg" aria-hidden="true">
+      <path d={highlightPathD} fill="none" stroke="var(--lh)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
   {/if}
 </div>
 
@@ -389,18 +388,19 @@ onMount(async () => {
   .ap-post-row:hover { transform: translateX(0.375rem); }
   .ap-col { position: relative; width: var(--tw); flex-shrink: 0; align-self: stretch; }
   .ap-node { position: absolute; left: 50%; transform: translateX(-50%); border-radius: 50%; z-index: 2; transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
+  .ap-node.highlighted, .ap-node.hovered { z-index: 3; }
   .ap-year-node { top: calc(50% - 0.375rem); width: 0.75rem; height: 0.75rem; border: 2px solid var(--nc); background: var(--page-bg, white); }
   .ap-year-node.highlighted { background: var(--nh); border-color: var(--nh); }
   .ap-month-node { top: calc(50% - 0.25rem); width: 0.5rem; height: 0.5rem; background: var(--nc); }
-  .ap-month-node.highlighted { background: var(--nh); }
+  .ap-month-node.highlighted { background: var(--nh); transform: translateX(-50%) scale(1.5); }
   .ap-post-node { top: calc(50% - 0.2rem); width: 0.4rem; height: 0.4rem; background: var(--nc); }
   .ap-post-node.hovered { background: var(--nh); transform: translateX(-50%) scale(1.6); }
   .ap-hline { position: absolute; height: 0; border-top: var(--lw) dashed var(--lc); z-index: 1; }
   .ap-month-hline { top: 50%; left: calc(-1 * var(--tw) / 2); width: var(--tw); }
   .ap-post-hline { top: 50%; left: calc(-1 * var(--tw) / 2); width: var(--tw); }
-  .ap-highlight-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
-  .ap-hl-vline { position: absolute; width: 0; border-left: 3px solid var(--lh); transform: translateX(-50%); }
-  .ap-hl-hline { position: absolute; height: 0; border-top: 3px solid var(--lh); }
+  .ap-highlight-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: visible; }
+  .ap-highlight-svg path { filter: drop-shadow(0 0 2px var(--page-bg, white)) drop-shadow(0 0 2px var(--page-bg, white)); }
+  :global(.dark) .ap-highlight-svg path { filter: drop-shadow(0 0 2px var(--page-bg, #0d0d0d)) drop-shadow(0 0 2px var(--page-bg, #0d0d0d)); }
   .ap-year-header, .ap-month-header { display: flex; align-items: center; min-height: var(--tw); }
   .ap-year-label, .ap-month-label { display: flex; align-items: baseline; gap: 0.6rem; padding-left: 0.5rem; flex: 1; }
   .ap-h1 { font-size: 1.375rem; font-weight: 700; color: var(--deep-text); margin: 0; }
@@ -418,7 +418,7 @@ onMount(async () => {
     .ap-category { min-width: 2.5rem; font-size: 0.75rem; }
     .ap-title { font-size: 0.82rem; }
     .ap-year-block::before, .ap-month-block::before { content: none; }
-    .ap-hline, .ap-node, .ap-col, .ap-highlight-layer { display: none; }
+    .ap-hline, .ap-node, .ap-col, .ap-highlight-svg { display: none; }
     .ap-months-area, .ap-posts-area { padding-left: 0.5rem; }
   }
 </style>

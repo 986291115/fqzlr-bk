@@ -6,28 +6,10 @@ export const projectsPageConfig = {
 
 export const projectsConfig: FriendLink[] = [
 	{
-		title: "团子的邮箱",
-		imgurl: "https://re.tsh520.cn/zl/tx.webp",
-		desc: "个人使用的邮箱服",
-		siteurl: "https://email.0824.uk/inbox",
-		tags: ["我的网站"],
-		weight: 8,
-		enabled: true,
-	},
-	{
-		title: "团子的相册",
-		imgurl: "https://re.tsh520.cn/zl/tx.webp",
-		desc: "个人照片存储与展示",
-		siteurl: "https://ph.tsh520.cn/",
-		tags: ["我的网站"],
-		weight: 8,
-		enabled: true,
-	},
-	{
 		title: "番茄主理人的博客",
-		imgurl: "https://re.tsh520.cn/zl/tx.webp",
+		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 		desc: "个人技术与生活分享博客",
-		siteurl: "https://blog.tsh520.cn/",
+		siteurl: "https://fqzlr.com/",
 		tags: ["我的网站"],
 		weight: 8,
 		enabled: true,

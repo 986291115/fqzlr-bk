@@ -13,7 +13,7 @@ export const friendsPageConfig: FriendsPageConfig = {
 	// GitHub Issue 申请友链配置
 	githubIssue: {
 		// GitHub 仓库地址（格式：owner/repo）
-		repo: "fqzlr/my-blog",
+		repo: "fqzlr/fqzlr-bk",
 		// Issue 标签（可选）
 		labels: ["friend-link"],
 	},

@@ -109,6 +109,14 @@ export type SiteConfig = {
 		changelog: boolean; // 更新日志页面开关
 	};
 
+	// 归档页面内容开关
+	archive: {
+		posts: boolean; // 博客文章
+		moments: boolean; // 说说/动态
+		bangumi: boolean; // 番组计划（动漫、书籍、游戏、音乐）
+		life: boolean; // 生活记录（足迹、笔记本、日常规划）
+	};
+
 	// 分类导航栏开关
 	categoryBar?: boolean;
 

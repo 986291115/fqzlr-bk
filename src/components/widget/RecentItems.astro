@@ -95,7 +95,7 @@ const allItems = [
 			title: `${notebookNames[n.id.split("/")[0]] || n.id.split("/")[0]} · ${n.data.name || "未命名"}`,
 			date: n.data.date || new Date(),
 			url: `/life/notebooks/${n.id.replace(/\\/g, "/").split("/")[0]}/${n.id.split("/").pop()?.replace(/\.md$/, "") || ""}/`,
-			image: "https://re.tsh520.cn/zl/life-notebook.webp",
+			image: "https://fqzlr.com/zl/life-notebook.webp",
 			id: n.id,
 		})),
 	...routinesEntries
@@ -112,7 +112,7 @@ const allItems = [
 			title: `规划: ${r.data.name}`,
 			date: r.data.updatedAt instanceof Date ? r.data.updatedAt : new Date(),
 			url: "/life/routines/",
-			image: "https://re.tsh520.cn/zl/life-routine.webp",
+			image: "https://fqzlr.com/zl/life-routine.webp",
 			id: r.id,
 		})),
 ];

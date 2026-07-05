@@ -12,7 +12,7 @@
 | 框架 | Astro 5.17 + Svelte 5 + Tailwind CSS v4 |
 | 包管理 | pnpm 9.14.4 (ESM) |
 | 部署 | Vercel（主）+ GitHub Pages（CI/CD） |
-| 线上 | https://blog.tsh520.cn/ |
+| 线上 | https://fqzlr.com/ |
 | 来源 | Fork 自 CuteLeaf/Firefly ← saicaca/fuwari |
 
 ---

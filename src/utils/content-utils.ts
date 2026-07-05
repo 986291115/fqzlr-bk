@@ -2,6 +2,7 @@ import { type CollectionEntry, getCollection } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { getCategoryUrl } from "@utils/url-utils";
+import { siteConfig } from "@/config";
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
@@ -75,127 +76,139 @@ const isIn = (entryId: string, folder: string) =>
 	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
 
 export async function getArchiveList(): Promise<ArchiveItem[]> {
-	const posts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
-	const moments = await getCollection("moments");
-	const bangumi = await getCollection("bangumi");
-	const lifeEntries = await getCollection("life");
-	const notebooksEntries = await getCollection("notebooks");
-	const routinesEntries = await getCollection("routines");
+	const { archive: archiveConfig } = siteConfig;
 
-	const postItems: ArchiveItem[] = posts.map((post) => ({
-		id: post.id,
-		type: "post",
-		data: {
-			title: post.data.title,
-			published: post.data.published,
-			tags: post.data.tags,
-			category: post.data.category,
-			order: post.data.order,
-		},
-	}));
+	const postItems: ArchiveItem[] = [];
+	if (archiveConfig.posts) {
+		const posts = await getCollection("posts", ({ data }) => {
+			return import.meta.env.PROD ? data.draft !== true : true;
+		});
+		postItems.push(
+			...posts.map((post) => ({
+				id: post.id,
+				type: "post",
+				data: {
+					title: post.data.title,
+					published: post.data.published,
+					tags: post.data.tags,
+					category: post.data.category,
+					order: post.data.order,
+				},
+			})),
+		);
+	}
 
-	const momentItems: ArchiveItem[] = moments.map((moment) => {
-		// 提取摘要作为标题
-		let title = moment.body || "";
-		title = title.replace(/[#*`]/g, "").trim(); // 移除 markdown 符号
-		if (title.length > 50) title = `${title.substring(0, 50)}...`;
-		if (!title) title = i18n(I18nKey.moments) || "日常动态";
+	const momentItems: ArchiveItem[] = [];
+	if (archiveConfig.moments) {
+		const moments = await getCollection("moments");
+		momentItems.push(
+			...moments.map((moment) => {
+				let title = moment.body || "";
+				title = title.replace(/[#*`]/g, "").trim();
+				if (title.length > 50) title = `${title.substring(0, 50)}...`;
+				if (!title) title = i18n(I18nKey.moments) || "日常动态";
+				return {
+					id: moment.id,
+					type: "moment",
+					data: {
+						title: title,
+						published: moment.data.published,
+						tags: moment.data.tags,
+						category: null,
+					},
+				};
+			}),
+		);
+	}
 
-		return {
-			id: moment.id,
-			type: "moment",
-			data: {
-				title: title,
-				published: moment.data.published,
-				tags: moment.data.tags,
-				category: null,
-			},
-		};
-	});
+	const bangumiItems: ArchiveItem[] = [];
+	if (archiveConfig.bangumi) {
+		const bangumi = await getCollection("bangumi");
+		bangumiItems.push(
+			...bangumi.map((b) => {
+				let link = b.data.link || "";
+				if (!link) {
+					const slug = b.id
+						.replace(/\\/g, "/")
+						.replace(/\.(md|mdx|markdown)$/i, "");
+					if (b.data.category === "book") {
+						link = `/books/${slug}/`;
+					} else if (b.data.category === "music") {
+						link = "/music/";
+					} else {
+						link = "/movies-games/";
+					}
+				}
+				return {
+					id: b.id,
+					type: "bangumi",
+					data: {
+						title: b.data.title,
+						published: b.data.published || new Date(0),
+						tags: [],
+						category: null,
+						image:
+							typeof b.data.image === "string"
+								? b.data.image
+								: (b.data.image as any)?.src,
+						link,
+					},
+				};
+			}),
+		);
+	}
 
-	const bangumiItems: ArchiveItem[] = bangumi.map((b) => {
-		let link = b.data.link || "";
-		if (!link) {
-			const slug = b.id
-				.replace(/\\/g, "/")
-				.replace(/\.(md|mdx|markdown)$/i, "");
-			if (b.data.category === "book") {
-				link = `/books/${slug}/`;
-			} else if (b.data.category === "music") {
-				link = "/music/";
-			} else {
-				link = "/movies-games/";
-			}
-		}
-		return {
-			id: b.id,
-			type: "bangumi",
-			data: {
-				title: b.data.title,
-				published: b.data.published || new Date(0),
-				tags: [],
-				category: null,
-				image:
-					typeof b.data.image === "string"
-						? b.data.image
-						: (b.data.image as any)?.src,
-				link,
-			},
-		};
-	});
-
-	// 生活动态归档
 	const lifeItems: ArchiveItem[] = [];
+	if (archiveConfig.life) {
+		const lifeEntries = await getCollection("life");
+		const notebooksEntries = await getCollection("notebooks");
+		const routinesEntries = await getCollection("routines");
 
-	// 足迹记录
-	lifeEntries
-		.filter((entry) => isIn(entry.id, "places"))
-		.forEach((p) => {
-			const parts = [p.data.province, p.data.city].filter(Boolean);
+		lifeEntries
+			.filter((entry) => isIn(entry.id, "places"))
+			.forEach((p) => {
+				const parts = [p.data.province, p.data.city].filter(Boolean);
+				lifeItems.push({
+					id: p.id,
+					type: "life",
+					data: {
+						title: parts.length > 0 ? parts.join(" ") : "足迹记录",
+						published: p.data.date || new Date(),
+						tags: ["足迹"],
+						link: "/life/places/",
+					},
+				});
+			});
+
+		notebooksEntries
+			.filter((n) => !n.id.includes("_index"))
+			.forEach((n) => {
+				lifeItems.push({
+					id: n.id,
+					type: "life",
+					data: {
+						title: n.data.name || "笔记本",
+						published: n.data.date || new Date(),
+						tags: ["笔记本"],
+						link: "/life/notebooks/",
+					},
+				});
+			});
+
+		routinesEntries.forEach((r) => {
 			lifeItems.push({
-				id: p.id,
+				id: r.id,
 				type: "life",
 				data: {
-					title: parts.length > 0 ? parts.join(" ") : "足迹记录",
-					published: p.data.date || new Date(),
-					tags: ["足迹"],
-					link: "/life/places/",
+					title: `规划: ${r.data.name}`,
+					published:
+						r.data.updatedAt instanceof Date ? r.data.updatedAt : new Date(),
+					tags: ["规划"],
+					link: "/life/routines/",
 				},
 			});
 		});
-
-	// 笔记本记录（排除 _index 元数据条目）
-	notebooksEntries
-		.filter((n) => !n.id.includes("_index"))
-		.forEach((n) => {
-			lifeItems.push({
-				id: n.id,
-				type: "life",
-				data: {
-					title: n.data.name || "笔记本",
-					published: n.data.date || new Date(),
-					tags: ["笔记本"],
-					link: "/life/notebooks/",
-				},
-			});
-		});
-
-	// 日常规划
-	routinesEntries.forEach((r) => {
-		lifeItems.push({
-			id: r.id,
-			type: "life",
-			data: {
-				title: `规划: ${r.data.name}`,
-				published:
-					r.data.updatedAt instanceof Date ? r.data.updatedAt : new Date(),
-				tags: ["规划"],
-				link: "/life/routines/",
-			},
-		});
-	});
+	}
 
 	return [...postItems, ...momentItems, ...bangumiItems, ...lifeItems].sort(
 		(a, b) => {

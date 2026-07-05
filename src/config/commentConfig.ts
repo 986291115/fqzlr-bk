@@ -2,11 +2,11 @@ import type { CommentConfig } from "../types/config";
 
 export const commentConfig: CommentConfig = {
 	// 评论系统类型: none, twikoo, waline, giscus, disqus, artalk，默认为none，即不启用评论系统
-	type: "waline",
+	type: "twikoo",
 
 	//twikoo评论系统配置
 	twikoo: {
-		envId: "https://twikoo.vercel.app",
+		envId: "https://pl.fqzlr.com",
 		// 设置 Twikoo 评论系统语言
 		lang: "zh-CN",
 		// 是否启用文章访问量统计功能
@@ -16,7 +16,7 @@ export const commentConfig: CommentConfig = {
 	//waline评论系统配置
 	waline: {
 		// waline 后端服务地址
-		serverURL: "https://co.tsh520.cn",
+		serverURL: "https://pl.fqzlr.com",
 		// 设置 Waline 评论系统语言
 		lang: "zh-CN",
 		// 评论登录模式。可选值如下：
