@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 团子和蛋糕的博客
+# 番茄主理人的博客
 > 一款清新美观的 Astro 静态博客主题模板
 >
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
@@ -235,6 +235,6 @@ comment: true    # 是否允许评论
 **版权声明：**
 - Copyright (c) 2024 [saicaca](https://github.com/saicaca) - [fuwari](https://github.com/saicaca/fuwari)
 - Copyright (c) 2025 [CuteLeaf](https://github.com/CuteLeaf) - [Firefly](https://github.com/CuteLeaf/Firefly)
-- Copyright (c) 2026 [团子和蛋糕](https://blog.tsh520.cn) - 个人博客
+- Copyright (c) 2026 [番茄主理人](https://blog.tsh520.cn) - 个人博客
 
 根据 MIT 开源协议，你可以自由使用、修改、分发代码，但需保留上述版权声明。

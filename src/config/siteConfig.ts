@@ -7,37 +7,39 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "团子和蛋糕的博客",
+	title: "Fqzlr的博客",
 
 	// 站点副标题
-	subtitle: "",
+	subtitle: "Fqzlr",
 
 	// 站点 URL
-	site_url: "https://blog.tsh520.cn",
+	site_url: "https://fqzlr.com/",
 
 	// 站点描述
 	description:
-		"团子和蛋糕的博客，一个分享技术见解与生活感悟的个人空间。涵盖编程开发、实用工具推荐、ACG文化与日常生活的随想，记录成长的每一步。",
+		"fqzlr的个人技术博客，专注NAS分享、AI实践、学习笔记与技术总结，与个人成长分享。",
 
 	// 站点关键词
 	keywords: [
-		"团子",
-		"团子和蛋糕",
-		"蛋糕",
-		"团子和蛋糕的博客",
-		"团子的博客",
-		"蛋糕的博客",
+		"fqzlr",
+		"JAVA",
+		"AI",
+		"Astro",
+		"ACGN",
+		"博客",
+		"技术博客",
+		"静态博客",
 	],
 
 	// 主题色
 	themeColor: {
 		// 主题色的默认色相，范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345
 		// hue = 230 对应偏紫的蓝色调
-		hue: 230,
+		hue: 165,
 		// 是否对访问者隐藏主题色选择器
 		fixed: false,
 		// 默认模式："light" 亮色，"dark" 暗色，"system" 跟随系统
-		defaultMode: "system",
+		defaultMode: "light",
 	},
 
 	// 页面整体宽度（单位：rem）
@@ -53,12 +55,52 @@ export const siteConfig: SiteConfig = {
 	// Favicon 配置
 	favicon: [
 		{
-			// 图标文件路径
-			src: "https://re.tsh520.cn/zl/tx.webp",
-			// 可选，指定主题 'light' | 'dark'
-			// theme: "light",
-			// 可选，图标大小
-			// sizes: "32x32",
+			src: "/favicon/favicon.ico",
+			sizes: "32x32",
+		},
+		{
+			src: "/favicon/favicon-16x16.png",
+			sizes: "16x16",
+		},
+		{
+			src: "/favicon/favicon-32x32.png",
+			sizes: "32x32",
+		},
+		{
+			src: "/favicon/favicon-48x48.png",
+			sizes: "48x48",
+		},
+		{
+			src: "/favicon/favicon.svg",
+			sizes: "any",
+		},
+		{
+			src: "/favicon/apple-touch-icon.png",
+			sizes: "180x180",
+		},
+		{
+			src: "/favicon/apple-touch-icon-152x152.png",
+			sizes: "152x152",
+		},
+		{
+			src: "/favicon/apple-touch-icon-167x167.png",
+			sizes: "167x167",
+		},
+		{
+			src: "/favicon/apple-touch-icon-180x180.png",
+			sizes: "180x180",
+		},
+		{
+			src: "/favicon/android-chrome-192x192.png",
+			sizes: "192x192",
+		},
+		{
+			src: "/favicon/android-chrome-512x512.png",
+			sizes: "512x512",
+		},
+		{
+			src: "/favicon/safari-pinned-tab.svg",
+			sizes: "any",
 		},
 	],
 
@@ -72,11 +114,11 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/firefly.png",
-			alt: "🍀",
+			value: "assets/images/avatar.gif",
+			alt: "logo",
 		},
 		// 导航栏标题
-		title: "团子和蛋糕",
+		title: "Fqzlr的博客",
 		// 悬停时显示的互动颜文字
 		hoverTitle: "w(ﾟДﾟ)w 不要走！再看看嘛！",
 		// 全宽导航栏，导航栏是否占满屏幕宽度，true：占满，false：不占满
@@ -86,29 +128,18 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点开始日期，用于统计运行天数
-	siteStartDate: "2025-9-1",
+	siteStartDate: "2026-04-12",
 
 	// 门户区配置
 	portal: {
 		announcement: {
 			enable: true,
-			text: "欢迎来到团子和蛋糕的博客！这里有技术分享、生活记录和更多有趣内容。",
+			text: "欢迎来到Fqzlr的博客！专注NAS分享、AI实践、学习笔记与技术总结。",
 		},
 		dailyQuote: {
 			enable: true,
 			quotes: [
-				{ text: "人生到处知何似，应似飞鸿踏雪泥。", source: "苏轼" },
-				{ text: "海棠花未眠，老陈总在我身边。", source: "团子" },
-				{
-					text: "世界上只有一种真正的英雄主义，那就是在认识生活的真相后依然热爱生活。",
-					source: "罗曼·罗兰",
-				},
-				{
-					text: "愿你一生努力，一生被爱。想要的都拥有，得不到的都释怀。",
-					source: "八月长安",
-				},
-				{ text: "凡是过去，皆为序章。", source: "莎士比亚" },
-				{ text: "温柔半两，从容一生。", source: "三毛" },
+				{ text: "躬身入局，心为主理，行有尺度，自持本心", source: "Fqzlr" },
 			],
 		},
 		recentPostsCount: 3,
@@ -120,7 +151,7 @@ export const siteConfig: SiteConfig = {
 		start: 9, // 上班时间 9:00
 		end: 18, // 下班时间 18:00
 		// 工作日范围，0=周日 1=周一 ... 6=周六，默认周一到周五
-		workDays: [1, 2, 3, 4, 5],
+		workDays: [1, 2, 3, 4, 5, 6],
 	},
 
 	// 站点时区（IANA 时区字符串），用于格式化bangumi、rss里的构建日期时间等等..
@@ -178,8 +209,7 @@ export const siteConfig: SiteConfig = {
 	// 说说页面封面配置（微信朋友圈风格）
 	momentsCover: {
 		enable: true,
-		image:
-			"https://ph.0824.uk/file/博客横屏封面/1780635498430_mmexport1774845895097.jpg",
+		image: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 	},
 
 	// 分类导航栏开关，在首页和归档页顶部显示分类快捷导航
@@ -188,7 +218,7 @@ export const siteConfig: SiteConfig = {
 	// 文章列表布局配置
 	postListLayout: {
 		// 默认布局模式："list" 列表模式（单列布局），"grid" 网格模式（多列布局）
-		defaultMode: "grid",
+		defaultMode: "list",
 		// 是否允许用户切换布局
 		allowSwitch: true,
 		// 网格布局配置，仅在 defaultMode 为 "grid" 或允许切换布局时生效
@@ -216,8 +246,8 @@ export const siteConfig: SiteConfig = {
 		microsoftClarityId: "",
 		// Umami Analytics
 		umamiAnalytics: {
-			websiteId: "cea54104-ebb9-4237-911d-67043d2dae74",
-			scriptUrl: "https://umami.tsh520.cn/script.js",
+			websiteId: "4f4d87b0-bf0f-403a-a7c1-71962537673a",
+			scriptUrl: "https://umami.fqzlr.com/script.js",
 		},
 	},
 

@@ -1,5 +1,5 @@
 ---
-name: 团子和蛋糕的博客
+name: 番茄主理人的博客
 url: https://blog.tsh520.cn/
 icon: material-symbols:article
 description: 个人技术与生活分享博客

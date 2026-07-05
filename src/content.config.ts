@@ -169,13 +169,12 @@ const albumCollection = defineCollection({
 		z.object({
 			title: z.string(),
 			subtitle: z.string().optional().default(""),
-			cover: image().or(z.string()).optional(),
+			cover: z.string().optional(),
 			date: z.coerce.date(),
 			location: z.string().optional().default(""),
 			photos: z
 				.array(
-					image()
-						.or(z.string())
+					z.string()
 						.or(
 							z.object({
 								src: z.string(),

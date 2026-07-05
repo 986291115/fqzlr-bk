@@ -137,7 +137,7 @@ export const friendsPageConfig: FriendsPageConfig = {
 	showCustomContent: true,
 	showComment: true,
 	randomizeSort: false,
-	applyLink: "https://github.com/tianshihao2003/dumplingandcakeblog/issues/new?template=friend-link.yml",
+	applyLink: "https://github.com/fqzlr/dumplingandcakeblog/issues/new?template=friend-link.yml",
 	siteInfo: {
 		name: "dumplingandcake",
 		desc: "饺子与蛋糕的博客",

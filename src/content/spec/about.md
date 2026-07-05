@@ -1,6 +1,6 @@
 # 关于我 / About Me
 
-你好！我是 **团子和蛋糕**，一名计算机技术爱好者。
+你好！我是 **番茄主理人**，一名计算机技术爱好者。
 
 如果你喜欢，那么欢迎来到我的世界！
 
@@ -14,7 +14,7 @@
 
 如果你想和我交流技术问题，分享有趣的想法，或者只是想打个招呼，欢迎通过以下方式联系我：
 
-- 💻 **GitHub**: [tianshihao2003](https://github.com/tianshihao2003)
+- 💻 **GitHub**: [fqzlr](https://github.com/fqzlr)
 - ✉️ **Email**: [3109581507@qq.com](mailto:3109581507@qq.com)
 
 ---

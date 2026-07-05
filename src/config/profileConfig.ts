@@ -6,22 +6,22 @@ export const profileConfig: ProfileConfig = {
 	// 1. public 目录（以 "/" 开头，不优化）："/assets/images/avatar.webp"
 	// 2. src 目录（不以 "/"开头，自动优化但会增加构建时间，推荐）："assets/images/avatar.webp"
 	// 3. 远程 URL："https://example.com/avatar.jpg"
-	avatar: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
+	avatar: "assets/images/shangban.png",
 
 	// 下班时间头像（为空则始终使用上方 avatar）
-	avatarOffWork: "",
+	avatarOffWork: "assets/images/xiaban.gif",
 
 	// 名字
-	name: "番茄主理人",
+	name: "Fqzlr",
 
 	// 首页展示名字（留空则使用 name）
-	displayName: "Dumpling",
+	displayName: "Fqzlrの博客",
 
 	// 职业/身份标签
-	occupation: "[技术博主 / 生活记录者]",
+	occupation: "[啥都不会 / 无技术博主]",
 
 	// 个人签名（支持多条，会循环打字+删除效果）
-	bio: ["如果你喜欢，那么欢迎来到我的世界！", "海棠花未眠，老陈总在我身边"],
+	bio: ["躬身入局，心为主理，行有尺度，自持本心."],
 
 	// 链接配置
 	// 已经预装的图标集：fa7-brands，fa7-regular，fa7-solid，material-symbols，simple-icons
@@ -31,33 +31,33 @@ export const profileConfig: ProfileConfig = {
 	// showName: true 时显示图标和名称，false 时只显示图标
 	links: [
 		{
-			name: "WeChat",
-			icon: "simple-icons:wechat",
-			url: "https://re.tsh520.cn/zl/vx.webp",
-			showName: false,
-		},
-		{
-			name: "QQ",
+			name: "QQ群",
 			icon: "simple-icons:tencentqq",
-			url: "https://re.tsh520.cn/zl/qq.webp",
-			showName: false,
-		},
-		{
-			name: "GitHub",
-			icon: "simple-icons:github",
-			url: "https://github.com/tianshihao2003",
-			showName: false,
-		},
-		{
-			name: "Email",
-			icon: "material-symbols:mail-outline",
-			url: "mailto:3109581507@qq.com",
+			url: "https://qm.qq.com/q/wrmF4FI9pu",
 			showName: false,
 		},
 		{
 			name: "Bilibili",
 			icon: "simple-icons:bilibili",
-			url: "https://space.bilibili.com/1394731616?spm_id_from=333.1007.0.0",
+			url: "https://space.bilibili.com/2017273493",
+			showName: false,
+		},
+		{
+			name: "GitHub",
+			icon: "simple-icons:github",
+			url: "https://github.com/fqzlr",
+			showName: false,
+		},
+		{
+			name: "Email",
+			icon: "material-symbols:mail-outline",
+			url: "mailto:fqzlr@outlook.com",
+			showName: false,
+		},
+		{
+			name: "RSS",
+			icon: "material-symbols:rss-feed",
+			url: "/rss/",
 			showName: false,
 		},
 	],

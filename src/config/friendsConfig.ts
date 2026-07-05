@@ -13,32 +13,36 @@ export const friendsPageConfig: FriendsPageConfig = {
 	// GitHub Issue 申请友链配置
 	githubIssue: {
 		// GitHub 仓库地址（格式：owner/repo）
-		repo: "your-username/your-repo",
+		repo: "fqzlr/my-blog",
 		// Issue 标签（可选）
 		labels: ["friend-link"],
 	},
 
 	// 本站信息（用于在申请指南中展示）
 	siteInfo: {
-		name: "小饺子和小蛋糕的博客",
-		desc: "记录生活与技术的个人博客",
-		url: "https://example.com",
-		avatar: "https://example.com/avatar.png",
+		name: "fqzlr",
+		desc: "躬身入局，心为主理，行有尺度，自持本心",
+		url: "https://fqzlr.com",
+		avatar: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 	},
 
 	// 注意事项
 	notes: [
 		{
-			title: "网站要求",
-			content: "网站内容健康，无违法违规内容，且已正常运营一段时间",
+			title: "互换原则",
+			content: "请先将本站添加到您的友链页面，确认后会添加您的友链",
 		},
 		{
-			title: "友链形式",
-			content: "首页友链或内页友链均可，互相尊重",
+			title: "链接维护",
+			content: "友链网站长期无法访问或内容违规，将会被移除",
 		},
 		{
-			title: "失效处理",
-			content: "如发现网站无法访问或内容违规，将有权移除友链",
+			title: "内容要求",
+			content: "内容积极向上，不含有任何含色情/反动/暴力等违法违规内容",
+		},
+		{
+			title: "站点要求",
+			content: "支持 HTTPS，以原创内容为主，能够正常访问且有持续更新",
 		},
 	],
 };

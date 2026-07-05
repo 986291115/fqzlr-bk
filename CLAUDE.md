@@ -8,7 +8,7 @@
 
 | 项 | 值 |
 |---|---|
-| 名称 | Firefly v6.6.13 — "团子和蛋糕的博客" |
+| 名称 | Firefly v6.6.13 — "番茄主理人的博客" |
 | 框架 | Astro 5.17 + Svelte 5 + Tailwind CSS v4 |
 | 包管理 | pnpm 9.14.4 (ESM) |
 | 部署 | Vercel（主）+ GitHub Pages（CI/CD） |

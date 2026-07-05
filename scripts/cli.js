@@ -110,7 +110,7 @@ const commands = [
 
 function showHelp() {
 	console.log("╔══════════════════════════════════════════════╗");
-	console.log("║     团子和蛋糕的博客 · 工具箱               ║");
+	console.log("║     番茄主理人的博客 · 工具箱               ║");
 	console.log("╠══════════════════════════════════════════════╣");
 	console.log("║                                              ║");
 	for (const cmd of commands) {

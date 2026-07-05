@@ -290,7 +290,7 @@
 	align-items: center;
 	justify-content: center;
 	min-width: clamp(9.5rem, 13vw, 13.5rem);
-	margin-top: clamp(-2rem, -2vw, -0.8rem);
+	margin-top: clamp(0.5rem, 1vw, 1rem);
 	padding: 0.34rem 1rem;
 	border-radius: 3px;
 	background: rgba(255, 255, 255, 0.72);

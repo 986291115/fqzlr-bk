@@ -154,7 +154,7 @@ async function getInstallationTokenServer(env) {
 		};
 
 		// 获取 installation ID
-		const ghUser = env.PUBLIC_GITHUB_OWNER || "tianshihao2003";
+		const ghUser = env.PUBLIC_GITHUB_OWNER || "fqzlr";
 		const ghRepo = env.PUBLIC_GITHUB_REPO || "dumplingandcakeblog";
 		let installationId = null;
 

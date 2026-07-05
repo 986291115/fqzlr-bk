@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 团子和蛋糕的博客
+# 番茄主理人的博客
 > A Fresh and Beautiful Astro Static Blog Theme Template
 >
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
@@ -233,6 +233,6 @@ Originally based on [CuteLeaf/Firefly](https://github.com/CuteLeaf/Firefly), whi
 **Copyright Notice:**
 - Copyright (c) 2024 [saicaca](https://github.com/saicaca) - [fuwari](https://github.com/saicaca/fuwari)
 - Copyright (c) 2025 [CuteLeaf](https://github.com/CuteLeaf) - [Firefly](https://github.com/CuteLeaf/Firefly)
-- Copyright (c) 2026 [团子和蛋糕](https://blog.tsh520.cn) - Personal Blog
+- Copyright (c) 2026 [番茄主理人](https://blog.tsh520.cn) - Personal Blog
 
 Under the MIT license, you are free to use, modify, and distribute the code, but you must retain the above copyright notice.

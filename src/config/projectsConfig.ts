@@ -24,7 +24,7 @@ export const projectsConfig: FriendLink[] = [
 		enabled: true,
 	},
 	{
-		title: "团子和蛋糕的博客",
+		title: "番茄主理人的博客",
 		imgurl: "https://re.tsh520.cn/zl/tx.webp",
 		desc: "个人技术与生活分享博客",
 		siteurl: "https://blog.tsh520.cn/",

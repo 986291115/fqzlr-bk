@@ -89,7 +89,7 @@
 	portal: {
 		announcement: {
 			enable: true,
-			text: "欢迎来到团子和蛋糕的博客！这里有技术分享、生活记录和更多有趣内容。",
+			text: "欢迎来到番茄主理人的博客！这里有技术分享、生活记录和更多有趣内容。",
 		},
 		dailyQuote: {
 			enable: true,
