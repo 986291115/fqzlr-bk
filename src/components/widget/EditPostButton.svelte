@@ -404,6 +404,7 @@ function closeHelpModal() {
 					<iconify-icon icon="material-symbols:add-rounded"></iconify-icon>
 					<span class="tb-text">添加</span>
 				</button>
+				<button class="tb-btn tb-btn-submit" onclick={handleSubmit} disabled={saving || (!hasChanges && pageDraftCount === 0)} title="提交">
 					{#if saving}
 						<iconify-icon icon="material-symbols:progress-activity-rounded" class="animate-spin"></iconify-icon>
 					{:else}
