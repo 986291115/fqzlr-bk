@@ -12,6 +12,9 @@ const moments = await getCollection("moments");
 
 const coverEntry = moments.find((m) => m.id === "_cover");
 const coverImage = coverEntry?.data?.image || "";
+const coverAvatar = coverEntry?.data?.avatar || "";
+const coverName = coverEntry?.data?.name || "";
+const coverBio = coverEntry?.data?.bio || "";
 
 const sortedMoments = moments
 	.filter((m) => !m.data.pinned && m.id !== "_cover")
@@ -76,7 +79,7 @@ const albums = await getCollection("album");
 
 <MainGridLayout title="动态" description="记录生活中的点点滴滴">
   <!-- 微信朋友圈风格封面 -->
-  <MomentsCover coverImage={coverImage} />
+  <MomentsCover coverImage={coverImage} coverAvatar={coverAvatar} coverName={coverName} coverBio={coverBio} />
 
   <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
   <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>

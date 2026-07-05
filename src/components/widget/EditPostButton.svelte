@@ -306,6 +306,10 @@ function handleAdd() {
 	);
 }
 
+function triggerKeyImport() {
+	keyFileInputEl?.click();
+}
+
 async function handleKeyFileSelect(e: Event) {
 	const input = e.target as HTMLInputElement;
 	const file = input.files?.[0];

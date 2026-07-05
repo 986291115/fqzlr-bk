@@ -44,6 +44,12 @@ let imagesInput = $state("");
 let tagsInput = $state("");
 let coverImage = $state("");
 let originalCoverImage = $state("");
+let coverAvatar = $state("");
+let originalCoverAvatar = $state("");
+let coverName = $state("");
+let originalCoverName = $state("");
+let coverBio = $state("");
+let originalCoverBio = $state("");
 
 const pageKey = "moments";
 const pageName = "说说";
@@ -51,6 +57,9 @@ const pageName = "说说";
 function serializeMoments(): string {
 	return JSON.stringify({
 		coverImage,
+		coverAvatar,
+		coverName,
+		coverBio,
 		moments: moments.map((m) => ({
 			id: m.id,
 			slug: m.slug,
@@ -75,6 +84,15 @@ function deserializeMoments(json: string) {
 		if (parsed && typeof parsed === "object") {
 			if (parsed.coverImage) {
 				coverImage = parsed.coverImage;
+			}
+			if (parsed.coverAvatar) {
+				coverAvatar = parsed.coverAvatar;
+			}
+			if (parsed.coverName) {
+				coverName = parsed.coverName;
+			}
+			if (parsed.coverBio) {
+				coverBio = parsed.coverBio;
 			}
 			const data = Array.isArray(parsed) ? parsed : parsed.moments;
 			if (Array.isArray(data)) {
@@ -221,6 +239,21 @@ function collectFromDOM() {
 		coverImage = coverImgEl.src;
 		originalCoverImage = coverImgEl.src;
 	}
+	const avatarEl = document.querySelector(".wx-avatar") as HTMLImageElement | null;
+	if (avatarEl) {
+		coverAvatar = avatarEl.src;
+		originalCoverAvatar = avatarEl.src;
+	}
+	const nameEl = document.querySelector(".wx-name");
+	if (nameEl) {
+		coverName = nameEl.textContent?.trim() || "";
+		originalCoverName = nameEl.textContent?.trim() || "";
+	}
+	const bioEl = document.querySelector(".wx-bio");
+	if (bioEl) {
+		coverBio = bioEl.textContent?.trim() || "";
+		originalCoverBio = bioEl.textContent?.trim() || "";
+	}
 
 	feed.querySelectorAll<HTMLElement>(".moment-card").forEach((el) => {
 		const id = el.id || "";
@@ -273,23 +306,30 @@ function hideSSRContent() {
 	const feed = document.getElementById("moments-feed");
 	const pinnedBlock = document.getElementById("pinned-block");
 	const emptyEl = document.getElementById("moments-empty");
+	const coverEl = document.getElementById("moments-cover");
 	if (feed) (feed as HTMLElement).style.display = "none";
 	if (pinnedBlock) (pinnedBlock as HTMLElement).style.display = "none";
 	if (emptyEl) (emptyEl as HTMLElement).style.display = "none";
+	if (coverEl) (coverEl as HTMLElement).style.display = "none";
 }
 
 function showSSRContent() {
 	const feed = document.getElementById("moments-feed");
 	const pinnedBlock = document.getElementById("pinned-block");
 	const emptyEl = document.getElementById("moments-empty");
+	const coverEl = document.getElementById("moments-cover");
 	if (feed) (feed as HTMLElement).style.display = "";
 	if (pinnedBlock) (pinnedBlock as HTMLElement).style.display = "";
 	if (emptyEl) (emptyEl as HTMLElement).style.display = "";
+	if (coverEl) (coverEl as HTMLElement).style.display = "";
 }
 
 function handleCancel() {
 	moments = deepClone(originalMoments);
 	coverImage = originalCoverImage;
+	coverAvatar = originalCoverAvatar;
+	coverName = originalCoverName;
+	coverBio = originalCoverBio;
 	editingIndex = -1;
 	drafts.clearDrafts();
 	showSSRContent();
@@ -482,15 +522,22 @@ async function submitMoments(
 ): Promise<boolean> {
 	let allOk = true;
 
-	if (coverImage && coverImage !== originalCoverImage) {
-		const coverMd = `---\nimage: "${coverImage.replace(/"/g, '\\"')}"\n---\n`;
+	if (coverImage !== originalCoverImage || coverAvatar !== originalCoverAvatar || coverName !== originalCoverName || coverBio !== originalCoverBio) {
+		const coverLines = ["---"];
+		if (coverImage) coverLines.push(`image: "${coverImage.replace(/"/g, '\\"')}"`);
+		if (coverAvatar) coverLines.push(`avatar: "${coverAvatar.replace(/"/g, '\\"')}"`);
+		if (coverName) coverLines.push(`name: "${coverName.replace(/"/g, '\\"')}"`);
+		if (coverBio) coverLines.push(`bio: "${coverBio.replace(/"/g, '\\"')}"`);
+		coverLines.push("---");
+		coverLines.push("");
+		const coverMd = coverLines.join("\n");
 		const coverPath = "src/content/moments/_cover.md";
 		const coverFile = await getRepoFile(coverPath, repoConfig);
 		if (coverFile && coverFile.sha) {
-			const ok = await updateRepoFile(coverPath, coverMd, coverFile.sha, "chore(moments): update cover image", repoConfig);
+			const ok = await updateRepoFile(coverPath, coverMd, coverFile.sha, "chore(moments): update cover settings", repoConfig);
 			if (!ok) allOk = false;
 		} else {
-			const ok = await createRepoFile(coverPath, coverMd, "chore(moments): add cover image", repoConfig);
+			const ok = await createRepoFile(coverPath, coverMd, "chore(moments): add cover settings", repoConfig);
 			if (!ok) allOk = false;
 		}
 	}
@@ -635,22 +682,29 @@ function getGridCols(count: number) {
 
 {#if editMode}
   <div class="moments-edit-list">
-    <div class="moments-cover-edit-card">
-      <div class="moments-form-header">
-        <iconify-icon icon="material-symbols:photo-camera-back-outline-rounded"></iconify-icon>
-        <span>封面图设置</span>
+    <div class="wx-cover wx-cover-editable">
+      <div class="wx-cover-img-box">
+        <img src={coverImage} alt="封面" class="wx-cover-img" />
+        <label class="wx-edit-overlay wx-edit-cover">
+          <iconify-icon icon="material-symbols:edit-rounded"></iconify-icon>
+          <span>更换封面</span>
+          <input type="text" bind:value={coverImage} placeholder="粘贴图片链接..." />
+        </label>
       </div>
-      <div class="moments-form-group">
-        <label>封面图链接</label>
-        <input
-          type="text"
-          class="moments-input"
-          bind:value={coverImage}
-          placeholder="https://example.com/cover.jpg"
-        />
-        {#if coverImage}
-          <div class="moments-cover-preview">
-            <img src={coverImage} alt="封面预览" />
+      <div class="wx-info-bar">
+        <div class="wx-avatar-box">
+          <img src={coverAvatar} alt={coverName} class="wx-avatar" />
+          <label class="wx-edit-avatar">
+            <iconify-icon icon="material-symbols:edit-rounded"></iconify-icon>
+            <input type="text" bind:value={coverAvatar} placeholder="头像链接..." />
+          </label>
+        </div>
+        <div class="wx-name wx-name-editable">
+          <input type="text" bind:value={coverName} placeholder="昵称..." />
+        </div>
+        {#if coverBio !== undefined}
+          <div class="wx-bio wx-bio-editable">
+            <input type="text" bind:value={coverBio} placeholder="个性签名..." />
           </div>
         {/if}
       </div>
@@ -877,28 +931,177 @@ function getGridCols(count: number) {
     padding: 12px 20px;
   }
 
-  .moments-cover-edit-card {
-    border-radius: 16px;
-    background: var(--card-bg, white);
-    border: 1px solid hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
-    padding: 20px;
-  }
-  :global(.dark) .moments-cover-edit-card {
-    background: rgba(23, 23, 23, 0.8);
-    border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.3);
+  .wx-cover.wx-cover-editable {
+    margin-bottom: 0;
+    border-radius: 12px;
+    overflow: visible;
+    position: relative;
+    border: 2px solid hsla(var(--theme-hue, 165), 70%, 50%, 0.4);
   }
 
-  .moments-cover-preview {
-    margin-top: 8px;
-    border-radius: 8px;
-    overflow: hidden;
-    max-height: 150px;
-  }
-  .moments-cover-preview img {
+  .wx-cover.wx-cover-editable .wx-cover-img-box {
     width: 100%;
-    height: auto;
+    height: 280px;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .wx-cover.wx-cover-editable .wx-cover-img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    max-height: 150px;
+    object-position: center;
+    display: block;
+  }
+
+  .wx-edit-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    color: #fff;
+  }
+  .wx-cover-img-box:hover .wx-edit-overlay {
+    opacity: 1;
+  }
+  .wx-edit-overlay iconify-icon {
+    font-size: 2rem;
+  }
+  .wx-edit-overlay span {
+    font-size: 0.875rem;
+  }
+  .wx-edit-overlay input {
+    margin-top: 8px;
+    width: 80%;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.8125rem;
+    color: #333;
+  }
+
+  .wx-cover.wx-cover-editable .wx-info-bar {
+    position: relative;
+    background: var(--card-bg);
+    border: none;
+    border-radius: 0 0 10px 10px;
+    padding: 0.75rem 1.25rem 1rem;
+    min-height: 2rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .wx-cover.wx-cover-editable .wx-avatar-box {
+    position: absolute;
+    top: 0;
+    right: 1.25rem;
+    transform: translateY(-65%);
+    z-index: 20;
+  }
+
+  .wx-cover.wx-cover-editable .wx-avatar {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 3px solid var(--card-bg);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    display: block;
+  }
+
+  .wx-edit-avatar {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: hsla(var(--theme-hue, 165), 70%, 50%, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .wx-edit-avatar input {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    width: 200px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  .wx-edit-avatar:hover input {
+    display: block;
+  }
+
+  .wx-cover.wx-cover-editable .wx-name {
+    position: absolute;
+    right: 7rem;
+    top: 0;
+    transform: translateY(-110%);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    z-index: 15;
+  }
+
+  .wx-cover.wx-cover-editable .wx-name input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    width: 160px;
+    outline: none;
+  }
+  .wx-cover.wx-cover-editable .wx-name input:focus {
+    border-color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .wx-cover.wx-cover-editable .wx-bio {
+    font-size: 0.8125rem;
+    color: var(--content-meta);
+    line-height: 1.5;
+    text-align: right;
+    max-width: calc(100% - 8rem);
+    margin-left: auto;
+    margin-top: 2rem;
+  }
+
+  .wx-cover.wx-cover-editable .wx-bio input {
+    background: transparent;
+    border: 1px dashed var(--border, rgba(0, 0, 0, 0.2));
+    color: var(--content-meta);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    text-align: right;
+    width: 100%;
+    outline: none;
+  }
+  .wx-cover.wx-cover-editable .wx-bio input:focus {
+    border-style: solid;
+    border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.5);
   }
 
   .moments-card-actions {

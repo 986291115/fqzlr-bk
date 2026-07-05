@@ -4,23 +4,27 @@ import { profileConfig, siteConfig } from "@/config";
 interface Props {
 	class?: string;
 	coverImage?: string;
+	coverAvatar?: string;
+	coverName?: string;
+	coverBio?: string;
 }
 
-const { class: className = "", coverImage } = Astro.props;
+const { class: className = "", coverImage, coverAvatar, coverName, coverBio } = Astro.props;
 
 const coverConfig = siteConfig.momentsCover;
 if (!coverConfig?.enable) return null;
 
-const avatar = profileConfig.avatar || "/avatar.png";
-const name = profileConfig.name || "";
-const bio = Array.isArray(profileConfig.bio)
+const avatar = coverAvatar || profileConfig.avatar || "/avatar.png";
+const name = coverName || profileConfig.name || "";
+const defaultBio = Array.isArray(profileConfig.bio)
 	? profileConfig.bio[1] || profileConfig.bio[0] || ""
 	: profileConfig.bio || "";
+const bio = coverBio || defaultBio;
 
 const displayImage = coverImage || coverConfig.image;
 ---
 
-<div class:list={["wx-cover", className]}>
+<div class:list={["wx-cover", className]} id="moments-cover">
   <!-- 封面图 -->
   <div class="wx-cover-img-box">
     <img
