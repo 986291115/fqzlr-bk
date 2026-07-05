@@ -93,6 +93,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	if (siteConfig.pages.changelog) {
 		recordChildren.push(LinkPreset.Changelog);
 	}
+	if (siteConfig.pages.calendar) {
+		recordChildren.push(LinkPreset.Calendar);
+	}
 	// 规划 & 足迹
 	recordChildren.push({
 		name: "规划",
@@ -126,6 +129,10 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "/about/",
 		icon: "material-symbols:info",
 		children: [
+			// 外部链接
+			LinkPreset.Fhome,
+			LinkPreset.Fnote,
+
 			// 关于页面
 			LinkPreset.About,
 

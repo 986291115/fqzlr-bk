@@ -63,4 +63,21 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/posts/",
 		icon: "material-symbols:article-outline",
 	},
+	[LinkPreset.Calendar]: {
+		name: i18n(I18nKey.calendar),
+		url: "/calendar/",
+		icon: "material-symbols:calendar-month",
+	},
+	[LinkPreset.Fhome]: {
+		name: "主页",
+		url: "https://home.fqzlr.com/",
+		icon: "material-symbols:link",
+		external: true,
+	},
+	[LinkPreset.Fnote]: {
+		name: "笔记",
+		url: "https://bj.fqzlr.com/",
+		icon: "material-symbols:link",
+		external: true,
+	},
 };

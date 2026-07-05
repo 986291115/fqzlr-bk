@@ -49,3 +49,4 @@ export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
 export { skillsConfig } from "./skillsConfig";
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置
+export { calendarConfig } from "./calendarConfig"; // 日历配置

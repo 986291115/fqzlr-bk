@@ -107,6 +107,7 @@ export type SiteConfig = {
 		moviesGames: boolean; // 影视与游戏页面开关
 		musicPage: boolean; // 音乐页面开关
 		changelog: boolean; // 更新日志页面开关
+		calendar: boolean; // 日历页面开关
 	};
 
 	// 归档页面内容开关
@@ -225,6 +226,9 @@ export enum LinkPreset {
 	MusicPage = 9,
 	Changelog = 10,
 	Posts = 11,
+	Calendar = 12,
+	Fhome = 13,
+	Fnote = 14,
 }
 
 export type NavBarLink = {
@@ -860,3 +864,64 @@ export type ResponsiveImageLayout = "constrained" | "full-width" | "none";
 
 // 图像格式类型
 export type ImageFormat = "avif" | "webp" | "png" | "jpg" | "jpeg" | "gif";
+
+// 日历配置类型
+export type SolarOrLunarDate =
+	| { type: "solar"; month: number; day: number }
+	| { type: "lunar"; month: number; day: number };
+
+export type BirthdayItem = {
+	name: string;
+	date: SolarOrLunarDate;
+	icon?: string;
+	note?: string;
+};
+
+export type ScheduleRecurring =
+	| { freq: "yearly"; month: number; day: number; lunar?: boolean }
+	| { freq: "monthly"; day: number }
+	| { freq: "weekly"; weekday: number };
+
+export type ScheduleItem = {
+	title: string;
+	date?: string;
+	recurring?: ScheduleRecurring;
+	note?: string;
+	icon?: string;
+};
+
+export type CalendarHolidayApiConfig = {
+	enable: boolean;
+	url: string;
+	fallbackOnError: boolean;
+	years: number[];
+};
+
+export type CalendarBuiltinHoliday = {
+	name: string;
+	date: SolarOrLunarDate;
+	icon?: string;
+};
+
+export type CalendarShowConfig = {
+	posts: boolean;
+	lunarDate: boolean;
+	weekNumber: boolean;
+};
+
+export type CalendarOverviewConfig = {
+	futureDays: number;
+	maxItems: number;
+};
+
+export type CalendarConfig = {
+	title?: string;
+	description?: string;
+	showComment?: boolean;
+	holidayApi: CalendarHolidayApiConfig;
+	builtinHolidays: CalendarBuiltinHoliday[];
+	birthdays: BirthdayItem[];
+	schedules: ScheduleItem[];
+	show: CalendarShowConfig;
+	overview: CalendarOverviewConfig;
+};
