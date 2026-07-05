@@ -12,7 +12,7 @@ export default {
   // Obsidian 笔记库路径（必须修改！）
   // Windows 示例: 'E:/Obsidian/Vault'
   // macOS/Linux 示例: '/Users/username/Obsidian/Vault'
-  obsidianVaultPath: 'B:/GitHub/dumplingandcake_warehouse/网络笔记',
+  obsidianVaultPath: 'B:/GitHub/my-blog_warehouse/网络笔记',
 
   // 博客项目 content 文件夹路径（通常不需要修改）
   projectContentPath: path.resolve(__dirname, '../../src/content'),

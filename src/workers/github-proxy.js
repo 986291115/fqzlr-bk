@@ -155,7 +155,7 @@ async function getInstallationTokenServer(env) {
 
 		// 获取 installation ID
 		const ghUser = env.PUBLIC_GITHUB_OWNER || "fqzlr";
-		const ghRepo = env.PUBLIC_GITHUB_REPO || "dumplingandcakeblog";
+		const ghRepo = env.PUBLIC_GITHUB_REPO || "my-blog";
 		let installationId = null;
 
 		const instResp = await fetch(`${GH_API}/app/installations`, {

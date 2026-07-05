@@ -89,6 +89,7 @@ export type SiteConfig = {
 			alt?: string; // 图片alt文本
 		};
 		title?: string; // 导航栏标题，如果不设置则使用 title
+		hoverTitle?: string; // 鼠标悬停时显示的互动颜文字
 		widthFull?: boolean; // 导航栏是否占满屏幕宽度
 		followTheme?: boolean; // 导航栏图标和标题是否跟随主题色
 	};
@@ -699,6 +700,24 @@ export type FriendLink = {
 
 export type FriendsPageConfig = {
 	columns: 2 | 3; // 显示列数：2列或3列
+	applyLink?: boolean; // 是否开启友链申请功能
+	githubIssue?: {
+		// GitHub Issue 申请配置
+		repo: string; // GitHub 仓库地址（格式：owner/repo）
+		labels?: string[]; // Issue 标签数组，用于筛选友链申请
+	};
+	siteInfo?: {
+		// 本站信息，用于友链申请指南
+		name: string; // 站点名称
+		desc: string; // 站点描述
+		url: string; // 站点 URL
+		avatar: string; // 站点头像 URL
+	};
+	notes?: {
+		// 注意事项列表
+		title: string; // 注意事项标题
+		content: string; // 注意事项内容
+	}[];
 };
 
 // 音乐播放器配置
