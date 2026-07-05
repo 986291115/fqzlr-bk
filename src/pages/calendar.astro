@@ -2,10 +2,13 @@
 import CalendarGrid from "@/components/pages/calendar/CalendarGrid.svelte";
 import EventDetailPanel from "@/components/pages/calendar/EventDetailPanel.svelte";
 import EventOverview from "@/components/pages/calendar/EventOverview.svelte";
+import Navbar from "@/components/layout/Navbar.astro";
+import Footer from "@/components/layout/Footer.astro";
+import FloatingDock from "@/components/controls/FloatingDock.astro";
 import { calendarConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Layout from "@/layouts/Layout.astro";
 import "@/styles/pages/calendar.css";
 
 if (!siteConfig.pages.calendar) {
@@ -53,32 +56,55 @@ const gridProps = {
 const detailProps = { holidays, posts, birthdays, schedules, years, showPosts };
 ---
 
-<MainGridLayout title={title} description={description} hideSidebar={true}>
-	<div class="calendar-page">
-		<div class="calendar-page__shell">
-			<header class="calendar-page__header flex justify-between items-start gap-4 flex-wrap">
-				<div class="flex-1 min-w-0">
-					<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h1>
-				</div>
-				<div class="page-header-toolbar-slot flex-shrink-0"></div>
-			</header>
-
-			<aside class="calendar-page__rail calendar-page__rail--left" aria-label={i18n(I18nKey.calendarUpcoming)}>
-				<EventOverview client:load {...overviewProps} />
-			</aside>
-		
-			<main class="calendar-page__main" aria-label={title}>
-				<CalendarGrid client:load {...gridProps} />
-			</main>
-		
-			<aside class="calendar-page__rail calendar-page__rail--right" aria-label={i18n(I18nKey.calendarToday)}>
-				<EventDetailPanel client:load {...detailProps} />
-			</aside>
-		</div>
+<Layout title={title} description={description}>
+	<div id="navbar-wrapper" class="pointer-events-auto transition-all" data-full-width={String(siteConfig.navbar.widthFull ?? false)}>
+		<Navbar />
 	</div>
-</MainGridLayout>
+
+	<main id="swup-container" class="calendar-page-wrapper">
+		<div class="calendar-page">
+			<div class="calendar-page__shell">
+				<header class="calendar-page__header flex justify-between items-start gap-4 flex-wrap">
+					<div class="flex-1 min-w-0">
+						<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h1>
+					</div>
+					<div class="page-header-toolbar-slot flex-shrink-0"></div>
+				</header>
+
+				<aside class="calendar-page__rail calendar-page__rail--left" aria-label={i18n(I18nKey.calendarUpcoming)}>
+					<EventOverview client:load {...overviewProps} />
+				</aside>
+			
+				<main class="calendar-page__main" aria-label={title}>
+					<CalendarGrid client:load {...gridProps} />
+				</main>
+			
+				<aside class="calendar-page__rail calendar-page__rail--right" aria-label={i18n(I18nKey.calendarToday)}>
+					<EventDetailPanel client:load {...detailProps} />
+				</aside>
+			</div>
+		</div>
+	</main>
+
+	<footer class="calendar-footer">
+		<Footer />
+	</footer>
+
+	<FloatingDock />
+</Layout>
 
 <style>
+	.calendar-page-wrapper {
+		position: relative;
+		min-height: calc(100vh - 4rem);
+		padding-top: 5.5rem;
+	}
+
+	.calendar-footer {
+		position: relative;
+		z-index: 30;
+	}
+
 	@media (max-width: 768px) {
 		:has(> .page-header-toolbar-slot) {
 			flex-direction: column;
