@@ -81,10 +81,12 @@ function handleSidebarModeChange(e: Event) {
 	if (detail?.pageKey !== "daohang") return;
 	if (detail.editing) {
 		editMode = true;
+		hideSSRGrid();
 		editingIndex = -1;
 		activeTab = "all";
 	} else {
 		editMode = false;
+		showSSRGrid();
 	}
 }
 
@@ -113,7 +115,9 @@ function handleSidebarAdd(e: Event) {
 }
 
 function collectFromDOM() {
-	const cards = document.querySelectorAll(".tools-card");
+	const allSection = document.querySelector('[data-tools-section="all"]');
+	if (!allSection) return;
+	const cards = allSection.querySelectorAll(".tools-card");
 	const collected: DaohangItem[] = [];
 	cards.forEach((el) => {
 		const card = el as HTMLElement;
@@ -176,17 +180,31 @@ const groupedItems = $derived.by(() => {
 function handleModeChange(e: CustomEvent) {
 	editMode = e.detail.editing;
 	if (editMode) {
+		hideSSRGrid();
 		editingIndex = -1;
 		activeTab = "all";
+	} else {
+		showSSRGrid();
 	}
 }
 
+function hideSSRGrid() {
+	const grid = document.getElementById("daohang-grid");
+	if (grid) grid.style.display = "none";
+}
+
+function showSSRGrid() {
+	const grid = document.getElementById("daohang-grid");
+	if (grid) grid.style.display = "";
+}
+
 function handleCancel() {
+	editMode = false;
 	items = deepClone(originalItems);
 	drafts.clearDrafts();
 	editingIndex = -1;
 	activeTab = "all";
-	editMode = false;
+	showSSRGrid();
 }
 
 function switchTab(tab: string) {
@@ -335,8 +353,8 @@ function isHttpIcon(icon?: string) {
 }
 </script>
 
-<!-- Tab 分类导航 -->
-{#if categories.length > 1}
+<!-- Tab 分类导航（仅编辑模式显示） -->
+{#if editMode && categories.length > 1}
 	<div class="daohang-tab-wrapper">
 		<div class="daohang-tab-pill">
 			<button

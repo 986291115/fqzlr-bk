@@ -14,7 +14,7 @@ const { class: className = "", coverImage, coverAvatar, coverName, coverBio } = 
 const coverConfig = siteConfig.momentsCover;
 if (!coverConfig?.enable) return null;
 
-const avatar = coverAvatar || profileConfig.avatar || "/avatar.png";
+const avatar = coverAvatar || profileConfig.avatar || "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640";
 const name = coverName || profileConfig.name || "";
 const defaultBio = Array.isArray(profileConfig.bio)
 	? profileConfig.bio[1] || profileConfig.bio[0] || ""

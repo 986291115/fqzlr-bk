@@ -1202,7 +1202,35 @@ onMount(async () => {
 			</div>
 		</div>
 
+		
 		<div class="sidebar-panel">
+			<div class="sidebar-section auth-status-section">
+				{#if authed}
+					<div class="auth-indicator auth-ok">
+						<iconify-icon icon="material-symbols:vpn-key-rounded" class="text-base"></iconify-icon>
+						<span>已导入私钥</span>
+						<button class="auth-logout-btn" onclick={handleLogout} title="清除私钥">清除</button>
+					</div>
+				{:else}
+					<div class="auth-indicator auth-err">
+						<iconify-icon icon="material-symbols:key-off-rounded" class="text-base"></iconify-icon>
+						<span>请先点击工具栏「导入密钥」按钮导入私钥</span>
+					</div>
+				{/if}
+			</div>
+			<div class="sidebar-section">
+				<label class="sidebar-label">
+					<iconify-icon icon="material-symbols:link-rounded" class="text-sm"></iconify-icon>
+					文章 Slug
+				</label>
+				<input
+					bind:value={slug}
+					type="text"
+					class="sidebar-input"
+					placeholder="article-slug"
+				/>
+				<p class="sidebar-hint">留空将自动从标题生成</p>
+			</div>
 			<div class="sidebar-section">
 				<label class="sidebar-label">
 					<iconify-icon icon="material-symbols:image-rounded" class="text-sm"></iconify-icon>
@@ -1220,7 +1248,7 @@ onMount(async () => {
 					</div>
 				{/if}
 			</div>
-
+			
 			<div class="sidebar-section">
 				<label class="sidebar-label">
 					<iconify-icon icon="material-symbols:description-rounded" class="text-sm"></iconify-icon>
@@ -1279,20 +1307,6 @@ onMount(async () => {
 				/>
 			</div>
 
-			<div class="sidebar-section">
-				<label class="sidebar-label">
-					<iconify-icon icon="material-symbols:link-rounded" class="text-sm"></iconify-icon>
-					文章 Slug
-				</label>
-				<input
-					bind:value={slug}
-					type="text"
-					class="sidebar-input"
-					placeholder="article-slug"
-				/>
-				<p class="sidebar-hint">留空将自动从标题生成</p>
-			</div>
-
 			<div class="sidebar-section checkbox-section">
 				<label class="checkbox-label">
 					<input type="checkbox" bind:checked={isDraft} />
@@ -1306,21 +1320,6 @@ onMount(async () => {
 					<iconify-icon icon="material-symbols:push-pin-rounded" class="text-sm"></iconify-icon>
 					置顶文章
 				</label>
-			</div>
-
-			<div class="sidebar-section auth-status-section">
-				{#if authed}
-					<div class="auth-indicator auth-ok">
-						<iconify-icon icon="material-symbols:vpn-key-rounded" class="text-base"></iconify-icon>
-						<span>已导入私钥</span>
-						<button class="auth-logout-btn" onclick={handleLogout} title="清除私钥">清除</button>
-					</div>
-				{:else}
-					<div class="auth-indicator auth-err">
-						<iconify-icon icon="material-symbols:key-off-rounded" class="text-base"></iconify-icon>
-						<span>请先点击工具栏「导入密钥」按钮导入私钥</span>
-					</div>
-				{/if}
 			</div>
 		</div>
 	</div>

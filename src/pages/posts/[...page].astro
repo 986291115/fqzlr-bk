@@ -19,7 +19,9 @@ const len = page.data.length;
 
 <MainGridLayout>
   {siteConfig.categoryBar && <CategoryTools />}
-  <PostPage page={page} />
+  <div class="mt-6">
+    <PostPage page={page} />
+  </div>
   {
     page.total > page.size && (
       <Pagination

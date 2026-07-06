@@ -139,6 +139,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 友链
 			LinkPreset.Friends,
 
+			// 朋友圈
+			{
+				name: "朋友圈",
+				url: "/pengyou/",
+				icon: "material-symbols:group",
+			},
+
 			// 赞助
 			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
 

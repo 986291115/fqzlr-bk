@@ -124,6 +124,10 @@
   }
 }
 
+.wx-pinned-hidden {
+  display: none;
+}
+
 /* JS 动态插入的说说卡片样式 */
 #moments-feed .moment-card {
   position: relative;

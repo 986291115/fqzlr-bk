@@ -20,7 +20,7 @@ const gridColumns = siteConfig.postListLayout.grid.columns || 2;
 // 根据配置设置初始布局模式，避免闪烁
 const defaultLayout = siteConfig.postListLayout.defaultMode || "list";
 const gridCols =
-	!isBothSidebars && gridColumns === 3
+	gridColumns === 3
 		? "md:grid-cols-2 lg:grid-cols-3"
 		: "md:grid-cols-2";
 const initialLayoutClass =
@@ -77,7 +77,7 @@ const initialLayoutClass =
 
         if (savedLayout === 'grid') {
           container.classList.add('grid-mode', 'grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-4');
-          if (!isBothSidebars && gridColumns === 3) {
+          if (gridColumns === 3) {
             container.classList.add('lg:grid-cols-3');
           }
         } else {
@@ -134,7 +134,7 @@ const initialLayoutClass =
                 applyMasonryLayout();
             } else {
                 postListContainer.classList.add("grid", "grid-cols-1", "md:grid-cols-2", "gap-4");
-                if (!isBothSidebars && gridColumns === 3) {
+                if (gridColumns === 3) {
                     postListContainer.classList.add("lg:grid-cols-3");
                 }
                 resetMasonryLayout();

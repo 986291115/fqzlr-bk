@@ -207,43 +207,99 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
         <DaohangEditor client:only />
       </div>
 
-      <!-- Tab 分类导航（椭圆胶囊 + 换行） -->
-      {allSites.length > 0 && sortedCategories.length > 1 && (
-        <div class="tools-tab-wrapper">
-          <div class="tools-tab-pill" data-tools-tab-nav>
-            <div class="tools-tab-indicator" data-tools-tab-indicator></div>
-            <button data-tools-tab="all" class="tools-tab-btn tools-tab-btn-active">
-              全部
-              <span class="tools-tab-badge">{allSites.length}</span>
-            </button>
-            {sortedCategories.map((cat) => (
-              <button data-tools-tab={cat} class="tools-tab-btn tools-tab-btn-inactive">
-                {cat}
-                <span class="tools-tab-badge">{categoryCounts[cat]}</span>
+      <!-- 导航网格（编辑模式下隐藏） -->
+      <div id="daohang-grid">
+        <!-- Tab 分类导航（椭圆胶囊 + 换行） -->
+        {allSites.length > 0 && sortedCategories.length > 1 && (
+          <div class="tools-tab-wrapper">
+            <div class="tools-tab-pill" data-tools-tab-nav>
+              <div class="tools-tab-indicator" data-tools-tab-indicator></div>
+              <button data-tools-tab="all" class="tools-tab-btn tools-tab-btn-active">
+                全部
+                <span class="tools-tab-badge">{allSites.length}</span>
               </button>
-            ))}
+              {sortedCategories.map((cat) => (
+                <button data-tools-tab={cat} class="tools-tab-btn tools-tab-btn-inactive">
+                  {cat}
+                  <span class="tools-tab-badge">{categoryCounts[cat]}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <!-- 工具卡片内容 -->
-      {allSites.length > 0 ? (
-        <div>
-          <!-- 全部：按分类分组显示 -->
-          <div data-tools-section="all">
+        <!-- 工具卡片内容 -->
+        {allSites.length > 0 ? (
+          <div>
+            <!-- 全部：按分类分组显示 -->
+            <div data-tools-section="all">
+              {sortedCategories.map((cat) => {
+                const catSites = sortedData.get(cat)!;
+                if (catSites.length === 0) return null;
+                return (
+                  <div class="tools-category-group mt-8 first:mt-0">
+                    <div class="flex items-center gap-3 mb-5">
+                      <div class="flex items-center gap-2">
+                        <Icon name={getCategoryIcon(cat)} class="text-lg text-neutral-900 dark:text-neutral-100" />
+                        <span class="text-base font-bold text-neutral-900 dark:text-neutral-100">{cat}</span>
+                      </div>
+                      <span class="text-xs text-neutral-400 dark:text-neutral-500">{catSites.length}</span>
+                      <div class="flex-1 h-[2px] bg-black dark:bg-white" />
+                    </div>
+                    <div class="tools-card-grid">
+                      {catSites.map((site, index) => (
+                        <a
+                          href={site.data.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="tools-card group"
+                          data-category={cat}
+                          style={`animation-delay: ${index * 60}ms`}
+                        >
+                          <div class="tools-card-jump-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M7 17L17 7" />
+                              <path d="M7 7h10v10" />
+                            </svg>
+                          </div>
+                          <div class="flex items-center gap-2 mb-3">
+                            {site.data.icon ? (
+                              site.data.icon.startsWith('http') ? (
+                                <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+                              ) : (
+                                <Icon name={site.data.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                              )
+                            ) : site.data.image ? (
+                              <img src={site.data.image} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+                            ) : (
+                              <Icon name="material-symbols:language" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                            )}
+                            <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
+                              {site.data.name}
+                            </h3>
+                          </div>
+                          <p class="tools-card-desc">{site.data.description}</p>
+                          <div class="tools-card-footer">
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+                              {(() => {
+                                try { return new URL(site.data.url).hostname; } catch { return site.data.url; }
+                              })()}
+                            </span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <!-- 各分类独立 Tab 内容 -->
             {sortedCategories.map((cat) => {
               const catSites = sortedData.get(cat)!;
               if (catSites.length === 0) return null;
               return (
-                <div class="tools-category-group mt-8 first:mt-0">
-                  <div class="flex items-center gap-3 mb-5">
-                    <div class="flex items-center gap-2">
-                      <Icon name={getCategoryIcon(cat)} class="text-lg text-neutral-900 dark:text-neutral-100" />
-                      <span class="text-base font-bold text-neutral-900 dark:text-neutral-100">{cat}</span>
-                    </div>
-                    <span class="text-xs text-neutral-400 dark:text-neutral-500">{catSites.length}</span>
-                    <div class="flex-1 h-[2px] bg-black dark:bg-white" />
-                  </div>
+                <div data-tools-section={cat} class="hidden">
                   <div class="tools-card-grid">
                     {catSites.map((site, index) => (
                       <a
@@ -291,66 +347,13 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
               );
             })}
           </div>
-
-          <!-- 各分类独立 Tab 内容 -->
-          {sortedCategories.map((cat) => {
-            const catSites = sortedData.get(cat)!;
-            if (catSites.length === 0) return null;
-            return (
-              <div data-tools-section={cat} class="hidden">
-                <div class="tools-card-grid">
-                  {catSites.map((site, index) => (
-                    <a
-                      href={site.data.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="tools-card group"
-                      data-category={cat}
-                      style={`animation-delay: ${index * 60}ms`}
-                    >
-                      <div class="tools-card-jump-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M7 17L17 7" />
-                          <path d="M7 7h10v10" />
-                        </svg>
-                      </div>
-                      <div class="flex items-center gap-2 mb-3">
-                        {site.data.icon ? (
-                          site.data.icon.startsWith('http') ? (
-                            <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                          ) : (
-                            <Icon name={site.data.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                          )
-                        ) : site.data.image ? (
-                          <img src={site.data.image} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                        ) : (
-                          <Icon name="material-symbols:language" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                        )}
-                        <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
-                          {site.data.name}
-                        </h3>
-                      </div>
-                      <p class="tools-card-desc">{site.data.description}</p>
-                      <div class="tools-card-footer">
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 truncate">
-                          {(() => {
-                            try { return new URL(site.data.url).hostname; } catch { return site.data.url; }
-                          })()}
-                        </span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div class="text-center py-16">
-          <Icon name="material-symbols:bookmark-outline" class="text-5xl text-neutral-300 dark:text-neutral-600 mb-4" />
-          <p class="text-neutral-500 dark:text-neutral-400">暂无收录的网站</p>
-        </div>
-      )}
+        ) : (
+          <div class="text-center py-16">
+            <Icon name="material-symbols:bookmark-outline" class="text-5xl text-neutral-300 dark:text-neutral-600 mb-4" />
+            <p class="text-neutral-500 dark:text-neutral-400">暂无收录的网站</p>
+          </div>
+        )}
+      </div>
     </div>
   </div>
 </MainGridLayout>

@@ -1,0 +1,100 @@
+---
+import { Icon } from "astro-icon/components";
+import { pengyouConfig } from "@/config/pengyouConfig";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const title = "朋友圈";
+const description = "来看看我的朋友们都在干嘛";
+
+const { api, data } = pengyouConfig;
+
+let items = data;
+
+if (api) {
+	try {
+		const response = await fetch(api);
+		if (response.ok) {
+			items = await response.json();
+		}
+	} catch {
+		console.error("Failed to fetch friends data from API");
+	}
+}
+
+function formatDate(dateString: string): string {
+	const date = new Date(dateString);
+	const now = new Date();
+	const diffTime = Math.abs(now.getTime() - date.getTime());
+	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+	if (diffDays === 0) return "今天";
+	if (diffDays === 1) return "昨天";
+	if (diffDays < 7) return `${diffDays}天前`;
+	if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
+	if (diffDays < 365) return `${Math.floor(diffDays / 30)}月前`;
+	return `${Math.floor(diffDays / 365)}年前`;
+}
+---
+
+<MainGridLayout title={title} description={description}>
+	<div class="card-base z-10 px-9 py-6 relative w-full">
+		<div class="flex items-center gap-3 mb-6">
+			<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+				<Icon name="material-symbols:group" class="text-[1.5rem]" />
+			</div>
+			<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+				{title}
+			</h1>
+		</div>
+
+		<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6">
+			{description}
+		</p>
+
+		<div class="bg-(--card-bg) rounded-(--radius-large) p-4 mb-6">
+			<p class="text-sm text-neutral-500 dark:text-neutral-500">
+				如果你是我的邻居，但是没有在这里看到自己，可以立刻马上告诉我你的 RSS 订阅地址噢～
+			</p>
+		</div>
+
+		<div class="space-y-4">
+			{items.map((item, index) => (
+				<article
+					key={index}
+					class="bg-(--card-bg) rounded-(--radius-large) p-5 hover:shadow-lg transition-shadow duration-300"
+				>
+					<a
+						href={item.link}
+						target="_blank"
+						rel="noopener nofollow"
+						class="block"
+					>
+						<header class="mb-3">
+							<h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 hover:text-(--primary) transition-colors">
+								{item.title}
+							</h2>
+						</header>
+						<p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-4">
+							{item.content}
+						</p>
+						<footer class="flex items-center justify-between text-sm">
+							<span class="flex items-center gap-2">
+								<img
+									src={`https://icon.bqb.cool/?url=${item.link.split("//")[1]?.split("/")[0] || ""}`}
+									alt={item.author}
+									class="w-5 h-5 rounded-full object-cover"
+								/>
+								<em class="text-neutral-500 dark:text-neutral-500 truncate max-w-[120px]">
+									{item.author}
+								</em>
+							</span>
+							<time class="text-neutral-400 dark:text-neutral-600">
+								{formatDate(item.date)}
+							</time>
+						</footer>
+					</a>
+				</article>
+			))}
+		</div>
+	</div>
+</MainGridLayout>

@@ -245,6 +245,9 @@ function collectFromDOM() {
 	if (avatarEl) {
 		coverAvatar = avatarEl.src;
 		originalCoverAvatar = avatarEl.src;
+	} else {
+		coverAvatar = profileConfig.avatar || "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640";
+		originalCoverAvatar = profileConfig.avatar || "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640";
 	}
 	const nameEl = document.querySelector(".wx-name");
 	if (nameEl) {
