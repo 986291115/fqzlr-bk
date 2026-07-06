@@ -50,6 +50,8 @@ let coverName = $state("");
 let originalCoverName = $state("");
 let coverBio = $state("");
 let originalCoverBio = $state("");
+let showAvatarInput = $state(false);
+let avatarInputRef: HTMLInputElement | null = null;
 
 const pageKey = "moments";
 const pageName = "说说";
@@ -694,10 +696,38 @@ function getGridCols(count: number) {
       <div class="wx-info-bar">
         <div class="wx-avatar-box">
           <img src={coverAvatar} alt={coverName} class="wx-avatar" />
-          <label class="wx-edit-avatar">
+          <button
+            class="wx-edit-avatar"
+            onclick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              showAvatarInput = !showAvatarInput;
+              if (!showAvatarInput) return;
+              setTimeout(() => {
+                avatarInputRef?.focus();
+                avatarInputRef?.select();
+              }, 10);
+            }}
+            title="编辑头像"
+          >
             <iconify-icon icon="material-symbols:edit-rounded"></iconify-icon>
-            <input type="text" bind:value={coverAvatar} placeholder="头像链接..." />
-          </label>
+          </button>
+          {#if showAvatarInput}
+            <div class="wx-edit-avatar-popup">
+              <input
+                bind:this={avatarInputRef}
+                type="text"
+                bind:value={coverAvatar}
+                placeholder="头像链接..."
+                onblur={() => (showAvatarInput = false)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === "Escape") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+              />
+            </div>
+          {/if}
         </div>
         <div class="wx-name wx-name-editable">
           <input type="text" bind:value={coverName} placeholder="昵称..." />
@@ -1032,21 +1062,33 @@ function getGridCols(count: number) {
     color: #fff;
     cursor: pointer;
     font-size: 0.9rem;
+    border: none;
+    padding: 0;
+    z-index: 10;
   }
-  .wx-edit-avatar input {
-    display: none;
+  .wx-edit-avatar:hover {
+    background: hsla(var(--theme-hue, 165), 70%, 45%, 1);
+  }
+  .wx-edit-avatar-popup {
     position: absolute;
     top: 100%;
     right: 0;
-    margin-top: 4px;
-    width: 200px;
-    padding: 4px 8px;
-    font-size: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    margin-top: 8px;
+    z-index: 100;
   }
-  .wx-edit-avatar:hover input {
-    display: block;
+  .wx-edit-avatar-popup input {
+    width: 220px;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    outline: none;
+  }
+  .wx-edit-avatar-popup input:focus {
+    border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.8);
   }
 
   .wx-cover.wx-cover-editable .wx-name {

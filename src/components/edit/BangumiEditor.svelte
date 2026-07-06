@@ -51,8 +51,6 @@ let originalItemsJson = $state("");
 let editingIndex = $state(-1);
 let activeTab = $state(defaultCategory);
 let activeStatusTab = $state("all");
-let modalItem = $state<BangumiItem | null>(null);
-let modalMode = $state<"add" | "edit">("add");
 let tagsInput = $state("");
 
 const pageKey = customPageName === "书架"
@@ -277,7 +275,7 @@ function handleSidebarCancel(e: Event) {
 function handleSidebarAdd(e: Event) {
 	const detail = (e as CustomEvent).detail;
 	if (detail?.pageKey !== pageKey) return;
-	openAddModal();
+	handleAdd();
 }
 
 function collectFromDOM() {
@@ -334,7 +332,7 @@ function hideSSRContent() {
 		".tools-tab-pill",
 		".mg-item",
 		".bangumi-item",
-		"#bookshelf",
+		".bookshelf",
 		".bookshelf-container",
 	];
 	selectors.forEach((sel) => {
@@ -356,7 +354,7 @@ function showSSRContent() {
 		".tools-tab-pill",
 		".mg-item",
 		".bangumi-item",
-		"#bookshelf",
+		".bookshelf",
 		".bookshelf-container",
 	];
 	selectors.forEach((sel) => {
@@ -376,7 +374,7 @@ function handleCancel() {
 	showSSRContent();
 }
 
-function openAddModal() {
+function handleAdd() {
 	const today = new Date().toISOString().slice(0, 10);
 	let defaultCat = "anime";
 	let defaultSubcat: string | undefined;
@@ -390,7 +388,7 @@ function openAddModal() {
 		defaultCat = activeTab;
 	}
 
-	modalItem = {
+	const newItem: BangumiItem = {
 		id: genId("bg"),
 		slug: "",
 		title: "",
@@ -405,51 +403,54 @@ function openAddModal() {
 		published: today,
 		_draft: true,
 	};
+	items = [newItem, ...items];
 	tagsInput = "";
-	modalMode = "add";
+	editingIndex = 0;
 }
 
-function openEditModal(index: number) {
+function startEdit(index: number) {
 	const item = filteredItems[index];
 	if (!item) return;
 	const realIndex = items.findIndex((i) => i.id === item.id);
 	if (realIndex < 0) return;
 
 	editingIndex = realIndex;
-	modalItem = deepClone(items[realIndex]);
 	tagsInput = items[realIndex].tags.join(", ");
-	modalMode = "edit";
 }
 
-function closeModal() {
-	modalItem = null;
-	editingIndex = -1;
-}
-
-function saveModal() {
-	if (!modalItem) return;
-	if (!modalItem.title.trim()) {
+function finishEdit() {
+	if (editingIndex < 0) return;
+	const item = items[editingIndex];
+	if (!item.title.trim()) {
 		showToast("标题不能为空", "warning");
 		return;
 	}
 
-	modalItem.tags = tagsInput
+	item.tags = tagsInput
 		.split(/[,，、\s]+/)
 		.map((s) => s.trim())
 		.filter((s) => s);
 
-	if (modalMode === "add") {
-		items = [modalItem, ...items];
-		showToast("已添加，记得点击保存", "info");
+	items[editingIndex] = { ...item };
+	items = [...items];
+	showToast("已修改，记得点击保存", "info");
+	editingIndex = -1;
+}
+
+function cancelItemEdit() {
+	if (editingIndex < 0) return;
+	const item = items[editingIndex];
+
+	if (item._draft && !item.title.trim()) {
+		items = items.filter((_, i) => i !== editingIndex);
 	} else {
-		if (editingIndex >= 0) {
-			items[editingIndex] = { ...modalItem };
+		const orig = originalItems.find((o) => o.id === item.id && !item._draft);
+		if (orig) {
+			items[editingIndex] = deepClone(orig);
 			items = [...items];
-			showToast("已修改，记得点击保存", "info");
 		}
 	}
-
-	closeModal();
+	editingIndex = -1;
 }
 
 function deleteItem(index: number) {
@@ -475,6 +476,10 @@ function restoreItem(index: number) {
 	if (realIndex < 0) return;
 	items[realIndex] = { ...items[realIndex], _deleted: false };
 	items = [...items];
+}
+
+function getRealIndex(item: BangumiItem): number {
+	return items.findIndex((it) => it.id === item.id);
 }
 
 function slugify(text: string): string {
@@ -596,8 +601,9 @@ function handleSaveDraft() {
 }
 
 async function handleSubmit() {
-	if (modalItem) {
-		closeModal();
+	if (editingIndex >= 0) {
+		finishEdit();
+		if (editingIndex >= 0) return;
 	}
 	if (!hasValidToken()) {
 		showToast("GitHub 代理未配置，请联系管理员", "warning");
@@ -653,12 +659,6 @@ registerSubmitHandler(pageKey, async (draft) => {
 	}
 	return false;
 });
-
-function handleKeydown(e: KeyboardEvent) {
-	if (e.key === "Escape") {
-		closeModal();
-	}
-}
 </script>
 
 
@@ -698,49 +698,158 @@ function handleKeydown(e: KeyboardEvent) {
             class="bg-card"
             class:bg-card-draft={item._draft}
             class:bg-card-deleted={item._deleted}
+            class:bg-card-editing={editingIndex === getRealIndex(item)}
           >
-            <div class="bg-card-actions">
-              <button class="bg-action-btn bg-action-edit" onclick={() => openEditModal(i)} title="编辑">
-                <iconify-icon icon="material-symbols:edit-outline-rounded"></iconify-icon>
-              </button>
-              {#if item._deleted}
-                <button class="bg-action-btn bg-action-restore" onclick={() => restoreItem(i)} title="恢复">
-                  <iconify-icon icon="material-symbols:restore"></iconify-icon>
+            {#if editingIndex !== getRealIndex(item)}
+              <div class="bg-card-actions">
+                <button class="bg-action-btn bg-action-edit" onclick={() => startEdit(i)} title="编辑">
+                  <iconify-icon icon="material-symbols:edit-outline-rounded"></iconify-icon>
                 </button>
-              {:else}
-                <button class="bg-action-btn bg-action-delete" onclick={() => deleteItem(i)} title="删除">
-                  <iconify-icon icon="material-symbols:delete-outline-rounded"></iconify-icon>
-                </button>
-              {/if}
-            </div>
-
-            <div class="bg-card-cover">
-              {#if item.image}
-                <img src={item.image} alt={item.title} loading="lazy" />
-              {:else}
-                <div class="bg-card-cover-placeholder">
-                  <iconify-icon icon="material-symbols:image-outline"></iconify-icon>
-                </div>
-              {/if}
-            </div>
-
-            <div class="bg-card-info">
-              <h4 class="bg-card-title">{item.title || "（无标题）"}</h4>
-              <div class="bg-card-meta">
-                <span
-                  class="bg-status-badge"
-                  style={`background:${statusMap[item.status]?.color}20;color:${statusMap[item.status]?.color};border-color:${statusMap[item.status]?.color}40`}
-                >
-                  {statusMap[item.status]?.name}
-                </span>
-                {#if item._draft}
-                  <span class="bg-draft-badge">新增</span>
-                {/if}
                 {#if item._deleted}
-                  <span class="bg-deleted-badge">已删除</span>
+                  <button class="bg-action-btn bg-action-restore" onclick={() => restoreItem(i)} title="恢复">
+                    <iconify-icon icon="material-symbols:restore"></iconify-icon>
+                  </button>
+                {:else}
+                  <button class="bg-action-btn bg-action-delete" onclick={() => deleteItem(i)} title="删除">
+                    <iconify-icon icon="material-symbols:delete-outline-rounded"></iconify-icon>
+                  </button>
                 {/if}
               </div>
-            </div>
+
+              <div class="bg-card-cover">
+                {#if item.image}
+                  <img src={item.image} alt={item.title} loading="lazy" />
+                {:else}
+                  <div class="bg-card-cover-placeholder">
+                    <iconify-icon icon="material-symbols:image-outline"></iconify-icon>
+                  </div>
+                {/if}
+              </div>
+
+              <div class="bg-card-info">
+                <h4 class="bg-card-title">{item.title || "（无标题）"}</h4>
+                <div class="bg-card-meta">
+                  <span
+                    class="bg-status-badge"
+                    style={`background:${statusMap[item.status]?.color}20;color:${statusMap[item.status]?.color};border-color:${statusMap[item.status]?.color}40`}
+                  >
+                    {statusMap[item.status]?.name}
+                  </span>
+                  {#if item._draft}
+                    <span class="bg-draft-badge">新增</span>
+                  {/if}
+                  {#if item._deleted}
+                    <span class="bg-deleted-badge">已删除</span>
+                  {/if}
+                </div>
+              </div>
+            {:else}
+              <div class="bg-card-edit-form">
+                <div class="bg-edit-form-header">
+                  <iconify-icon icon="material-symbols:edit-document-outline-rounded"></iconify-icon>
+                  <span>{item._draft ? "添加条目" : "编辑条目"}</span>
+                  {#if item._draft}
+                    <span class="bg-draft-badge">新增</span>
+                  {/if}
+                </div>
+
+                <div class="bg-edit-form-body">
+                  <div class="bg-form-group">
+                    <label>标题 *</label>
+                    <input
+                      type="text"
+                      class="bg-input"
+                      bind:value={items[getRealIndex(item)].title}
+                      placeholder="条目标题"
+                    />
+                  </div>
+                  <div class="bg-form-group">
+                    <label>中文名称</label>
+                    <input
+                      type="text"
+                      class="bg-input"
+                      bind:value={items[getRealIndex(item)].name_cn}
+                      placeholder="中文名称（可选）"
+                    />
+                  </div>
+
+                  <div class="bg-form-row">
+                    <div class="bg-form-group">
+                      <label>分类</label>
+                      <select class="bg-select" bind:value={items[getRealIndex(item)].category}>
+                        {#each Object.entries(categoryMap) as [key, val]}
+                          <option value={key}>{val.name}</option>
+                        {/each}
+                      </select>
+                    </div>
+                    <div class="bg-form-group">
+                      <label>状态</label>
+                      <select class="bg-select" bind:value={items[getRealIndex(item)].status}>
+                        {#each Object.entries(statusMap) as [key, val]}
+                          <option value={key}>{val.name}</option>
+                        {/each}
+                      </select>
+                    </div>
+                    <div class="bg-form-group">
+                      <label>评分</label>
+                      <input
+                        type="number"
+                        class="bg-input"
+                        bind:value={items[getRealIndex(item)].score}
+                        min="0"
+                        max="10"
+                        step="0.5"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="bg-form-group">
+                    <label>封面图 URL</label>
+                    <input
+                      type="text"
+                      class="bg-input"
+                      bind:value={items[getRealIndex(item)].image}
+                      placeholder="https://example.com/cover.jpg"
+                    />
+                  </div>
+
+                  <div class="bg-form-group">
+                    <label>标签（逗号分隔）</label>
+                    <input
+                      type="text"
+                      class="bg-input"
+                      bind:value={tagsInput}
+                      placeholder="标签1, 标签2, 标签3"
+                    />
+                  </div>
+
+                  <div class="bg-form-group">
+                    <label>短评/简介</label>
+                    <textarea
+                      class="bg-textarea"
+                      bind:value={items[getRealIndex(item)].comment}
+                      rows={3}
+                      placeholder="简单的评价或介绍..."
+                      spellcheck="false"
+                    ></textarea>
+                  </div>
+
+                  <div class="bg-form-group">
+                    <label>日期</label>
+                    <input
+                      type="date"
+                      class="bg-input"
+                      bind:value={items[getRealIndex(item)].published}
+                    />
+                  </div>
+                </div>
+
+                <div class="bg-edit-form-footer">
+                  <button class="bg-btn bg-btn-cancel" onclick={cancelItemEdit}>取消</button>
+                  <button class="bg-btn bg-btn-save" onclick={finishEdit}>完成</button>
+                </div>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -751,121 +860,6 @@ function handleKeydown(e: KeyboardEvent) {
       </div>
     {/if}
   </div>
-
-  <!-- Modal -->
-  {#if modalItem}
-    <div class="bg-modal-overlay" onclick={closeModal} onkeydown={handleKeydown} tabindex="0">
-      <div class="bg-modal" onclick={(e) => e.stopPropagation()}>
-        <div class="bg-modal-header">
-          <iconify-icon icon="material-symbols:edit-document-outline-rounded"></iconify-icon>
-          <span>{modalMode === "add" ? "添加条目" : "编辑条目"}</span>
-          <button class="bg-modal-close" onclick={closeModal}>
-            <iconify-icon icon="material-symbols:close-rounded"></iconify-icon>
-          </button>
-        </div>
-
-        <div class="bg-modal-body">
-          <div class="bg-form-grid">
-            <div class="bg-form-group">
-              <label>标题 *</label>
-              <input
-                type="text"
-                class="bg-input"
-                bind:value={modalItem.title}
-                placeholder="条目标题"
-              />
-            </div>
-            <div class="bg-form-group">
-              <label>中文名称</label>
-              <input
-                type="text"
-                class="bg-input"
-                bind:value={modalItem.name_cn}
-                placeholder="中文名称（可选）"
-              />
-            </div>
-          </div>
-
-          <div class="bg-form-grid">
-            <div class="bg-form-group">
-              <label>分类</label>
-              <select class="bg-select" bind:value={modalItem.category}>
-                {#each Object.entries(categoryMap) as [key, val]}
-                  <option value={key}>{val.name}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="bg-form-group">
-              <label>状态</label>
-              <select class="bg-select" bind:value={modalItem.status}>
-                {#each Object.entries(statusMap) as [key, val]}
-                  <option value={key}>{val.name}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="bg-form-group">
-              <label>评分 (0-10)</label>
-              <input
-                type="number"
-                class="bg-input"
-                bind:value={modalItem.score}
-                min="0"
-                max="10"
-                step="0.5"
-              />
-            </div>
-          </div>
-
-          <div class="bg-form-group">
-            <label>封面图 URL</label>
-            <input
-              type="text"
-              class="bg-input"
-              bind:value={modalItem.image}
-              placeholder="https://example.com/cover.jpg"
-            />
-          </div>
-
-          <div class="bg-form-group">
-            <label>标签（逗号分隔）</label>
-            <input
-              type="text"
-              class="bg-input"
-              bind:value={tagsInput}
-              placeholder="标签1, 标签2, 标签3"
-            />
-          </div>
-
-          <div class="bg-form-group">
-            <label>短评/简介</label>
-            <textarea
-              class="bg-textarea"
-              bind:value={modalItem.comment}
-              rows={4}
-              placeholder="简单的评价或介绍..."
-              spellcheck="false"
-            ></textarea>
-          </div>
-
-          <div class="bg-form-grid">
-            <div class="bg-form-group">
-              <label>日期</label>
-              <input
-                type="date"
-                class="bg-input"
-                bind:value={modalItem.published}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-modal-footer">
-          <button class="bg-btn bg-btn-cancel" onclick={closeModal}>取消</button>
-          <button class="bg-btn bg-btn-save" onclick={saveModal}>保存</button>
-        </div>
-      </div>
-    </div>
-  {/if}
 {/if}
 
 <style>
@@ -1081,83 +1075,58 @@ function handleKeydown(e: KeyboardEvent) {
     font-size: 0.875rem;
   }
 
-  /* Modal */
-  .bg-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
+  .bg-card-editing {
+    grid-column: span 2;
+    grid-row: span 2;
   }
-  .bg-modal {
-    width: 100%;
-    max-width: 560px;
-    max-height: 90vh;
-    background: var(--card-bg, white);
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: slideUp 0.3s ease;
-  }
-  :global(.dark) .bg-modal {
-    background: #1a1a2e;
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  @media (max-width: 640px) {
+    .bg-card-editing {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
   }
 
-  .bg-modal-header {
+  .bg-card-edit-form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .bg-edit-form-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 16px 20px;
-    font-size: 15px;
+    padding: 12px 14px;
+    font-size: 13px;
     font-weight: 600;
     color: hsl(var(--theme-hue, 165), 70%, 45%);
     border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
   }
-  .bg-modal-close {
-    margin-left: auto;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: var(--content-meta, #6b7280);
-    font-size: 18px;
-  }
-  .bg-modal-close:hover {
-    background: var(--bg-secondary, #f3f4f6);
-  }
 
-  .bg-modal-body {
-    padding: 20px;
+  .bg-edit-form-body {
+    padding: 14px;
     overflow-y: auto;
     flex: 1;
   }
 
-  .bg-form-grid {
+  .bg-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
   }
+
   .bg-form-group {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
   .bg-form-group label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary, #4b5563);
     margin-bottom: 4px;
@@ -1169,10 +1138,10 @@ function handleKeydown(e: KeyboardEvent) {
   .bg-select,
   .bg-textarea {
     width: 100%;
-    padding: 8px 12px;
+    padding: 7px 10px;
     border: 1.5px solid var(--border, #d1d5db);
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 12px;
     background: var(--bg-color, white);
     color: var(--text-color, #1f2937);
     outline: none;
@@ -1195,20 +1164,20 @@ function handleKeydown(e: KeyboardEvent) {
   }
   .bg-textarea {
     resize: vertical;
-    min-height: 80px;
+    min-height: 60px;
   }
 
-  .bg-modal-footer {
+  .bg-edit-form-footer {
     display: flex;
     gap: 8px;
-    padding: 16px 20px;
+    padding: 12px 14px;
     border-top: 1px solid var(--border, rgba(0,0,0,0.08));
   }
   .bg-btn {
     flex: 1;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
@@ -1241,7 +1210,7 @@ function handleKeydown(e: KeyboardEvent) {
   }
 
   @media (max-width: 640px) {
-    .bg-form-grid {
+    .bg-form-row {
       grid-template-columns: 1fr 1fr;
     }
   }
