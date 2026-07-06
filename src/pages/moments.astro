@@ -82,26 +82,14 @@ const albums = await getCollection("album");
   <MomentsCover coverImage={coverImage} coverAvatar={coverAvatar} coverName={coverName} coverBio={coverBio} />
 
   <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
-  <div class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
+  <div class="wx-pinned" id="pinned-block" style={pinnedMoments.length === 0 ? 'display:none' : ''}>
     <div class="wx-pinned-tag">
       <span>置顶</span>
     </div>
     <div class="wx-pinned-items" id="pinned-items">
-      {pinnedData.map((item) => (
-        <div class="wx-pinned-preview">
-          {item.images.length > 0 ? (
-            <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
-              {item.images.slice(0, 9).map((img) => (
-                typeof img === "string" ? (
-                  <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                ) : (
-                  <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                )
-              ))}
-            </div>
-          ) : (
-            <p class="wx-ptxt">{item.body.slice(0, 60)}{item.body.length > 60 ? '...' : ''}</p>
-          )}
+      {pinnedMoments.map((moment) => (
+        <div class="wx-pinned-item">
+          <MomentCard moment={moment} />
         </div>
       ))}
     </div>

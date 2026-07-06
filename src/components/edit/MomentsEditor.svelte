@@ -235,7 +235,6 @@ function htmlToMarkdown(html: string): string {
 function collectFromDOM() {
 	const feed = document.getElementById("moments-feed");
 	if (!feed) return;
-	const result: MomentEntry[] = [];
 
 	const coverImgEl = document.querySelector(".wx-cover-img") as HTMLImageElement | null;
 	if (coverImgEl) {
@@ -258,48 +257,58 @@ function collectFromDOM() {
 		originalCoverBio = bioEl.textContent?.trim() || "";
 	}
 
-	feed.querySelectorAll<HTMLElement>(".moment-card").forEach((el) => {
-		const id = el.id || "";
-		const slug = id.replace(/\.mdx?$/, "");
-		const author = el.querySelector(".user-name")?.textContent?.trim() || "";
-		const avatarEl = el.querySelector(".card-avatar img") as HTMLImageElement | null;
-		const avatar = avatarEl?.src || "";
-		const timeEl = el.querySelector("time");
-		const published = (timeEl?.getAttribute("datetime") || "").slice(0, 10);
-		const pinned = !!el.querySelector(".pinned-badge");
-		const location = el.querySelector(".location")?.textContent?.trim() || "";
-		const contentEl = el.querySelector(".moment-markdown-content");
-		const bodyHtml = contentEl?.innerHTML || "";
-		const body = htmlToMarkdown(bodyHtml);
+	const result: MomentEntry[] = [];
 
-		const imageEls = el.querySelectorAll(".card-images img");
-		const images: string[] = [];
-		imageEls.forEach((img) => {
-			const src = img.getAttribute("data-src") || img.getAttribute("src") || "";
-			if (src) images.push(src);
-		});
+	function collectCards(container: Element | null) {
+		if (!container) return;
+		container.querySelectorAll<HTMLElement>(".moment-card").forEach((el) => {
+			const id = el.id || "";
+			const slug = id.replace(/\.mdx?$/, "");
+			const author = el.querySelector(".user-name")?.textContent?.trim() || "";
+			const avatarEl = el.querySelector(".card-avatar img") as HTMLImageElement | null;
+			const avatar = avatarEl?.src || "";
+			const timeEl = el.querySelector("time");
+			const published = (timeEl?.getAttribute("datetime") || "").slice(0, 10);
+			const pinned = !!el.querySelector(".pinned-badge");
+			const location = el.querySelector(".location")?.textContent?.trim() || "";
+			const contentEl = el.querySelector(".moment-markdown-content");
+			const bodyHtml = contentEl?.innerHTML || "";
+			const body = htmlToMarkdown(bodyHtml);
 
-		const tagEls = el.querySelectorAll(".card-tags .tag-item");
-		const tags: string[] = [];
-		tagEls.forEach((tag) => {
-			const text = tag.textContent?.trim().replace(/^#/, "") || "";
-			if (text) tags.push(text);
-		});
+			const imageEls = el.querySelectorAll(".card-images img");
+			const images: string[] = [];
+			imageEls.forEach((img) => {
+				const src = img.getAttribute("data-src") || img.getAttribute("src") || "";
+				if (src) images.push(src);
+			});
 
-		result.push({
-			id: slug || genId("mom"),
-			slug,
-			author,
-			avatar,
-			pinned,
-			published: published || new Date().toISOString().slice(0, 10),
-			images,
-			tags,
-			location,
-			device: "",
-			body,
+			const tagEls = el.querySelectorAll(".card-tags .tag-item");
+			const tags: string[] = [];
+			tagEls.forEach((tag) => {
+				const text = tag.textContent?.trim().replace(/^#/, "") || "";
+				if (text) tags.push(text);
+			});
+
+			result.push({
+				id: slug || genId("mom"),
+				slug,
+				author,
+				avatar,
+				pinned,
+				published: published || new Date().toISOString().slice(0, 10),
+				images,
+				tags,
+				location,
+				device: "",
+				body,
+			});
 		});
-	});
+	}
+
+	const pinnedBlock = document.getElementById("pinned-block");
+
+	collectCards(pinnedBlock);
+	collectCards(feed);
 
 	moments = result;
 	originalMoments = deepClone(result);
