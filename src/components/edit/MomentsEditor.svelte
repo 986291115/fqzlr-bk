@@ -525,11 +525,11 @@ async function submitMoments(
 	let allOk = true;
 
 	if (coverImage !== originalCoverImage || coverAvatar !== originalCoverAvatar || coverName !== originalCoverName || coverBio !== originalCoverBio) {
-		const coverLines = ["---"];
-		if (coverImage) coverLines.push(`image: "${coverImage.replace(/"/g, '\\"')}"`);
-		if (coverAvatar) coverLines.push(`avatar: "${coverAvatar.replace(/"/g, '\\"')}"`);
-		if (coverName) coverLines.push(`name: "${coverName.replace(/"/g, '\\"')}"`);
-		if (coverBio) coverLines.push(`bio: "${coverBio.replace(/"/g, '\\"')}"`);
+		const coverLines = ["---", "published: 2024-01-01"];
+		if (coverImage) coverLines.push(`cover_image: "${coverImage.replace(/"/g, '\\"')}"`);
+		if (coverAvatar) coverLines.push(`cover_avatar: "${coverAvatar.replace(/"/g, '\\"')}"`);
+		if (coverName) coverLines.push(`cover_name: "${coverName.replace(/"/g, '\\"')}"`);
+		if (coverBio) coverLines.push(`cover_bio: "${coverBio.replace(/"/g, '\\"')}"`);
 		coverLines.push("---");
 		coverLines.push("");
 		const coverMd = coverLines.join("\n");

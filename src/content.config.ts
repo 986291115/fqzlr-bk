@@ -95,6 +95,11 @@ const momentsCollection = defineCollection({
 			tags: z.array(z.string()).optional().default([]),
 			location: z.string().optional().default(""),
 			device: z.string().optional().default(""),
+			// Cover settings (used by _cover.md only)
+			cover_image: z.string().optional().default(""),
+			cover_avatar: z.string().optional().default(""),
+			cover_name: z.string().optional().default(""),
+			cover_bio: z.string().optional().default(""),
 		}),
 });
 

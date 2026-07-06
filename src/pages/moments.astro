@@ -11,10 +11,10 @@ import MomentsEditor from "@/components/edit/MomentsEditor.svelte";
 const moments = await getCollection("moments");
 
 const coverEntry = moments.find((m) => m.id === "_cover");
-const coverImage = coverEntry?.data?.image || "";
-const coverAvatar = coverEntry?.data?.avatar || "";
-const coverName = coverEntry?.data?.name || "";
-const coverBio = coverEntry?.data?.bio || "";
+const coverImage = coverEntry?.data?.cover_image || "";
+const coverAvatar = coverEntry?.data?.cover_avatar || "";
+const coverName = coverEntry?.data?.cover_name || "";
+const coverBio = coverEntry?.data?.cover_bio || "";
 
 const sortedMoments = moments
 	.filter((m) => !m.data.pinned && m.id !== "_cover")
