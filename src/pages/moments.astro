@@ -82,7 +82,7 @@ const albums = await getCollection("album");
   <MomentsCover coverImage={coverImage} coverAvatar={coverAvatar} coverName={coverName} coverBio={coverBio} />
 
   <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
-  <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
+  <div class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
     <div class="wx-pinned-tag">
       <span>置顶</span>
     </div>
@@ -105,7 +105,7 @@ const albums = await getCollection("album");
         </div>
       ))}
     </div>
-  </a>
+  </div>
 
   <!-- 说说列表（本地 + 外部合并，按时间排序） -->
   <div class="wx-feed" id="moments-feed">

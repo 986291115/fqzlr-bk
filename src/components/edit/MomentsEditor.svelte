@@ -15,6 +15,7 @@ import {
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
 import { repoConfig } from "@/config/editConfig";
+import { profileConfig } from "@/config";
 
 interface MomentEntry {
 	id: string;
@@ -448,8 +449,8 @@ function handleAdd() {
 	const newMoment: MomentEntry = {
 		id: genId("mom"),
 		slug: "",
-		author: "",
-		avatar: "",
+		author: profileConfig.name || "",
+		avatar: (profileConfig as any).avatar || "",
 		pinned: false,
 		published: dateStr,
 		images: [],
