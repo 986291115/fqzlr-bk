@@ -32,6 +32,7 @@ const inlineEditPages: PageConfig[] = [
 	{ pageName: "导航", pageKey: "daohang", isInlineEdit: true, match: (p) => p.startsWith("/projects") },
 	{ pageName: "关于", pageKey: "about", isInlineEdit: true, match: (p) => p.startsWith("/about") },
 	{ pageName: "友链", pageKey: "friends", isInlineEdit: true, match: (p) => p.startsWith("/friends") },
+	{ pageName: "朋友圈", pageKey: "pengyou", isInlineEdit: true, match: (p) => p.startsWith("/pengyou") },
 	{ pageName: "赞助", pageKey: "sponsor", isInlineEdit: true, match: (p) => p.startsWith("/sponsor") },
 	{ pageName: "更新日志", pageKey: "changelog", isInlineEdit: true, match: (p) => p.startsWith("/changelog") },
 	{ pageName: "留言板", pageKey: "guestbook", isInlineEdit: true, match: (p) => p.startsWith("/guestbook") },
