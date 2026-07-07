@@ -5,6 +5,14 @@ export type HomePortfolioShutterPanel = {
 	alt?: string;
 };
 
+export type HomePortfolioShutterInterlude = {
+	foreground: string;
+	stripLeft: string;
+	stripRight: string;
+	copyLeft: string;
+	copyRight: string;
+};
+
 export type HomePortfolioShutterConfig = {
 	enabled: boolean;
 	kicker: string;
@@ -15,6 +23,7 @@ export type HomePortfolioShutterConfig = {
 		src: string;
 		alt: string;
 	};
+	interlude: HomePortfolioShutterInterlude;
 	panels: HomePortfolioShutterPanel[];
 };
 
@@ -23,10 +32,17 @@ export const homePortfolioShutterConfig = {
 	kicker: "The End",
 	title: "2026年 加油！",
 	description: "从想法到实现，每一行代码都是成长的痕迹。",
-	scrollDistance: 4000,
+	scrollDistance: 6000,
 	finalImage: {
 		src: "/assets/images/home-truncated/utl.webp",
 		alt: "2026年 加油！",
+	},
+	interlude: {
+		foreground: "/assets/images/home-truncated/b-1.webp",
+		stripLeft: "/assets/images/home-truncated/b-2.webp",
+		stripRight: "/assets/images/home-truncated/b-3.webp",
+		copyLeft: "番茄",
+		copyRight: "主理人",
 	},
 	panels: [
 		{

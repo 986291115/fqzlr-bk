@@ -955,7 +955,7 @@
 	background: transparent !important;
 	border: none !important;
 }
-
+/* 首页导航栏透明 */
 .lg\:is-home #navbar.scrolled > div {
 	background: transparent !important;
 	border: none !important;
@@ -964,4 +964,69 @@
 /* 首页隐藏顶部渐变高光 */
 .lg\:is-home .top-gradient-highlight {
 	display: none !important;
+}
+
+/* ---------- 浮动头像（左下角/右下角） ---------- */
+.home-hero__avatar-float {
+	--float-avatar-size: clamp(5rem, 9vw, 8rem);
+	position: absolute;
+	z-index: 40;
+	width: var(--float-avatar-size);
+	height: var(--float-avatar-size);
+}
+
+.home-hero__avatar-float .home-hero__avatar-wrapper {
+	width: 100%;
+	height: 100%;
+	border-width: 3px;
+	outline-width: 2px;
+	box-shadow: 0 6px 0 rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+.home-hero__avatar-float .home-hero__status-badge {
+	left: 50%;
+	bottom: -0.85rem;
+	transform: translateX(-50%);
+	min-width: 4.8rem;
+	padding: 0.28rem 0.65rem;
+	font-size: 0.85rem;
+	border-width: 2px;
+}
+
+.home-hero__avatar-float .home-hero__status-dot {
+	width: 0.45rem;
+	height: 0.45rem;
+}
+
+/* 左下角 */
+.home-hero__avatar-float--bottom-left {
+	left: clamp(2rem, 5vw, 4rem);
+	bottom: clamp(2rem, 6vh, 4rem);
+}
+
+/* 右下角 */
+.home-hero__avatar-float--bottom-right {
+	right: clamp(2rem, 5vw, 4rem);
+	bottom: clamp(2rem, 6vh, 4rem);
+}
+
+/* 移动端浮动头像 */
+@media (max-width: 768px) {
+	.home-hero__avatar-float {
+		--float-avatar-size: clamp(4rem, 16vw, 6rem);
+	}
+
+	.home-hero__avatar-float--bottom-left {
+		left: 1.5rem;
+		bottom: 1.5rem;
+	}
+
+	.home-hero__avatar-float--bottom-right {
+		right: 1.5rem;
+		bottom: 1.5rem;
+	}
+
+	.home-hero__avatar-float .home-hero__status-badge {
+		display: none;
+	}
 }

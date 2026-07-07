@@ -264,6 +264,53 @@ export type ProfileConfig = {
 		icon: string;
 		showName?: boolean;
 	}[];
+	/** 首页 Hero 区域文字显隐配置 */
+	homeHero?: {
+		/** 是否显示职业/身份标签 */
+		showOccupation?: boolean;
+		/** 是否显示首页大标题名字 */
+		showDisplayName?: boolean;
+		/** 是否显示B站徽章 */
+		showBilibiliBadge?: boolean;
+		/** B站徽章显示的文字 */
+		bilibiliBadgeText?: string;
+		/** 是否显示个人签名/座右铭 */
+		showBio?: boolean;
+		/** 是否显示左侧头像 */
+		showAvatar?: boolean;
+		/** 头像位置：default=默认（左侧面板），bottom-left=左下角，bottom-right=右下角 */
+		avatarPosition?: "default" | "bottom-left" | "bottom-right";
+		/** 是否显示工作状态徽章（上班中/下班了） */
+		showWorkStatus?: boolean;
+		/** 是否显示右上角胶囊标签 */
+		showPill?: boolean;
+		/** 胶囊标签显示的文字 */
+		pillText?: string;
+		/** 是否显示竖排标题 */
+		showVerticalTitle?: boolean;
+		/** 竖排标题文字 */
+		verticalTitle?: string;
+		/** 是否显示竖排名字 */
+		showVerticalName?: boolean;
+		/** 是否显示竖排创意标签 */
+		showVerticalCreative?: boolean;
+		/** 创意标签文字 */
+		verticalCreative?: string;
+		/** 是否显示底部日文小文字 */
+		showFooterText?: boolean;
+		/** 底部文字内容 */
+		footerText?: string;
+		/** 是否显示中间角色图片 */
+		showCharacter?: boolean;
+		/** 是否显示右侧磨砂玻璃卡片 */
+		showArtWindow?: boolean;
+		/** 是否显示角色对话气泡 */
+		showSpeech?: boolean;
+		/** 气泡中文内容 */
+		speechChinese?: string;
+		/** 气泡英文内容 */
+		speechEnglish?: string;
+	};
 };
 
 export type LicenseConfig = {
