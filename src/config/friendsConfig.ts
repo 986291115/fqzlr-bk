@@ -11,10 +11,10 @@ export const friendsPageConfig: FriendsPageConfig = {
 	randomizeSort: false,
 	applyLink: "https://github.com/fqzlr/dumplingandcakeblog/issues/new?template=friend-link.yml",
 	siteInfo: {
-		name: "dumplingandcake",
-		desc: "饺子与蛋糕的博客",
-		url: "https://dumplingandcakeblog.pages.dev",
-		avatar: "",
+		name: "fqzlr",
+		desc: "坐而言不如起而行.",
+		url: "https://fqzlr.com/",
+		avatar: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 		email: "",
 	},
 	notes: [
@@ -76,6 +76,17 @@ export const friendsConfig: FriendLink[] = [
 		  "imgurl": "https://upxuu.com/images/20260214145619.jpg",
 		  "desc": "逐光而上！",
 		  "siteurl": "https://upxuu.com/",
+		  "tags": [
+		    "Blog"
+		  ],
+		  "weight": 10,
+		  "enabled": true
+		},
+		{
+		  "title": "团子和蛋糕",
+		  "imgurl": "https://re.tsh520.cn/zl/tx.webp",
+		  "desc": "如果你喜欢那么欢迎来到我的世界！",
+		  "siteurl": "https://blog.tsh520.cn",
 		  "tags": [
 		    "Blog"
 		  ],
