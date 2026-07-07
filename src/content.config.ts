@@ -304,24 +304,6 @@ const ziyuanCollection = defineCollection({
 });
 
 // ============================================================================
-// 友情链接集合 - 友链展示与管理
-// 目录：src/content/friends/
-// 每个 .md 文件代表一个友链，通过 frontmatter 配置信息
-// ============================================================================
-const friendsCollection = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/friends" }),
-	schema: z.object({
-		title: z.string(),
-		imgurl: z.string(),
-		desc: z.string(),
-		siteurl: z.string(),
-		tags: z.array(z.string()).optional().default([]),
-		weight: z.number().optional().default(0),
-		enabled: z.boolean().optional().default(true),
-	}),
-});
-
-// ============================================================================
 // 导航集合 - 网址导航
 // 目录：src/content/daohang/
 // 支持分类、图标、描述、特色标记等
@@ -388,7 +370,6 @@ export const collections = {
 	album: albumCollection,
 	daohang: daohangCollection,
 	ziyuan: ziyuanCollection,
-	friends: friendsCollection,
 	changelog: changelogCollection,
 	danmu: danmuCollection,
 };

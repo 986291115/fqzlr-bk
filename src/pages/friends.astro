@@ -1,15 +1,15 @@
 ---
-import { getCollection, getEntry, render } from "astro:content";
+import { getEntry, render } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import Markdown from "@components/common/Markdown.astro";
 import { Icon } from "astro-icon/components";
 import FriendCard from "@components/features/FriendCard.astro";
 import FriendRulesModal from "@components/features/FriendRulesModal.astro";
-import { friendsPageConfig } from "@/config";
+import { friendsPageConfig, getEnabledFriends } from "@/config";
 import FriendsEditor from "@/components/edit/FriendsEditor.svelte";
-import I18nKey from "@/i18n/i18nKey";
-import { i18n } from "@/i18n/translation";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 const friendsPost = await getEntry("spec", "friends");
 
@@ -19,14 +19,11 @@ if (!friendsPost) {
 
 const { Content } = await render(friendsPost);
 
-// 从 content/friends 目录读取友链数据，按权重排序
-const friendsEntries = await getCollection("friends");
-const items = friendsEntries
-	.filter((item) => item.data.enabled !== false)
-	.sort((a, b) => (b.data.weight || 0) - (a.data.weight || 0));
+// 从 friendsConfig.ts 读取友链数据
+const items = getEnabledFriends();
 
 const allTags = [
-	...new Set(items.flatMap((item) => item.data.tags || [])),
+	...new Set(items.flatMap((item) => item.tags || [])),
 ].sort();
 
 // 页面标题和描述
@@ -106,13 +103,13 @@ const description = i18n(I18nKey.friendsDescription);
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
         {
           items.map((item) => (
-            <div class="friend-card" data-friend-id={item.id || item.data.siteurl} data-tags={item.data.tags?.join(",")}>
+            <div class="friend-card" data-friend-id={item.siteurl} data-tags={item.tags?.join(",")}>
               <FriendCard
-                title={item.data.title}
-                href={item.data.siteurl}
-                imgurl={item.data.imgurl}
-                desc={item.data.desc}
-                tags={item.data.tags}
+                title={item.title}
+                href={item.siteurl}
+                imgurl={item.imgurl}
+                desc={item.desc}
+                tags={item.tags}
               />
             </div>
           ))

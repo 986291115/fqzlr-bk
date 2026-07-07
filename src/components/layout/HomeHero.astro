@@ -327,8 +327,10 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				scaleY: 1,
 				duration: 1.2,
 				ease: "expo.out",
-			}, 0.34)
-			.fromTo(occupation, {
+			}, 0.34);
+
+		if (occupation) {
+			heroOpeningTimeline.fromTo(occupation, {
 				autoAlpha: 0,
 				y: 48,
 				clipPath: "inset(0 0 100% 0)",
@@ -338,8 +340,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				clipPath: "inset(0 0 0% 0)",
 				duration: 0.92,
 				ease: "expo.out",
-			}, 0.82)
-			.fromTo(name, {
+			}, 0.82);
+		}
+
+		if (name) {
+			heroOpeningTimeline.fromTo(name, {
 				autoAlpha: 0,
 				x: -78,
 				scaleX: 0.78,
@@ -352,8 +357,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				clipPath: "inset(0 0% 0 0)",
 				duration: 1.18,
 				ease: "expo.out",
-			}, 0.98)
-			.fromTo(badge, {
+			}, 0.98);
+		}
+
+		if (badge) {
+			heroOpeningTimeline.fromTo(badge, {
 				autoAlpha: 0,
 				x: -42,
 				y: 14,
@@ -366,8 +374,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				scaleX: 1,
 				duration: 0.78,
 				ease: "expo.out",
-			}, 1.34)
-			.fromTo(avatar, {
+			}, 1.34);
+		}
+
+		if (avatar) {
+			heroOpeningTimeline.fromTo(avatar, {
 				autoAlpha: 0,
 				x: 54,
 				y: 12,
@@ -382,8 +393,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 1.05,
 				ease: "expo.out",
 				clearProps: "clipPath",
-			}, 1.45)
-			.fromTo(artWindow, {
+			}, 1.45);
+		}
+
+		if (artWindow) {
+			heroOpeningTimeline.fromTo(artWindow, {
 				autoAlpha: 0,
 				x: "7vw",
 				clipPath: "inset(0 0 0 100%)",
@@ -394,8 +408,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 1.25,
 				ease: "expo.out",
 				clearProps: "clipPath",
-			}, 1.15)
-			.fromTo(characterMotion, {
+			}, 1.15);
+		}
+
+		if (characterMotion) {
+			heroOpeningTimeline.fromTo(characterMotion, {
 				autoAlpha: 0,
 				y: 58,
 				rotationX: 68,
@@ -414,17 +431,21 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 1.56,
 				ease: "expo.out",
 				clearProps: "transform,filter,visibility",
-			}, 1.42)
-			.fromTo(rightPanel, {
-				autoAlpha: 0,
-				x: 60,
-			}, {
-				autoAlpha: 1,
-				x: 0,
-				duration: 0.95,
-				ease: "power3.out",
-			}, 1.66)
-			.fromTo(motto, {
+			}, 1.42);
+		}
+
+		heroOpeningTimeline.fromTo(rightPanel, {
+			autoAlpha: 0,
+			x: 60,
+		}, {
+			autoAlpha: 1,
+			x: 0,
+			duration: 0.95,
+			ease: "power3.out",
+		}, 1.66);
+
+		if (motto) {
+			heroOpeningTimeline.fromTo(motto, {
 				autoAlpha: 0,
 				y: 68,
 				filter: "blur(14px)",
@@ -436,8 +457,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				clipPath: "inset(0 0 0% 0)",
 				duration: 1.15,
 				ease: "expo.out",
-			}, 1.72)
-			.fromTo(speech, {
+			}, 1.72);
+		}
+
+		if (speech) {
+			heroOpeningTimeline.fromTo(speech, {
 				autoAlpha: 0,
 				xPercent: -50,
 				y: 34,
@@ -453,14 +477,18 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 0.92,
 				ease: "expo.out",
 				clearProps: "filter",
-			}, 2.62)
-			.fromTo(speechLines, {
+			}, 2.62);
+		}
+
+		if (speechLines.length > 0) {
+			heroOpeningTimeline.fromTo(speechLines, {
 				clipPath: "inset(0 100% 0 0)",
 			}, {
 				clipPath: "inset(0 0% 0 0)",
 				duration: 1.05,
 				ease: "steps(18)",
 			}, 3.08);
+		}
 
 		hero.classList.remove("home-hero--motion-pending");
 	}

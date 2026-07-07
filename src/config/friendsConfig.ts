@@ -60,6 +60,17 @@ export const friendsConfig: FriendLink[] = [
 		  "weight": 10,
 		  "enabled": true
 		},
+				{
+		  "title": "团子和蛋糕",
+		  "imgurl": "https://re.tsh520.cn/zl/tx.webp",
+		  "desc": "如果你喜欢那么欢迎来到我的世界！",
+		  "siteurl": "https://blog.tsh520.cn",
+		  "tags": [
+		    "Blog"
+		  ],
+		  "weight": 10,
+		  "enabled": true
+		},
 		{
 		  "title": "椰汁の主页",
 		  "imgurl": "https://free.picui.cn/free/2026/03/23/69c12fe83f7a4.jpg",
@@ -82,17 +93,7 @@ export const friendsConfig: FriendLink[] = [
 		  "weight": 10,
 		  "enabled": true
 		},
-		{
-		  "title": "团子和蛋糕",
-		  "imgurl": "https://re.tsh520.cn/zl/tx.webp",
-		  "desc": "如果你喜欢那么欢迎来到我的世界！",
-		  "siteurl": "https://blog.tsh520.cn",
-		  "tags": [
-		    "Blog"
-		  ],
-		  "weight": 10,
-		  "enabled": true
-		},
+
 		{
 		  "title": "Re.Y.Ju.hao | 个人主页",
 		  "imgurl": "https://img.cdn1.vip/i/69f03a1c79908_1777351196.webp",

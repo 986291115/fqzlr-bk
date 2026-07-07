@@ -758,19 +758,19 @@ export type FriendLink = {
 };
 
 export type FriendsPageConfig = {
-	columns: 2 | 3; // 显示列数：2列或3列
-	applyLink?: boolean; // 是否开启友链申请功能
-	githubIssue?: {
-		// GitHub Issue 申请配置
-		repo: string; // GitHub 仓库地址（格式：owner/repo）
-		labels?: string[]; // Issue 标签数组，用于筛选友链申请
-	};
+	title?: string; // 页面标题
+	description?: string; // 页面描述
+	showCustomContent?: boolean; // 是否显示自定义内容
+	showComment?: boolean; // 是否显示评论区
+	randomizeSort?: boolean; // 是否随机排序
+	applyLink?: string; // 友链申请链接
 	siteInfo?: {
 		// 本站信息，用于友链申请指南
 		name: string; // 站点名称
 		desc: string; // 站点描述
 		url: string; // 站点 URL
 		avatar: string; // 站点头像 URL
+		email?: string; // 联系邮箱
 	};
 	notes?: {
 		// 注意事项列表

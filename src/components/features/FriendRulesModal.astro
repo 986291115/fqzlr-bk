@@ -166,7 +166,7 @@ const issueUrl = buildIssueUrl();
 
 <script>
   function initFriendRulesModal() {
-    const modal = document.getElementById('friend-rules-modal');
+    const modal = document.getElementById('friend-rules-modal') as HTMLDialogElement | null;
     if (!modal) return;
 
     const openBtns = document.querySelectorAll('[data-open-friend-rules]');

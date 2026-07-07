@@ -33,7 +33,7 @@ export { expressiveCodeConfig } from "./expressiveCodeConfig"; // 代码高亮�
 export { folderIconConfig } from "./folderIconConfig"; // 文件夹图标配置
 export { fontConfig } from "./fontConfig"; // 字体配置
 export { footerConfig } from "./footerConfig"; // 页脚配置
-export { friendsPageConfig } from "./friendsConfig"; // 友链配置
+export { friendsPageConfig, friendsConfig, getEnabledFriends } from "./friendsConfig"; // 友链配置
 export { pengyouConfig } from "./pengyouConfig"; // 朋友圈配置
 export { homePortfolioShutterConfig } from "./homePortfolioShutterConfig";
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
