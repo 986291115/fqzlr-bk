@@ -26,6 +26,119 @@ let repoLoaded = $state(false);
 let fileSha = $state<string | null>(null);
 let originalTS = $state<string>("");
 
+function tsObjectLiteralToJSON(src: string): string {
+	let out = "";
+	let i = 0;
+	const len = src.length;
+	let inString: false | "'" | '"' | "`" = false;
+	let inLineComment = false;
+	let inBlockComment = false;
+
+	const isUnquotedKeyChar = (c: string) => /[A-Za-z0-9_$]/.test(c);
+
+	while (i < len) {
+		const c = src[i];
+		const c2 = src[i + 1] || "";
+
+		if (inLineComment) {
+			out += c;
+			if (c === "\n") inLineComment = false;
+			i++;
+			continue;
+		}
+		if (inBlockComment) {
+			out += c;
+			if (c === "*" && c2 === "/") {
+				out += "/";
+				i += 2;
+				inBlockComment = false;
+				continue;
+			}
+			i++;
+			continue;
+		}
+		if (inString) {
+			out += c;
+			if (c === "\\" && i + 1 < len) {
+				out += src[i + 1];
+				i += 2;
+				continue;
+			}
+			if (c === inString) inString = false;
+			i++;
+			continue;
+		}
+
+		if (c === "/" && c2 === "/") {
+			inLineComment = true;
+			out += "//";
+			i += 2;
+			continue;
+		}
+		if (c === "/" && c2 === "*") {
+			inBlockComment = true;
+			out += "/*";
+			i += 2;
+			continue;
+		}
+		if (c === "'" || c === '"' || c === "`") {
+			inString = c;
+			out += '"';
+			i++;
+			while (i < len) {
+				const ch = src[i];
+				if (ch === "\\") {
+					const next = src[i + 1] || "";
+					if (next === "'" || next === '"') out += '"';
+					else if (next === "n") out += "\\n";
+					else if (next === "t") out += "\\t";
+					else if (next === "r") out += "\\r";
+					else out += "\\" + next;
+					i += 2;
+					continue;
+				}
+				if (ch === c) {
+					out += '"';
+					inString = false;
+					i++;
+					break;
+				}
+				if (ch === '"') {
+					out += '\\"';
+					i++;
+					continue;
+				}
+				out += ch;
+				i++;
+			}
+			continue;
+		}
+
+		if (isUnquotedKeyChar(c)) {
+			let j = i;
+			while (j < len && isUnquotedKeyChar(src[j])) j++;
+			const word = src.substring(i, j);
+			let k = j;
+			while (k < len && /\s/.test(src[k])) k++;
+			if (src[k] === ":") {
+				out += '"' + word + '"';
+				i = j;
+				continue;
+			} else {
+				out += word;
+				i = j;
+				continue;
+			}
+		}
+
+		out += c;
+		i++;
+	}
+
+	out = out.replace(/,(\s*\n\s*[}\]])/g, "$1");
+	return out;
+}
+
 function parseRSSFromTS(tsContent: string): PengyouRSSItem[] {
 	tsContent = tsContent.replace(/\r\n/g, "\n");
 
@@ -39,13 +152,15 @@ function parseRSSFromTS(tsContent: string): PengyouRSSItem[] {
 	const dataMatch = tsContent.substring(rssStartIdx).match(dataMarkerRegex);
 	if (!dataMatch || dataMatch.index === undefined) return [];
 
-	const dataStartIdx = rssStartIdx + dataMatch.index;
+	const closeBracketIdx = dataMatch[0].indexOf("]");
+	const dataStartIdx = rssStartIdx + dataMatch.index + closeBracketIdx + 1;
 
 	let rssStr = tsContent.substring(rssStartIdx, dataStartIdx).trim();
 	rssStr = rssStr.replace(/,$/, "");
 
 	try {
-		const parsed = JSON.parse(rssStr);
+		const jsonStr = tsObjectLiteralToJSON(rssStr);
+		const parsed = JSON.parse(jsonStr);
 		if (Array.isArray(parsed)) {
 			return parsed.map((item: any) => ({
 				id: item.id || genId("py"),
@@ -89,7 +204,8 @@ function buildPengyouConfigTS(
 			const start = rssMatch.index + rssMatch[0].indexOf("[");
 			const dataMatch = originalContent.substring(start).match(dataMarkerRegex);
 			if (dataMatch && dataMatch.index !== undefined) {
-				const dataStartIdx = start + dataMatch.index;
+				const closeBracketIdx = dataMatch[0].indexOf("]");
+				const dataStartIdx = start + dataMatch.index + closeBracketIdx + 1;
 				return (
 					originalContent.substring(0, start) +
 					newRSSContent +
