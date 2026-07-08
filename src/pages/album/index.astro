@@ -1,29 +1,23 @@
 ---
-import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import AlbumEditor from "@/components/edit/AlbumEditor.svelte";
+import { getEnabledAlbums, albumPageConfig } from "@/config/albumConfig";
 
-const albums = await getCollection("album", ({ data }) => {
-	return import.meta.env.PROD ? data.draft !== true : true;
-});
-
-const sortedAlbums = albums.sort(
-	(a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
+const sortedAlbums = getEnabledAlbums();
 
 const totalPhotos = sortedAlbums.reduce(
-	(sum, album) => sum + (album.data.photos?.length || 0),
+	(sum, album) => sum + (album.photos?.length || 0),
 	0,
 );
 
 const allTags = [
-	...new Set(sortedAlbums.flatMap((a) => a.data.tags || [])),
+	...new Set(sortedAlbums.flatMap((a) => a.tags || [])),
 ].sort();
 
 function getAlbumCategory(album: any): string {
-	if (album.data.category) return album.data.category;
-	const photos = album.data.photos || [];
+	if (album.category) return album.category;
+	const photos = album.photos || [];
 	if (photos.length > 0) {
 		const first = typeof photos[0] === "string" ? photos[0] : photos[0].src;
 		if (first && (first.startsWith("http://") || first.startsWith("https://"))) {
@@ -36,11 +30,12 @@ function getAlbumCategory(album: any): string {
 const localAlbums = sortedAlbums.filter((a) => getAlbumCategory(a) === "local");
 const networkAlbums = sortedAlbums.filter((a) => getAlbumCategory(a) === "network");
 
-const title = "相册";
-const description = "记录生活中的美好瞬间";
+const title = albumPageConfig.title || "相册";
+const description = albumPageConfig.description || "记录生活中的美好瞬间";
 
 function getCover(album: any): string {
-	const photos = album.data.photos || [];
+	if (album.cover) return album.cover;
+	const photos = album.photos || [];
 	if (photos.length > 0) {
 		const first = photos[0];
 		return typeof first === "string" ? first : first.src;
@@ -48,7 +43,8 @@ function getCover(album: any): string {
 	return "";
 }
 
-function formatDate(date: Date): string {
+function formatDate(dateStr: string): string {
+	const date = new Date(dateStr);
 	return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 ---
@@ -83,7 +79,7 @@ function formatDate(date: Date): string {
       </div>
 
       <div data-no-swup>
-        <AlbumEditor client:only="svelte" />
+        <AlbumEditor client:load />
       </div>
 
       <div id="album-grid">
@@ -127,11 +123,11 @@ function formatDate(date: Date): string {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 my-6">
             {sortedAlbums.map((album) => {
               const cover = getCover(album);
-              const photoCount = album.data.photos?.length || 0;
+              const photoCount = album.photos?.length || 0;
               return (
                 <a
                   href={`/album/${album.id}/`}
-                  data-tags={album.data.tags?.join(",") || ""}
+                  data-tags={album.tags?.join(",") || ""}
                   data-category={getAlbumCategory(album)}
                   class="album-card group"
                 >
@@ -139,7 +135,7 @@ function formatDate(date: Date): string {
                     {cover ? (
                       <img
                         src={cover}
-                        alt={album.data.title}
+                        alt={album.title}
                         class="album-card-img"
                         loading="lazy"
                         decoding="async"
@@ -154,9 +150,9 @@ function formatDate(date: Date): string {
                       {photoCount} 张照片
                     </div>
 
-                    {album.data.tags && album.data.tags.length > 0 && (
+                    {album.tags && album.tags.length > 0 && (
                       <div class="album-card-tags-overlay">
-                        {album.data.tags.slice(0, 4).map((tag: string) => (
+                        {album.tags.slice(0, 4).map((tag: string) => (
                           <span class="album-card-tag-overlay">{tag}</span>
                         ))}
                       </div>
@@ -164,14 +160,14 @@ function formatDate(date: Date): string {
                   </div>
 
                   <div class="album-card-details">
-                    <h3 class="album-card-title">{album.data.title}</h3>
+                    <h3 class="album-card-title">{album.title}</h3>
 
                     <div class="album-card-meta">
-                      {album.data.date && <span>{formatDate(album.data.date)}</span>}
-                      {album.data.location && (
+                      {album.date && <span>{formatDate(album.date)}</span>}
+                      {album.location && (
                         <span class="album-card-location">
                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
-                          {album.data.location}
+                          {album.location}
                         </span>
                       )}
                     </div>

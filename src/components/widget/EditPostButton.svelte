@@ -29,7 +29,7 @@ interface PageConfig {
 }
 
 const inlineEditPages: PageConfig[] = [
-	{ pageName: "导航", pageKey: "daohang", isInlineEdit: true, match: (p) => p.startsWith("/projects") },
+	{ pageName: "网站导航", pageKey: "projects", isInlineEdit: true, match: (p) => p.startsWith("/projects") },
 	{ pageName: "关于", pageKey: "about", isInlineEdit: true, match: (p) => p.startsWith("/about") },
 	{ pageName: "友链", pageKey: "friends", isInlineEdit: true, match: (p) => p.startsWith("/friends") },
 	{ pageName: "朋友圈", pageKey: "pengyou", isInlineEdit: true, match: (p) => p.startsWith("/pengyou") },

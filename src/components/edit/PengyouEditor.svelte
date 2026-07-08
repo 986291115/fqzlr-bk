@@ -28,17 +28,22 @@ let originalTS = $state<string>("");
 
 function parseRSSFromTS(tsContent: string): PengyouRSSItem[] {
 	tsContent = tsContent.replace(/\r\n/g, "\n");
-	const rssMarker = "rss: ";
-	const rssStartIdx = tsContent.indexOf(rssMarker);
-	if (rssStartIdx === -1) return [];
-	
-	const dataMarker = "data: ";
-	const dataStartIdx = tsContent.indexOf(dataMarker);
-	if (dataStartIdx === -1) return [];
-	
-	let rssStr = tsContent.substring(rssStartIdx + rssMarker.length, dataStartIdx).trim();
+
+	const rssMarkerRegex = /rss:\s*\[\s*\n/;
+	const rssMatch = tsContent.match(rssMarkerRegex);
+	if (!rssMatch || rssMatch.index === undefined) return [];
+
+	const rssStartIdx = rssMatch.index + rssMatch[0].indexOf("[");
+
+	const dataMarkerRegex = /\n\s*\]\s*,?\s*\n\s*data:\s*\[/;
+	const dataMatch = tsContent.substring(rssStartIdx).match(dataMarkerRegex);
+	if (!dataMatch || dataMatch.index === undefined) return [];
+
+	const dataStartIdx = rssStartIdx + dataMatch.index;
+
+	let rssStr = tsContent.substring(rssStartIdx, dataStartIdx).trim();
 	rssStr = rssStr.replace(/,$/, "");
-	
+
 	try {
 		const parsed = JSON.parse(rssStr);
 		if (Array.isArray(parsed)) {
@@ -76,18 +81,21 @@ function buildPengyouConfigTS(
 	const newRSSContent = `[\n${entries.join("\n")}\n\t]`;
 
 	if (originalContent) {
-		const rssMarker = "rss: ";
-		const dataMarker = "data: ";
-		const rssStartIdx = originalContent.indexOf(rssMarker);
-		const dataStartIdx = originalContent.indexOf(dataMarker);
-		
-		if (rssStartIdx !== -1 && dataStartIdx !== -1) {
-			const start = rssStartIdx + rssMarker.length;
-			return (
-				originalContent.substring(0, start) +
-				newRSSContent +
-				originalContent.substring(dataStartIdx)
-			);
+		const rssMarkerRegex = /rss:\s*\[\s*\n/;
+		const rssMatch = originalContent.match(rssMarkerRegex);
+		const dataMarkerRegex = /\n\s*\]\s*,?\s*\n\s*data:\s*\[/;
+
+		if (rssMatch && rssMatch.index !== undefined) {
+			const start = rssMatch.index + rssMatch[0].indexOf("[");
+			const dataMatch = originalContent.substring(start).match(dataMarkerRegex);
+			if (dataMatch && dataMatch.index !== undefined) {
+				const dataStartIdx = start + dataMatch.index;
+				return (
+					originalContent.substring(0, start) +
+					newRSSContent +
+					originalContent.substring(dataStartIdx)
+				);
+			}
 		}
 	}
 

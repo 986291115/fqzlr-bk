@@ -1,16 +1,14 @@
 ---
-import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import Comment from "@/components/comment/index.astro";
 import MomentCard from "@/components/moments/MomentCard.astro";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getEnabledMoments } from "@/config/momentsConfig";
 
-const moments = await getCollection("moments");
-const pinnedMoments = moments
-        .filter((m) => m.data.pinned && m.id !== "_cover")
-        .sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
-
-const albums = await getCollection("album");
+const allMoments = getEnabledMoments();
+const pinnedMoments = allMoments
+	.filter((m) => m.pinned)
+	.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
 ---
 
 <MainGridLayout title="置顶说说" description="我置顶的说说合集">

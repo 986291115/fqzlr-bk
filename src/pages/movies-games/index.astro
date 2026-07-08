@@ -1,15 +1,14 @@
 ---
-import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import { Icon } from "astro-icon/components";
 import ClientPagination from "@/components/common/ClientPagination.astro";
 import MovieGameCard from "@/components/pages/movies-games/MovieGameCard.astro";
 import { siteConfig } from "@/config";
+import { bangumiConfig } from "@/config/bangumiConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
-import { removeFileExtension } from "@/utils/url-utils";
 import BangumiEditor from "@/components/edit/BangumiEditor.svelte";
 
 if (!siteConfig.pages.moviesGames) {
@@ -17,8 +16,6 @@ if (!siteConfig.pages.moviesGames) {
 }
 
 const buildTime = formatDateI18nWithTime(new Date());
-
-const customBangumi = await getCollection("bangumi");
 
 const statusMap: Record<number, string> = {
 	1: "wish",
@@ -63,14 +60,15 @@ interface MgItem {
 	_subcategory?: string;
 }
 
-const mgItems: MgItem[] = customBangumi
-	.filter((item) => ["anime", "game", "real"].includes(item.data.category))
-	.map((item) => {
-		const { data, id } = item;
-		const imageSrc =
-			typeof data.image === "string" ? data.image : data.image.src;
+const mgItemsRaw = bangumiConfig
+	.filter((item) => ["anime", "game", "real"].includes(item.category) && item.enabled !== false)
+	.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
 
-		const finalLink = "/bangumi/" + removeFileExtension(id) + "/";
+const mgItems: MgItem[] = mgItemsRaw
+	.map((item) => {
+		const imageSrc = item.image;
+
+		const finalLink = "/bangumi/" + item.id + "/";
 
 		const subjectTypeMap: Record<string, number> = {
 			anime: 2,
@@ -78,26 +76,26 @@ const mgItems: MgItem[] = customBangumi
 			real: 6,
 		};
 
-		const subcategory = (data as any).subcategory as string | undefined;
+		const subcategory = item.subcategory;
 
 		return {
 			subject_id: 0,
-			subject_type: subjectTypeMap[data.category] || 2,
-			rate: data.score || 0,
-			type: data.status,
-			comment: data.comment || null,
-			tags: data.tags || [],
+			subject_type: subjectTypeMap[item.category] || 2,
+			rate: item.score || 0,
+			type: item.status,
+			comment: item.comment || null,
+			tags: item.tags || [],
 			ep_status: 0,
 			vol_status: 0,
-			updated_at: data.published?.toISOString() || new Date().toISOString(),
+			updated_at: item.published || new Date().toISOString(),
 			private: false,
 			link: finalLink,
 			_subcategory: subcategory,
 			subject: {
 				id: 0,
-				type: subjectTypeMap[data.category] || 2,
-				name: data.title,
-				name_cn: data.name_cn || data.title,
+				type: subjectTypeMap[item.category] || 2,
+				name: item.title,
+				name_cn: item.name_cn || item.title,
 				short_summary: "",
 				images: {
 					medium: imageSrc,
@@ -109,16 +107,12 @@ const mgItems: MgItem[] = customBangumi
 				volumes: 0,
 				eps: 0,
 				collection_total: 0,
-				score: data.score || 0,
+				score: item.score || 0,
 				rank: 0,
 				tags: [],
 			},
 		};
-	})
-	.sort(
-		(a, b) =>
-			new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-	);
+	});
 
 function getItemSubcategory(item: MgItem): string {
 	if (item._subcategory) return item._subcategory;
@@ -213,33 +207,6 @@ for (const tc of tabConfig) {
 }
 
 const activeTab = sections[0]?.tabKey || "all";
-
-const editorInitialItems = mgItems.map((item) => {
-	const imageSrc =
-		item.subject.images.medium || item.subject.images.large || item.subject.images.common || "";
-	const slug = item.link.replace(/^\/bangumi\//, "").replace(/\/$/, "");
-	return {
-		id: slug,
-		slug,
-		title: item.subject.name,
-		name_cn: item.subject.name_cn || item.subject.name,
-		category:
-			item.subject_type === 2
-				? "anime"
-				: item.subject_type === 4
-					? "game"
-					: item.subject_type === 6
-						? "real"
-						: "anime",
-		subcategory: item._subcategory,
-		status: item.type,
-		score: item.rate || item.subject.score || 0,
-		image: imageSrc,
-		tags: item.tags || [],
-		comment: item.comment || "",
-		published: item.updated_at ? item.updated_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-	};
-});
 ---
 
 <MainGridLayout title={i18n(I18nKey.moviesGamesTitle)} description={i18n(I18nKey.moviesGamesSubtitle)}>
@@ -267,10 +234,10 @@ const editorInitialItems = mgItems.map((item) => {
 
 			<div data-no-swup>
 				<BangumiEditor
-					client:only
+					client:load
 					defaultCategory="all"
 					customPageName="影视游戏"
-					initialItems={editorInitialItems as any}
+					initialItems={mgItemsRaw}
 				/>
 			</div>
 

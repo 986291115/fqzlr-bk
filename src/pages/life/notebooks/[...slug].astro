@@ -1,146 +1,67 @@
 ---
-import { getCollection, render } from "astro:content";
-import * as path from "node:path";
 import Comment from "@components/comment/index.astro";
 import Markdown from "@components/common/Markdown.astro";
-import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import { marked } from "marked";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-
-const notebookImageFiles = import.meta.glob<ImageMetadata>(
-	"../../content/life/notebooks/**/*.{jpg,jpeg,png,webp,avif,gif,svg}",
-	{ import: "default" },
-);
+import {
+	getNotesByFolder,
+	getEnabledFolders,
+} from "@/config/notebooksConfig";
 
 export async function getStaticPaths() {
-	const allEntries = await getCollection("notebooks");
-	const paths = [];
+	const paths: any[] = [];
+	const folders = getEnabledFolders();
 
-	for (const entry of allEntries) {
-		const normalizedId = entry.id.replace(/\\/g, "/");
-		if (normalizedId === "readme" || normalizedId === "readme.md") continue;
-		const isIndexFile =
-			/\/(_index|_index\.md|_index\.json)?$/.test(normalizedId) &&
-			(normalizedId.endsWith("_index") || normalizedId.includes("/_index."));
-		const isNotebookRoot =
-			normalizedId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
-			normalizedId.match(/^([^/]+)\/_index$/);
-		if (!isIndexFile || !isNotebookRoot) continue;
-
-		const folderName = isNotebookRoot[1];
-		const folderEntries = allEntries.filter((item) => {
-			const itemId = item.id.replace(/\\/g, "/");
-			return (
-				itemId.startsWith(`${folderName}/`) &&
-				!/^([^/]+)\/(_index|_index\.md|_index\.json)$/.test(itemId) &&
-				itemId !== `${folderName}/_index` &&
-				itemId !== `${folderName}/_index.md` &&
-				itemId !== `${folderName}/_index.json`
-			);
-		});
-		const sortedEntries = [...folderEntries].sort((a, b) => {
-			const aT = a.data.date instanceof Date ? a.data.date.getTime() : 0;
-			const bT = b.data.date instanceof Date ? b.data.date.getTime() : 0;
-			return bT - aT;
-		});
+	for (const folder of folders) {
+		const notes = getNotesByFolder(folder.slug);
 
 		paths.push({
-			params: { slug: folderName },
+			params: { slug: folder.slug },
 			props: {
-				entry,
-				entries: folderEntries,
-				sortedEntries,
+				folder,
+				notes,
 				isNotebookIndex: true,
 			},
 		});
-		for (const item of folderEntries) {
-			const itemId = item.id.replace(/\\/g, "/");
-			const itemSlug = itemId.split("/").pop()?.replace(/\.md$/, "") || "";
+
+		for (const note of notes) {
 			paths.push({
-				params: { slug: `${folderName}/${itemSlug}` },
-				props: { entry, item, isNotebookIndex: false },
+				params: { slug: `${folder.slug}/${note.id}` },
+				props: {
+					folder,
+					note,
+					isNotebookIndex: false,
+				},
 			});
 		}
 	}
+
 	return paths;
 }
 
-const { entry, entries, sortedEntries, item, isNotebookIndex } = Astro.props;
-const notebookContent = !isNotebookIndex ? await render(item) : null;
-const normalizedEntryId = entry.id.replace(/\\/g, "/");
-const isNotebookRootMatch =
-	normalizedEntryId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
-	normalizedEntryId.match(/^([^/]+)\/_index$/);
-const folderName = isNotebookRootMatch
-	? isNotebookRootMatch[1]
-	: normalizedEntryId.split("/")[0];
+const { folder, notes, note, isNotebookIndex } = Astro.props;
+const folderName = folder?.slug || "";
 
-let coverSrc: string | null = null;
-const rawCover = entry.data.cover as string | undefined;
-if (rawCover) {
-	if (rawCover.startsWith("http://") || rawCover.startsWith("https://")) {
-		coverSrc = rawCover;
-	} else {
-		const imageKey = path
-			.normalize(
-				path.join("../../content/life/notebooks", folderName, rawCover),
-			)
-			.replace(/\\/g, "/");
-		const loader = notebookImageFiles[imageKey];
-		if (loader) {
-			try {
-				const img = await loader();
-				coverSrc = img.src;
-			} catch {
-				coverSrc = null;
-			}
-		}
-	}
+let coverSrc: string | null = folder?.cover || null;
+if (coverSrc && !coverSrc.startsWith("http://") && !coverSrc.startsWith("https://")) {
+	coverSrc = null;
 }
 
 const notebookCommentPath = !isNotebookIndex
-	? `/life/notebooks/${item.id.replace(/\\/g, "/").replace(/\.md$/, "")}/`
+	? `/life/notebooks/${folderName}/${note?.id}/`
 	: "";
 
-const sortedEntriesWithImages = isNotebookIndex
-	? await Promise.all(
-			(sortedEntries || []).map(async (noteItem) => {
-				const rawImage = noteItem.data.image as string | string[] | undefined;
-				const imageList: string[] = [];
-				if (rawImage && rawImage !== "") {
-					const rawImages = Array.isArray(rawImage) ? rawImage : [rawImage];
-					const noteItemId = noteItem.id.replace(/\\/g, "/");
-					const noteDir = noteItemId.replace(/\/[^/]+$/, "");
-					for (const ri of rawImages) {
-						if (ri.startsWith("http://") || ri.startsWith("https://")) {
-							imageList.push(ri);
-						} else {
-							const imageKey = path
-								.normalize(
-									path.join("../../content/life/notebooks", noteDir, ri),
-								)
-								.replace(/\\/g, "/");
-							const loader = notebookImageFiles[imageKey];
-							if (loader) {
-								try {
-									const img = await loader();
-									imageList.push(img.src);
-								} catch {
-									/* skip */
-								}
-							}
-						}
-					}
-				}
-				return { ...noteItem, images: imageList };
-			}),
+const sortedEntries = isNotebookIndex
+	? [...(notes || [])].sort(
+			(a: any, b: any) =>
+				new Date(b.date).getTime() - new Date(a.date).getTime(),
 		)
 	: [];
 ---
 
 {isNotebookIndex ? (
-	<MainGridLayout title={entry.data.name || "笔记本"} description={entry.data.summary || "笔记本记录"}>
+	<MainGridLayout title={folder?.name || "笔记本"} description={folder?.summary || "笔记本记录"}>
 		<div class="diary-entry-page">
 			<section class="notebook-hero" style={coverSrc ? `background-image: url(${coverSrc});` : ""}>
 				<div class="notebook-hero-overlay"></div>
@@ -150,12 +71,12 @@ const sortedEntriesWithImages = isNotebookIndex
 				</a>
 				<div class="notebook-hero-content">
 					<span class="notebook-hero-tag">📔 日记本</span>
-					<h1 class="notebook-hero-title">{entry.data.name || "我的日记本"}</h1>
-					{entry.data.summary && <p class="notebook-hero-desc">{entry.data.summary}</p>}
+					<h1 class="notebook-hero-title">{folder?.name || "我的日记本"}</h1>
+					{folder?.summary && <p class="notebook-hero-desc">{folder.summary}</p>}
 					<div class="notebook-hero-stats">
-						<div class="notebook-hero-stat"><Icon name="material-symbols:article-outline" /><span>{entries.length} 篇日记</span></div>
-						{sortedEntries[0]?.data.date instanceof Date && (
-							<div class="notebook-hero-stat"><Icon name="material-symbols:calendar-today" /><span>最近 {sortedEntries[0].data.date.toISOString().split("T")[0]}</span></div>
+						<div class="notebook-hero-stat"><Icon name="material-symbols:article-outline" /><span>{notes?.length || 0} 篇日记</span></div>
+						{sortedEntries[0]?.date && (
+							<div class="notebook-hero-stat"><Icon name="material-symbols:calendar-today" /><span>最近 {new Date(sortedEntries[0].date).toISOString().split("T")[0]}</span></div>
 						)}
 					</div>
 				</div>
@@ -163,16 +84,14 @@ const sortedEntriesWithImages = isNotebookIndex
 
 			<section class="diary-entries-section">
 
-				{sortedEntriesWithImages.length === 0 ? (
+				{sortedEntries.length === 0 ? (
 					<div class="diary-empty-entries" id="local-empty"><div class="text-5xl mb-4">📝</div><p class="text-[var(--content-meta)]">还没有日记内容</p></div>
 				) : (
 					<div class="diary-entries-list">
-						{sortedEntriesWithImages.map((noteItem) => {
-							const noteItemId = noteItem.id.replace(/\\/g, "/");
-							const fileName = noteItemId.split("/").pop()?.replace(/\.md$/, "") || "未命名";
-							const itemSlug = fileName;
-							const contentBody = noteItem.body ? noteItem.body.split("\n").filter((line: string) => !line.trim().startsWith("---")).join("\n").trim() : "";
-							const htmlPreview = contentBody ? marked.parse(contentBody.slice(0, 300), { mangle: false, headerIds: false }) : "";
+						{sortedEntries.map((noteItem: any) => {
+							const itemSlug = noteItem.id;
+							const contentBody = noteItem.content || "";
+							const htmlPreview = contentBody ? (marked.parse(contentBody.slice(0, 300), { gfm: true, breaks: true }) as string) : "";
 							const previewHtml = htmlPreview
 									.replace(/<\/p>\s*<p>/g, '<br>')
 									.replace(/<\/?p>/g, '')
@@ -181,18 +100,19 @@ const sortedEntriesWithImages = isNotebookIndex
 									.replace(/<img[^>]*>/g, '')
 									.trim();
 							const preview = previewHtml.slice(0, 300) + (previewHtml.length > 300 ? "..." : "");
-							const noteImages = noteItem.images as string[];
+							const noteImages = noteItem.images || [];
 
 							return (
 								<a href={`/life/notebooks/${folderName}/${itemSlug}/`} class="diary-entry-card group">
 									<div class="entry-card-inner">
 										<div class="entry-card-text">
-											<span class="entry-card-date">{noteItem.data.date instanceof Date ? noteItem.data.date.toISOString().split("T")[0] : "未填写日期"}</span>
+											<span class="entry-card-date">{new Date(noteItem.date).toISOString().split("T")[0]}</span>
+											<h3 class="entry-card-title">{noteItem.title || "无标题"}</h3>
 											{preview && <p class="entry-card-preview" set:html={preview} />}
 										</div>
 										{noteImages.length > 0 && (
 											<div class="entry-card-images">
-												{noteImages.map((imgSrc, idx) => (
+												{noteImages.map((imgSrc: string, idx: number) => (
 													<div class="entry-card-image"><img src={imgSrc} alt={`图${idx + 1}`} class="entry-card-img" loading="lazy" /></div>
 												))}
 											</div>
@@ -208,34 +128,36 @@ const sortedEntriesWithImages = isNotebookIndex
 		</div>
 	</MainGridLayout>
 ) : (
-	<MainGridLayout title={item.data.name || item.data.title || "日记"}>
+	<MainGridLayout title={note?.title || "日记"}>
 		<div class="diary-detail-page">
 			<article class="diary-paper">
 				<a href={`/life/notebooks/${folderName}/`} class="diary-paper-back">
 					<Icon name="material-symbols:arrow-back-rounded" />
-					<span>返回 {entry.data.name || "日记本"}</span>
+					<span>返回 {folder?.name || "日记本"}</span>
 				</a>
 
 				<h1 class="diary-paper-title">
-					{item.data.name || item.data.title || item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题"}
+					{note?.title || "无标题"}
 				</h1>
 
 				<div class="diary-paper-content">
-					{notebookContent ? (
-						<Markdown><notebookContent.Content /></Markdown>
+					{note?.content ? (
+						<Markdown class="">
+							{note.content}
+						</Markdown>
 					) : (
 						<p>（无内容）</p>
 					)}
 				</div>
 
 				<div class="diary-paper-footer">
-					{item.data.tags && item.data.tags.length > 0 && (
+					{note?.tags && note.tags.length > 0 && (
 						<div class="diary-tags">
-							{item.data.tags.map((tag: string) => (<span class="diary-tag">#{tag}</span>))}
+							{note.tags.map((tag: string) => (<span class="diary-tag">#{tag}</span>))}
 						</div>
 					)}
 					<span class="diary-date-final">
-						{item.data.date instanceof Date ? item.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" }) : "未填写日期"}
+						{note?.date ? new Date(note.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" }) : "未填写日期"}
 					</span>
 				</div>
 			</article>
@@ -308,6 +230,7 @@ const sortedEntriesWithImages = isNotebookIndex
 	:global(.entry-card-inner) { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.25rem; }
 	:global(.entry-card-text) { flex: 1; min-width: 0; }
 	:global(.entry-card-date) { display: block; font-size: 0.75rem; color: var(--content-meta); margin-bottom: 0.35rem; }
+	:global(.entry-card-title) { font-size: 1rem; font-weight: 600; color: var(--text-color); margin: 0 0 0.5rem 0; }
 	:global(.entry-card-preview) { font-size: 0.825rem; color: var(--content-meta); line-height: 1.5; margin: 0; }
 
 	.entry-card-images { display: grid; grid-template-columns: repeat(3, 90px); gap: 0.5rem; }
@@ -397,4 +320,3 @@ const sortedEntriesWithImages = isNotebookIndex
 		color: var(--primary); border-radius: 9999px; margin-bottom: 0.5rem;
 	}
 </style>
-

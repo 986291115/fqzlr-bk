@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import WidgetLayout from "@/components/common/WidgetLayout.astro";
 import { siteConfig } from "@/config";
+import { getEnabledMoments } from "@/config/momentsConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import {
@@ -25,7 +26,7 @@ const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
 const posts = await getSortedPosts();
 const categories = await getCategoryList();
 const tags = await getTagList();
-const moments = await getCollection("moments");
+const moments = getEnabledMoments();
 const bangumi = await getCollection("bangumi");
 
 // 统计生活记录子分类

@@ -1,37 +1,26 @@
 ---
-import { getCollection, render } from "astro:content";
+import { marked } from "marked";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import RoutinesEditor from "@/components/edit/RoutinesEditor.svelte";
+import { getEnabledRoutines } from "@/config/routinesConfig";
 
-const routinesEntries = await getCollection("routines");
+const routinesList = getEnabledRoutines();
 
-const filteredEntries = routinesEntries.filter(
-	(entry) => !entry.id.toLowerCase().includes("readme"),
-);
+const lastUpdated = routinesList.find((e) => e.updatedAt)?.updatedAt
+	? new Date(routinesList.find((e) => e.updatedAt)!.updatedAt)
+	: undefined;
 
-const sortedEntries = [...filteredEntries].sort((a, b) => {
-	const aTime = a.data.updatedAt?.getTime() || 0;
-	const bTime = b.data.updatedAt?.getTime() || 0;
-	return bTime - aTime;
+const entriesWithContent = routinesList.map((entry) => {
+	const html = marked.parse(entry.body || "", {
+		gfm: true,
+		breaks: true,
+	}) as string;
+	return {
+		...entry,
+		htmlContent: html,
+	};
 });
-
-const lastUpdated = sortedEntries.find((e) => e.data.updatedAt)?.data.updatedAt;
-
-const entriesWithContent = await Promise.all(
-	sortedEntries.map(async (entry) => {
-		const { Content } = await render(entry);
-		return {
-			...entry,
-			Content,
-			name: entry.data.name || "未命名",
-			time: entry.data.time || "",
-			description: entry.data.description || "",
-			icon: entry.data.icon || "📋",
-			color: entry.data.color || "var(--primary)",
-		};
-	}),
-);
 
 const totalEntries = entriesWithContent.length;
 ---
@@ -65,7 +54,7 @@ const totalEntries = entriesWithContent.length;
 
       <!-- 日常规划编辑器 -->
       <div data-no-swup>
-        <RoutinesEditor client:only />
+        <RoutinesEditor client:load />
       </div>
 
       <!-- 规划列表 -->
@@ -97,7 +86,7 @@ const totalEntries = entriesWithContent.length;
                 </div>
                 <div class="routine-card-body">
                   <div class="routine-content">
-                    <entry.Content />
+                    <Fragment set:html={entry.htmlContent} />
                   </div>
                 </div>
               </article>

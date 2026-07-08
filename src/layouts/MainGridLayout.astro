@@ -644,7 +644,7 @@ const mobileQuality = Math.round(configQuality * 0.9);
             )}
                     
             {/* 主内容区包装器 - 包含静态栏位和swup容器，作为单个grid item */}
-            <div id="main-content-wrapper" class={`${staticBarClass} ${hideSidebar ? 'md:col-span-1 md:col-start-1 lg:col-span-1 lg:col-start-1 xl:col-span-1 xl:col-start-1' : ''}`}>
+            <div id="main-content-wrapper" class={`w-full min-w-0 max-w-full overflow-hidden ${staticBarClass} ${hideSidebar ? 'md:col-span-1 md:col-start-1 lg:col-span-1 lg:col-start-1 xl:col-span-1 xl:col-start-1' : ''}`}>
                 {/* 主内容区 - 始终渲染，确保 Swup 容器存在 */}
                 <main id="swup-container" class="transition-main">
                 {/* 携带网格布局类名，用于JS更新父容器 */}

@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import { profileConfig } from "@/config/profileConfig";
+import { getEnabledMoments } from "@/config/momentsConfig";
 import { getTagList } from "@/utils/content-utils";
 import { url } from "@/utils/url-utils";
 
@@ -10,7 +11,7 @@ const posts = await getCollection("posts", ({ data }) => {
 	return import.meta.env.PROD ? data.draft !== true : true;
 });
 const tags = await getTagList();
-const moments = await getCollection("moments");
+const moments = getEnabledMoments();
 
 const stats = [
 	{ label: "文章", count: posts.length },

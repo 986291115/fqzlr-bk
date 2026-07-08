@@ -779,6 +779,29 @@ export type FriendsPageConfig = {
 	}[];
 };
 
+// 收藏 API 条目（projects 页面使用）
+export type CollectionApiItem = {
+	name: string; // 站点名称
+	url: string; // 站点链接
+	description: string; // 站点描述
+	icon?: string; // 图标（iconify 名 或 图片 URL）
+	enabled: boolean; // 是否启用
+};
+
+// 收藏 API 分类分组
+export type CollectionApiGroup = {
+	category: string; // 分类名称
+	items: CollectionApiItem[]; // 该分类下的条目
+};
+
+// 收藏 API 页面配置
+export type CollectionsApiConfig = {
+	title?: string; // 页面标题，留空使用 i18n
+	description?: string; // 页面描述，留空使用 i18n
+	apis: CollectionApiGroup[]; // 按 category 分组的条目
+	categories?: string[]; // 自定义分类排序
+};
+
 // 音乐播放器配置
 export type MusicPlayerConfig = {
 	// 使用方式：'meting' 或 'local'

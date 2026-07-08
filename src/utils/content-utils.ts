@@ -3,6 +3,7 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { getCategoryUrl } from "@utils/url-utils";
 import { siteConfig } from "@/config";
+import { getEnabledMoments } from "@/config/momentsConfig";
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
@@ -100,7 +101,7 @@ export async function getArchiveList(): Promise<ArchiveItem[]> {
 
 	const momentItems: ArchiveItem[] = [];
 	if (archiveConfig.moments) {
-		const moments = await getCollection("moments");
+		const moments = getEnabledMoments();
 		momentItems.push(
 			...moments.map((moment) => {
 				let title = moment.body || "";
@@ -112,8 +113,8 @@ export async function getArchiveList(): Promise<ArchiveItem[]> {
 					type: "moment",
 					data: {
 						title: title,
-						published: moment.data.published,
-						tags: moment.data.tags,
+						published: new Date(moment.published),
+						tags: moment.tags,
 						category: null,
 					},
 				};
@@ -231,7 +232,7 @@ export async function getTagList(): Promise<Tag[]> {
 		return import.meta.env.PROD ? data.draft !== true : true;
 	});
 
-	const allMoments = await getCollection("moments");
+	const allMoments = getEnabledMoments();
 
 	const countMap: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { tags: string[] } }) => {
@@ -241,9 +242,9 @@ export async function getTagList(): Promise<Tag[]> {
 		});
 	});
 
-	allMoments.forEach((moment: { data: { tags: string[] } }) => {
-		if (Array.isArray(moment.data.tags)) {
-			moment.data.tags.forEach((tag: string) => {
+	allMoments.forEach((moment) => {
+		if (Array.isArray(moment.tags)) {
+			moment.tags.forEach((tag: string) => {
 				if (!countMap[tag]) countMap[tag] = 0;
 				countMap[tag]++;
 			});

@@ -1,64 +1,19 @@
 ---
-import { Image } from "astro:assets";
-import type { CollectionEntry } from "astro:content";
-import { render } from "astro:content";
 import { Icon } from "astro-icon/components";
 import Markdown from "@/components/common/Markdown.astro";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getTagUrl } from "@/utils/url-utils";
+import type { MomentItem } from "@/config/momentsConfig";
 
 interface Props {
-	moment: CollectionEntry<"moments">;
+	moment: MomentItem;
 }
 
 const { moment } = Astro.props;
-const { Content } = await render(moment);
-const { author, avatar, published, images, tags, location, device, pinned } =
-	moment.data;
+const { author, avatar, published, images, tags, location, device, pinned, body } =
+	moment;
 
-// 获取 moments 资产目录下的所有图片
-const momentAssets = import.meta.glob<{ default: ImageMetadata }>(
-	"../../content/moments/assets/*.{jpeg,jpg,png,gif,webp,avif}",
-	{ eager: true },
-);
-
-// 解析图片路径
-const parseImages = (imagesData: any): (string | ImageMetadata)[] => {
-	let rawPaths: string[] = [];
-	if (Array.isArray(imagesData)) {
-		rawPaths = imagesData.map((img) =>
-			typeof img === "string" ? img : img.src || img,
-		);
-	} else if (typeof imagesData === "string" && imagesData.trim()) {
-		rawPaths = imagesData
-			.split(/[,;]/)
-			.map((img) => img.trim())
-			.filter((img) => img);
-	}
-
-	return Array.from(new Set(rawPaths))
-		.map((img) => {
-			if (
-				img.startsWith("http://") ||
-				img.startsWith("https://") ||
-				img.startsWith("/")
-			) {
-				return img;
-			}
-
-			const cleanPath = img.replace(/^\.\//, "");
-			if (cleanPath.startsWith("assets/")) {
-				const fileName = cleanPath.replace("assets/", "");
-				for (const path in momentAssets) {
-					if (path.endsWith(fileName)) {
-						return momentAssets[path].default;
-					}
-				}
-			}
-			return img;
-		})
-		.filter((img) => img);
-};
+const publishedDate = new Date(published);
 
 // 计算图片网格列数
 const getGridCols = (count: number) => {
@@ -68,13 +23,8 @@ const getGridCols = (count: number) => {
 };
 
 const momentId = moment.id;
-const imagesArray = parseImages(images);
+const imagesArray = images || [];
 const gridMax = 9;
-
-const getImgSrc = (img: string | ImageMetadata): string => {
-	if (typeof img === "string") return img;
-	return img.src;
-};
 
 // 相对时间
 const formatTimeAgo = (date: Date): string => {
@@ -126,10 +76,10 @@ const formatTimeAgo = (date: Date): string => {
 			</div>
 			<div class="meta-row">
 				<time
-					datetime={published.toISOString()}
-					title={formatDateToYYYYMMDD(published)}
+					datetime={publishedDate.toISOString()}
+					title={formatDateToYYYYMMDD(publishedDate)}
 				>
-					{formatTimeAgo(published)}
+					{formatTimeAgo(publishedDate)}
 				</time>
 				{location && (
 					<>
@@ -153,7 +103,7 @@ const formatTimeAgo = (date: Date): string => {
 			class="moment-markdown text-[var(--text-color)] text-[0.9375rem] leading-[1.75]"
 		>
 			<Markdown class="moment-markdown-content">
-				<Content />
+				{body || ""}
 			</Markdown>
 		</div>
 	</div>
@@ -164,31 +114,19 @@ const formatTimeAgo = (date: Date): string => {
 			class={`card-images image-cols-${getGridCols(imagesArray.length)} `}
 		>
 			{imagesArray.map((img, index) => {
-				const imgSrc = getImgSrc(img);
 				const isHidden = index >= gridMax;
 				const isLastVisible = index === gridMax - 1 && imagesArray.length > gridMax;
 
 				return (
 					<div class={`image-item ${isHidden ? "hidden-image" : ""}`}>
-						{typeof img === "string" ? (
-							<img
-								src={img}
-								alt="Moment image"
-								class="image-img"
-								loading="lazy"
-								data-fancybox={`gallery-${moment.id}`}
-								data-src={imgSrc}
-							/>
-						) : (
-							<Image
-								src={img}
-								alt="Moment image"
-								class="image-img"
-								loading="lazy"
-								data-fancybox={`gallery-${moment.id}`}
-								data-src={imgSrc}
-							/>
-						)}
+						<img
+							src={img}
+							alt="Moment image"
+							class="image-img"
+							loading="lazy"
+							data-fancybox={`gallery-${moment.id}`}
+							data-src={img}
+						/>
 
 						{isLastVisible && (
 							<div class="more-overlay">

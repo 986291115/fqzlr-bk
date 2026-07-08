@@ -1,80 +1,33 @@
 ---
-import { Image } from "astro:assets";
-import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import Comment from "@/components/comment/index.astro";
 import MomentCard from "@/components/moments/MomentCard.astro";
 import MomentsCover from "@/components/moments/MomentsCover.astro";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 import MomentsEditor from "@/components/edit/MomentsEditor.svelte";
+import { momentsCover, getEnabledMoments, momentsPageConfig } from "@/config/momentsConfig";
 
-const moments = await getCollection("moments");
+// 从 momentsConfig.ts 读取说说数据
+const allMoments = getEnabledMoments();
 
-const coverEntry = moments.find((m) => m.id === "_cover");
-const coverImage = coverEntry?.data?.cover_image || "";
-const coverAvatar = coverEntry?.data?.cover_avatar || "";
-const coverName = coverEntry?.data?.cover_name || "";
-const coverBio = coverEntry?.data?.cover_bio || "";
+const coverImage = momentsCover.cover_image;
+const coverAvatar = momentsCover.cover_avatar;
+const coverName = momentsCover.cover_name;
+const coverBio = momentsCover.cover_bio;
 
-const sortedMoments = moments
-	.filter((m) => !m.data.pinned && m.id !== "_cover")
-	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
-
-const pinnedMoments = moments
-	.filter((m) => m.data.pinned && m.id !== "_cover")
-	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
-
-// 获取 moments 资产目录下的所有图片
-const momentAssets = import.meta.glob<{ default: ImageMetadata }>(
-	"../content/moments/assets/*.{jpeg,jpg,png,gif,webp,avif}",
-	{ eager: true },
-);
-
-// 解析图片路径
-const parseImages = (imagesData: any): (string | ImageMetadata)[] => {
-	let rawPaths: string[] = [];
-	if (Array.isArray(imagesData)) {
-		rawPaths = imagesData.map((img) =>
-			typeof img === "string" ? img : img.src || img,
-		);
-	} else if (typeof imagesData === "string" && imagesData.trim()) {
-		rawPaths = imagesData
-			.split(/[,;]/)
-			.map((img) => img.trim())
-			.filter((img) => img);
-	}
-
-	return Array.from(new Set(rawPaths))
-		.map((img) => {
-			if (
-				img.startsWith("http://") ||
-				img.startsWith("https://") ||
-				img.startsWith("/")
-			) {
-				return img;
-			}
-			const cleanPath = img.replace(/^\.\//, "");
-			if (cleanPath.startsWith("assets/")) {
-				const fileName = cleanPath.replace("assets/", "");
-				for (const path in momentAssets) {
-					if (path.endsWith(fileName)) {
-						return momentAssets[path].default;
-					}
-				}
-			}
-			return img;
-		})
-		.filter((img) => img);
-};
+// 置顶说说
+const pinnedMoments = allMoments.filter((m) => m.pinned);
+// 普通说说（按时间倒序）
+const sortedMoments = allMoments.filter((m) => !m.pinned);
 
 // 预处理置顶说说
 const pinnedData = pinnedMoments.map((m) => ({
-	images: parseImages(m.data.images),
+	images: m.images || [],
 	body: m.body || "",
-	date: m.data.published,
+	date: new Date(m.published),
 }));
 
-const albums = await getCollection("album");
+const albums = [] as any[];
 ---
 
 <MainGridLayout title="动态" description="记录生活中的点点滴滴">
@@ -93,11 +46,7 @@ const albums = await getCollection("album");
             {item.images.length > 0 ? (
               <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
                 {item.images.slice(0, 9).map((img) => (
-                  typeof img === "string" ? (
-                    <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                  ) : (
-                    <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                  )
+                  <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
                 ))}
               </div>
             ) : (
@@ -119,7 +68,7 @@ const albums = await getCollection("album");
   <div class="wx-feed" id="moments-feed">
     {sortedMoments.length > 0 ? (
       sortedMoments.map((moment) => (
-        <div class="wx-feed-item" data-published={moment.data.published.toISOString()}>
+        <div class="wx-feed-item" data-published={new Date(moment.published).toISOString()}>
           <MomentCard moment={moment} />
         </div>
       ))
@@ -134,7 +83,7 @@ const albums = await getCollection("album");
     )}
   </div>
 
-  <MomentsEditor client:only />
+  <MomentsEditor client:load />
 
   <!-- 评论区 -->
   <div id="moments-comments">

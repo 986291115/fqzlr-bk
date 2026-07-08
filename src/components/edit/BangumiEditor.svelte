@@ -5,9 +5,6 @@ import {
 	showToast,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
-	deleteRepoFile,
 	genId,
 	deepClone,
 	registerSubmitHandler,
@@ -17,18 +14,23 @@ import { repoConfig } from "@/config/editConfig";
 
 interface BangumiItem {
 	id: string;
-	slug: string;
 	title: string;
-	name_cn: string;
+	name_cn?: string;
 	category: string;
 	subcategory?: string;
 	status: number;
-	score: number;
+	score?: number;
 	image: string;
 	tags: string[];
-	comment: string;
+	comment?: string;
 	published: string;
-	sha?: string;
+	link?: string;
+	artist?: string;
+	audioUrl?: string;
+	lrcUrl?: string;
+	metingServer?: string;
+	metingId?: string;
+	enabled?: boolean;
 	_draft?: boolean;
 	_deleted?: boolean;
 }
@@ -47,11 +49,13 @@ let editMode = $state(false);
 let saving = $state(false);
 let items = $state<BangumiItem[]>([]);
 let originalItems = $state<BangumiItem[]>([]);
-let originalItemsJson = $state("");
 let editingIndex = $state(-1);
 let activeTab = $state(defaultCategory);
 let activeStatusTab = $state("all");
 let tagsInput = $state("");
+let repoLoaded = $state(false);
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const pageKey = customPageName === "书架"
 	? "books"
@@ -61,67 +65,260 @@ const pageKey = customPageName === "书架"
 
 const pageName = customPageName;
 
-function serializeItems(): string {
-	return JSON.stringify(
-		items.map((i) => ({
-			id: i.id,
-			slug: i.slug,
-			title: i.title,
-			name_cn: i.name_cn,
-			category: i.category,
-			subcategory: i.subcategory,
-			status: i.status,
-			score: i.score,
-			image: i.image,
-			tags: i.tags,
-			comment: i.comment,
-			published: i.published,
-			_draft: i._draft,
-			_deleted: i._deleted,
-		})),
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
+				}
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
+					}
+				}
+			}
+			return line;
+		})
+		.join("\n");
+}
+
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
+
+function parseBangumiFromTS(tsContent: string): BangumiItem[] {
+	const items = parseArrayFromTS(tsContent, "export const bangumiConfig: BangumiItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `bg-${index}`,
+		title: item.title || "",
+		name_cn: item.name_cn || "",
+		category: item.category || "anime",
+		subcategory: item.subcategory,
+		status: item.status || 2,
+		score: item.score || 0,
+		image: item.image || "",
+		tags: Array.isArray(item.tags) ? item.tags : [],
+		comment: item.comment || "",
+		published: item.published || new Date().toISOString().slice(0, 10),
+		link: item.link || "",
+		artist: item.artist || "",
+		audioUrl: item.audioUrl || "",
+		lrcUrl: item.lrcUrl || "",
+		metingServer: item.metingServer || "",
+		metingId: item.metingId || "",
+		enabled: item.enabled !== false,
+	}));
+}
+
+function buildBangumiObject(item: BangumiItem): string {
+	const obj: any = {
+		id: item.id,
+		title: item.title,
+	};
+	if (item.name_cn) obj.name_cn = item.name_cn;
+	obj.category = item.category;
+	if (item.subcategory) obj.subcategory = item.subcategory;
+	obj.status = item.status;
+	if (item.score) obj.score = item.score;
+	obj.image = item.image;
+	obj.tags = item.tags;
+	if (item.comment) obj.comment = item.comment;
+	obj.published = item.published;
+	if (item.link) obj.link = item.link;
+	if (item.artist) obj.artist = item.artist;
+	if (item.audioUrl) obj.audioUrl = item.audioUrl;
+	if (item.lrcUrl) obj.lrcUrl = item.lrcUrl;
+	if (item.metingServer) obj.metingServer = item.metingServer;
+	if (item.metingId) obj.metingId = item.metingId;
+	obj.enabled = item.enabled !== false;
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
 	);
 }
 
-function deserializeItems(json: string) {
-	try {
-		const parsed = JSON.parse(json);
-		if (Array.isArray(parsed)) {
-			items = parsed.map((e: any) => ({
-				id: e.id || genId("bg"),
-				slug: e.slug || "",
-				title: e.title || "",
-				name_cn: e.name_cn || "",
-				category: e.category || "anime",
-				subcategory: e.subcategory,
-				status: e.status || 2,
-				score: e.score || 0,
-				image: e.image || "",
-				tags: Array.isArray(e.tags) ? e.tags : [],
-				comment: e.comment || "",
-				published: e.published || new Date().toISOString().slice(0, 10),
-				sha: e.sha,
-				_draft: !!e._draft,
-				_deleted: !!e._deleted,
-			}));
-		}
-	} catch {}
+function buildBangumiConfigTS(
+	bangumiList: BangumiItem[],
+	originalContent?: string,
+): string {
+	const entries = bangumiList.map((m) => buildBangumiObject(m));
+	const arrayContent = entries.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const bangumiConfig: BangumiItem[] = [",
+			arrayContent,
+		);
+		return result;
+	}
+
+	return `/**
+ * 番剧/影视收藏页面配置
+ * 用于管理番剧、书籍、游戏、音乐收藏
+ */
+
+export type BangumiCategory = "anime" | "book" | "game" | "music" | "real";
+export type BangumiSubcategory = "movie" | "tv" | "anime" | "documentary" | "game";
+
+export interface BangumiItem {
+	id: string;
+	title: string;
+	name_cn?: string;
+	category: BangumiCategory;
+	subcategory?: BangumiSubcategory;
+	status: number;
+	score?: number;
+	image: string;
+	tags: string[];
+	comment?: string;
+	published: string;
+	link?: string;
+	artist?: string;
+	audioUrl?: string;
+	lrcUrl?: string;
+	metingServer?: string;
+	metingId?: string;
+	enabled?: boolean;
+}
+
+export interface BangumiPageConfig {
+	title?: string;
+	description?: string;
+	showComment?: boolean;
+	itemsPerPage?: number;
+	itemsPerPageMobile?: number;
+}
+
+export const bangumiPageConfig: BangumiPageConfig = {
+	title: "番剧",
+	description: "记录我看过的动漫、书籍、游戏和音乐",
+	showComment: true,
+	itemsPerPage: 12,
+	itemsPerPageMobile: 6,
+};
+
+export const bangumiConfig: BangumiItem[] = [
+${arrayContent}
+];
+
+export function getAllBangumi(): BangumiItem[] {
+	return bangumiConfig.filter((item) => item.enabled !== false);
+}
+
+export function getBangumiByCategory(category: BangumiCategory): BangumiItem[] {
+	return getAllBangumi()
+		.filter((item) => item.category === category)
+		.sort(
+			(a, b) =>
+				new Date(b.published).getTime() - new Date(a.published).getTime(),
+		);
+}
+
+export function getBangumiByStatus(status: number): BangumiItem[] {
+	return getAllBangumi().filter((item) => item.status === status);
+}
+
+export function getBangumiStats() {
+	const all = getAllBangumi();
+	const stats: Record<BangumiCategory, number> = {
+		anime: 0,
+		book: 0,
+		game: 0,
+		music: 0,
+		real: 0,
+	};
+	all.forEach((item) => {
+		stats[item.category] = (stats[item.category] || 0) + 1;
+	});
+	return stats;
+}
+`;
 }
 
 const drafts = setupRepoDrafts({
 	pageKey,
 	pageName,
-	getContent: () => serializeItems(),
-	setContent: (v) => deserializeItems(v),
-	getPath: () => `${pageKey}-items`,
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => originalItemsJson,
-	setOriginalContent: () => {},
-	getCommitMsg: () => `chore(${pageKey}): 更新${pageName}`,
+	getContent: () =>
+		buildBangumiConfigTS(
+			items.filter((m) => !m._deleted),
+			originalTS,
+		),
+	setContent: (v) => {
+		const parsed = parseBangumiFromTS(v);
+		if (parsed.length > 0 || v.includes("bangumiConfig")) {
+			items = parsed;
+		}
+	},
+	getPath: () => "src/config/bangumiConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
+	getCommitMsg: (isEdit) =>
+		isEdit ? `chore(${pageKey}): 更新${pageName}` : `chore(${pageKey}): 创建${pageName}配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
 });
+
 let hasChanges = $derived(drafts.hasLocalChanges());
 
 $effect(() => {
@@ -218,20 +415,18 @@ let filteredItems = $derived.by(() => {
 onMount(() => {
 	ensureIconify();
 	if (initialItems && initialItems.length > 0) {
-		items = initialItems.map((i) => ({ ...i, id: i.id || genId("bg") }));
+		items = initialItems.map((i) => ({ ...i, id: i.id || genId("bg"), enabled: i.enabled !== false }));
 	} else {
 		collectFromDOM();
 	}
 	originalItems = deepClone(items);
-	originalItemsJson = serializeItems();
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
 	window.addEventListener("edit:sidebarSubmit", handleSidebarSubmit);
 	window.addEventListener("edit:sidebarCancel", handleSidebarCancel);
 	window.addEventListener("edit:sidebarAdd", handleSidebarAdd);
-
-	drafts.restoreFromDrafts();
 
 	return () => {
 		window.removeEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -241,6 +436,45 @@ onMount(() => {
 		window.removeEventListener("edit:sidebarAdd", handleSidebarAdd);
 	};
 });
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/bangumiConfig.ts", repoConfig);
+	if (existing && existing.content) {
+		try {
+			const repoItems: BangumiItem[] = parseBangumiFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoItems.map((m) => [m.id, m]));
+			items = items.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(items.map((m) => m.id));
+			for (const g of repoItems) {
+				if (!existingIds.has(g.id)) {
+					items = [...items, { ...g, id: g.id || genId("bg") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			originalItems = deepClone(items);
+		} catch (e) {
+			console.error("Failed to parse repo bangumi:", e);
+		}
+	} else {
+		originalTS = buildBangumiConfigTS(items);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
+}
 
 function handleSidebarModeChange(e: Event) {
 	const detail = (e as CustomEvent).detail;
@@ -289,8 +523,6 @@ function collectFromDOM() {
 		const title = el.querySelector("h3, .title, .bangumi-title")?.textContent?.trim() || "";
 		const img = el.querySelector("img") as HTMLImageElement | null;
 		const image = img?.src || img?.getAttribute("data-src") || "";
-		const link = el.querySelector("a")?.getAttribute("href") || "";
-		const slug = link.replace(/^\/bangumi\/|\/$/g, "").replace(/^\/books\/|\/$/g, "");
 
 		let status = 2;
 		const statusEl = el.querySelector("[data-status]");
@@ -300,8 +532,7 @@ function collectFromDOM() {
 		}
 
 		result.push({
-			id: slug || genId("bg"),
-			slug,
+			id: genId("bg"),
 			title,
 			name_cn: title,
 			category: customPageName === "书架" ? "book" : "anime",
@@ -311,6 +542,7 @@ function collectFromDOM() {
 			tags: [],
 			comment: "",
 			published: new Date().toISOString().slice(0, 10),
+			enabled: true,
 		});
 	});
 
@@ -390,7 +622,6 @@ function handleAdd() {
 
 	const newItem: BangumiItem = {
 		id: genId("bg"),
-		slug: "",
 		title: "",
 		name_cn: "",
 		category: defaultCat,
@@ -401,6 +632,7 @@ function handleAdd() {
 		tags: [],
 		comment: "",
 		published: today,
+		enabled: true,
 		_draft: true,
 	};
 	items = [newItem, ...items];
@@ -482,120 +714,6 @@ function getRealIndex(item: BangumiItem): number {
 	return items.findIndex((it) => it.id === item.id);
 }
 
-function slugify(text: string): string {
-	return (
-		text
-			.toLowerCase()
-			.trim()
-			.replace(/[\s]+/g, "-")
-			.replace(/[^\w\u4e00-\u9fa5-]/g, "")
-			.replace(/-+/g, "-")
-			.replace(/^-|-$/g, "") || "item"
-	);
-}
-
-function buildBangumiMd(item: BangumiItem): string {
-	const lines = ["---"];
-	lines.push(`title: "${item.title.replace(/"/g, '\\"')}"`);
-	if (item.name_cn && item.name_cn !== item.title) {
-		lines.push(`name_cn: "${item.name_cn.replace(/"/g, '\\"')}"`);
-	}
-	lines.push(`category: ${item.category}`);
-	if (item.subcategory) {
-		lines.push(`subcategory: ${item.subcategory}`);
-	}
-	lines.push(`status: ${item.status}`);
-	if (item.score) {
-		lines.push(`score: ${item.score}`);
-	}
-	if (item.image) {
-		lines.push(`image: "${item.image}"`);
-	}
-	if (item.tags && item.tags.length > 0) {
-		lines.push(`tags:`);
-		item.tags.forEach((tag) => {
-			lines.push(`  - "${tag.replace(/"/g, '\\"')}"`);
-		});
-	}
-	if (item.comment) {
-		lines.push(`comment: "${item.comment.replace(/"/g, '\\"')}"`);
-	}
-	if (item.published) {
-		lines.push(`published: ${item.published}`);
-	}
-	lines.push("---");
-	lines.push("");
-	lines.push(item.comment || item.title);
-	lines.push("");
-	return lines.join("\n");
-}
-
-async function submitItems(itemsToSubmit: BangumiItem[]): Promise<boolean> {
-	let allOk = true;
-
-	for (let i = 0; i < itemsToSubmit.length; i++) {
-		const entry = itemsToSubmit[i];
-		if (entry._deleted) {
-			if (entry.slug && !entry._draft) {
-				const filePath = `src/content/bangumi/${entry.slug}.md`;
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file && file.sha) {
-					const ok = await deleteRepoFile(
-						filePath,
-						file.sha,
-						`chore(${pageKey}): remove ${entry.slug}`,
-						repoConfig,
-					);
-					if (!ok) allOk = false;
-				}
-			}
-			continue;
-		}
-
-		const md = buildBangumiMd(entry);
-		let slug = entry.slug;
-
-		if (entry._draft || !slug) {
-			slug = slugify(entry.title);
-			const filePath = `src/content/bangumi/${slug}.md`;
-			const ok = await createRepoFile(
-				filePath,
-				md,
-				`chore(${pageKey}): add ${slug}`,
-				repoConfig,
-			);
-			if (!ok) allOk = false;
-		} else {
-			const filePath = `src/content/bangumi/${slug}.md`;
-			let sha = entry.sha;
-			if (!sha) {
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file) sha = file.sha;
-			}
-			if (sha) {
-				const ok = await updateRepoFile(
-					filePath,
-					md,
-					sha,
-					`chore(${pageKey}): update ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			} else {
-				const ok = await createRepoFile(
-					filePath,
-					md,
-					`chore(${pageKey}): create ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			}
-		}
-	}
-
-	return allOk;
-}
-
 function handleSaveDraft() {
 	drafts.saveToDrafts();
 }
@@ -611,16 +729,14 @@ async function handleSubmit() {
 	}
 	saving = true;
 	try {
-		const ok = await submitItems(items);
-		if (ok) {
-			showToast("保存成功！页面将刷新以应用更改", "success");
-			drafts.clearDrafts();
-			originalItems = deepClone(items);
-			originalItemsJson = serializeItems();
-			setTimeout(() => window.location.reload(), 1200);
-		} else {
-			showToast("部分操作失败，请检查 GitHub App 权限配置", "error");
-		}
+		const cleanData = items.map(({ _draft, _deleted, ...rest }) => ({
+			...rest,
+			id: rest.id || genId("bg"),
+			enabled: rest.enabled !== false,
+		}));
+		items = cleanData;
+		drafts.saveToDrafts();
+		await drafts.submitDrafts();
 	} catch (err) {
 		showToast("保存出错：" + (err as Error).message, "error");
 		console.error(err);
@@ -631,31 +747,12 @@ async function handleSubmit() {
 
 registerSubmitHandler(pageKey, async (draft) => {
 	if (draft.payload?.type === "repo" && draft.payload.content !== undefined) {
-		let parsedItems: BangumiItem[] = [];
-		try {
-			const parsed = JSON.parse(String(draft.payload.content));
-			if (Array.isArray(parsed)) {
-				parsedItems = parsed.map((e: any) => ({
-					id: e.id || genId("bg"),
-					slug: e.slug || "",
-					title: e.title || "",
-					name_cn: e.name_cn || "",
-					category: e.category || "anime",
-					subcategory: e.subcategory,
-					status: e.status || 2,
-					score: e.score || 0,
-					image: e.image || "",
-					tags: Array.isArray(e.tags) ? e.tags : [],
-					comment: e.comment || "",
-					published: e.published || new Date().toISOString().slice(0, 10),
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		} catch {
+		const content = String(draft.payload.content);
+		const parsedItems = parseBangumiFromTS(content);
+		if (parsedItems.length === 0 && !content.includes("bangumiConfig")) {
 			return false;
 		}
-		return await submitItems(parsedItems);
+		return true;
 	}
 	return false;
 });
@@ -842,6 +939,68 @@ registerSubmitHandler(pageKey, async (draft) => {
                       bind:value={items[getRealIndex(item)].published}
                     />
                   </div>
+
+                  <div class="bg-form-group">
+                    <label>链接（可选）</label>
+                    <input
+                      type="text"
+                      class="bg-input"
+                      bind:value={items[getRealIndex(item)].link}
+                      placeholder="相关文章或外部链接"
+                    />
+                  </div>
+
+                  {#if items[getRealIndex(item)].category === "music"}
+                    <div class="bg-form-row">
+                      <div class="bg-form-group">
+                        <label>艺术家</label>
+                        <input
+                          type="text"
+                          class="bg-input"
+                          bind:value={items[getRealIndex(item)].artist}
+                          placeholder="艺术家/歌手"
+                        />
+                      </div>
+                      <div class="bg-form-group">
+                        <label>音频 URL</label>
+                        <input
+                          type="text"
+                          class="bg-input"
+                          bind:value={items[getRealIndex(item)].audioUrl}
+                          placeholder="音频文件链接"
+                        />
+                      </div>
+                    </div>
+                    <div class="bg-form-row">
+                      <div class="bg-form-group">
+                        <label>歌词 URL</label>
+                        <input
+                          type="text"
+                          class="bg-input"
+                          bind:value={items[getRealIndex(item)].lrcUrl}
+                          placeholder="歌词文件链接"
+                        />
+                      </div>
+                      <div class="bg-form-group">
+                        <label>Meting 服务器</label>
+                        <input
+                          type="text"
+                          class="bg-input"
+                          bind:value={items[getRealIndex(item)].metingServer}
+                          placeholder="netease/tencent/..."
+                        />
+                      </div>
+                    </div>
+                    <div class="bg-form-group">
+                      <label>Meting ID</label>
+                      <input
+                        type="text"
+                        class="bg-input"
+                        bind:value={items[getRealIndex(item)].metingId}
+                        placeholder="歌曲 ID"
+                      />
+                    </div>
+                  {/if}
                 </div>
 
                 <div class="bg-edit-form-footer">

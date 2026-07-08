@@ -6,135 +6,374 @@ import {
 	showToast,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
-	deleteRepoFile,
 	genId,
 	deepClone,
-	registerSubmitHandler,
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
-import { repoConfig } from "@/config/editConfig";
 import { profileConfig } from "@/config";
 
-interface MomentEntry {
+interface MomentItem {
 	id: string;
-	slug: string;
 	author: string;
-	avatar: string;
+	avatar?: string;
 	pinned: boolean;
 	published: string;
 	images: string[];
 	tags: string[];
-	location: string;
-	device: string;
+	location?: string;
+	device?: string;
 	body: string;
-	sha?: string;
+	enabled?: boolean;
 	_draft?: boolean;
 	_deleted?: boolean;
 }
 
+interface MomentsCover {
+	cover_image: string;
+	cover_avatar: string;
+	cover_name: string;
+	cover_bio: string;
+}
+
 let editMode = $state(false);
 let saving = $state(false);
-let moments = $state<MomentEntry[]>([]);
-let originalMoments = $state<MomentEntry[]>([]);
-let originalMomentsJson = $state("");
+let moments = $state<MomentItem[]>([]);
+let originalMoments = $state<MomentItem[]>([]);
 let editingIndex = $state(-1);
 let editPreview = $state("");
 let imagesInput = $state("");
 let tagsInput = $state("");
 let coverImage = $state("");
-let originalCoverImage = $state("");
 let coverAvatar = $state("");
-let originalCoverAvatar = $state("");
 let coverName = $state("");
-let originalCoverName = $state("");
 let coverBio = $state("");
-let originalCoverBio = $state("");
 let showAvatarInput = $state(false);
 let avatarInputRef: HTMLInputElement | null = null;
+let repoLoaded = $state(false);
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const pageKey = "moments";
 const pageName = "说说";
 
-function serializeMoments(): string {
-	return JSON.stringify({
-		coverImage,
-		coverAvatar,
-		coverName,
-		coverBio,
-		moments: moments.map((m) => ({
-			id: m.id,
-			slug: m.slug,
-			author: m.author,
-			avatar: m.avatar,
-			pinned: m.pinned,
-			published: m.published,
-			images: m.images,
-			tags: m.tags,
-			location: m.location,
-			device: m.device,
-			body: m.body,
-			_draft: m._draft,
-			_deleted: m._deleted,
-		})),
-	});
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
+				}
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
+					}
+				}
+			}
+			return line;
+		})
+		.join("\n");
 }
 
-function deserializeMoments(json: string) {
+function parseObjectFromTS(tsContent: string, startMarker: string): any | null {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return null;
+	let braceStart = tsContent.indexOf("{", startIdx);
+	if (braceStart === -1) return null;
+	let depth = 1;
+	let idx = braceStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "{") depth++;
+		else if (tsContent[idx] === "}") depth--;
+		if (depth > 0) idx++;
+	}
+	let objStr = tsContent.substring(braceStart, idx + 1).trim();
+	objStr = stripLineComments(objStr);
+	objStr = objStr.replace(/,(\s*[\]\}])/g, "$1");
+	objStr = objStr.replace(/,(\s*)$/, "$1");
+	objStr = objStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
 	try {
-		const parsed = JSON.parse(json);
-		if (parsed && typeof parsed === "object") {
-			if (parsed.coverImage) {
-				coverImage = parsed.coverImage;
-			}
-			if (parsed.coverAvatar) {
-				coverAvatar = parsed.coverAvatar;
-			}
-			if (parsed.coverName) {
-				coverName = parsed.coverName;
-			}
-			if (parsed.coverBio) {
-				coverBio = parsed.coverBio;
-			}
-			const data = Array.isArray(parsed) ? parsed : parsed.moments;
-			if (Array.isArray(data)) {
-				moments = data.map((e: any) => ({
-					id: e.id || genId("mom"),
-					slug: e.slug || "",
-					author: e.author || "",
-					avatar: e.avatar || "",
-					pinned: !!e.pinned,
-					published: e.published || new Date().toISOString().slice(0, 10),
-					images: Array.isArray(e.images) ? e.images : [],
-					tags: Array.isArray(e.tags) ? e.tags : [],
-					location: e.location || "",
-					device: e.device || "",
-					body: e.body || "",
-					sha: e.sha,
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		}
-	} catch {}
+		return JSON.parse(objStr);
+	} catch (e) {
+		console.error("Failed to parse object from TS:", e);
+		return null;
+	}
+}
+
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
+
+function parseMomentsFromTS(tsContent: string): MomentItem[] {
+	const items = parseArrayFromTS(tsContent, "export const momentsConfig: MomentItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `moment-${index}`,
+		author: item.author || "",
+		avatar: item.avatar || "",
+		pinned: !!item.pinned,
+		published: item.published || new Date().toISOString().slice(0, 10),
+		images: Array.isArray(item.images) ? item.images : [],
+		tags: Array.isArray(item.tags) ? item.tags : [],
+		location: item.location || "",
+		device: item.device || "",
+		body: item.body || "",
+		enabled: item.enabled !== false,
+	}));
+}
+
+function parseMomentsCoverFromTS(tsContent: string): MomentsCover | null {
+	const obj = parseObjectFromTS(tsContent, "export const momentsCover: MomentsCover = {");
+	if (!obj) return null;
+	return {
+		cover_image: obj.cover_image || "",
+		cover_avatar: obj.cover_avatar || "",
+		cover_name: obj.cover_name || "",
+		cover_bio: obj.cover_bio || "",
+	};
+}
+
+function buildMomentObject(m: MomentItem): string {
+	const obj: any = {
+		id: m.id,
+		author: m.author,
+	};
+	if (m.avatar) obj.avatar = m.avatar;
+	obj.pinned = m.pinned;
+	obj.published = m.published;
+	obj.images = m.images;
+	obj.tags = m.tags;
+	if (m.location) obj.location = m.location;
+	if (m.device) obj.device = m.device;
+	obj.body = m.body;
+	obj.enabled = m.enabled !== false;
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
+	);
+}
+
+function replaceObjectInTS(
+	originalContent: string,
+	startMarker: string,
+	newObjectContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let braceStart = originalContent.indexOf("{", startIdx);
+	if (braceStart === -1) return originalContent;
+	let depth = 1;
+	let idx = braceStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "{") depth++;
+		else if (originalContent[idx] === "}") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, braceStart + 1) +
+		"\n" +
+		newObjectContent +
+		"\n}" +
+		originalContent.substring(idx + 1)
+	);
+}
+
+function buildMomentsConfigTS(
+	momentsList: MomentItem[],
+	cover: MomentsCover,
+	originalContent?: string,
+): string {
+	const momentEntries = momentsList.map((m) => buildMomentObject(m));
+	const momentsArrayContent = momentEntries.join("\n");
+
+	const coverObj = {
+		cover_image: cover.cover_image,
+		cover_avatar: cover.cover_avatar,
+		cover_name: cover.cover_name,
+		cover_bio: cover.cover_bio,
+	};
+	const coverJson = JSON.stringify(coverObj, null, 2)
+		.split("\n")
+		.map((line) => `\t${line}`)
+		.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const momentsConfig: MomentItem[] = [",
+			momentsArrayContent,
+		);
+		result = replaceObjectInTS(
+			result,
+			"export const momentsCover: MomentsCover = {",
+			coverJson,
+		);
+		return result;
+	}
+
+	return `/**
+ * 说说/动态页面配置
+ * 用于管理首页说说展示的内容
+ */
+
+// 说说项类型定义
+export interface MomentItem {
+	id: string;
+	author: string;
+	avatar?: string;
+	pinned: boolean;
+	published: string;
+	images: string[];
+	tags: string[];
+	location?: string;
+	device?: string;
+	body: string;
+	enabled?: boolean;
+}
+
+// 说说封面配置
+export interface MomentsCover {
+	cover_image: string;
+	cover_avatar: string;
+	cover_name: string;
+	cover_bio: string;
+}
+
+// 说说页面配置
+export interface MomentsPageConfig {
+	title?: string;
+	description?: string;
+	showComment?: boolean;
+	randomizeSort?: boolean;
+}
+
+// 说说封面配置
+export const momentsCover: MomentsCover = {
+${coverJson}
+};
+
+// 说说列表配置
+export const momentsConfig: MomentItem[] = [
+${momentsArrayContent}
+];
+
+// 说说页面配置
+export const momentsPageConfig: MomentsPageConfig = {
+	title: "动态",
+	description: "记录生活中的点点滴滴",
+	showComment: true,
+	randomizeSort: false,
+};
+
+// 获取启用的说说（按时间倒序，置顶优先）
+export function getEnabledMoments(): MomentItem[] {
+	const enabled = momentsConfig.filter((m) => m.enabled !== false);
+	const pinned = enabled
+		.filter((m) => m.pinned)
+		.sort(
+			(a, b) =>
+				new Date(b.published).getTime() - new Date(a.published).getTime(),
+		);
+	const normal = enabled
+		.filter((m) => !m.pinned)
+		.sort(
+			(a, b) =>
+				new Date(b.published).getTime() - new Date(a.published).getTime(),
+		);
+	return [...pinned, ...normal];
+}
+`;
 }
 
 const drafts = setupRepoDrafts({
 	pageKey,
 	pageName,
-	getContent: () => serializeMoments(),
-	setContent: (v) => deserializeMoments(v),
-	getPath: () => "moments-entries",
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => originalMomentsJson,
-	setOriginalContent: () => {},
-	getCommitMsg: () => "chore(moments): 更新说说",
+	getContent: () =>
+		buildMomentsConfigTS(
+			moments.filter((m) => !m._deleted),
+			{ cover_image: coverImage, cover_avatar: coverAvatar, cover_name: coverName, cover_bio: coverBio },
+			originalTS,
+		),
+	setContent: (v) => {
+		const parsedMoments = parseMomentsFromTS(v);
+		const parsedCover = parseMomentsCoverFromTS(v);
+		if (parsedMoments.length > 0 || v.includes("momentsConfig")) {
+			moments = parsedMoments;
+		}
+		if (parsedCover) {
+			coverImage = parsedCover.cover_image;
+			coverAvatar = parsedCover.cover_avatar;
+			coverName = parsedCover.cover_name;
+			coverBio = parsedCover.cover_bio;
+		}
+	},
+	getPath: () => "src/config/momentsConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
+	getCommitMsg: (isEdit) =>
+		isEdit ? `chore(moments): 更新说说` : `chore(moments): 创建说说配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
 });
+
 let hasChanges = $derived(drafts.hasLocalChanges());
 
 $effect(() => {
@@ -148,15 +387,13 @@ $effect(() => {
 onMount(() => {
 	ensureIconify();
 	collectFromDOM();
-	originalMomentsJson = serializeMoments();
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
 	window.addEventListener("edit:sidebarSubmit", handleSidebarSubmit);
 	window.addEventListener("edit:sidebarCancel", handleSidebarCancel);
 	window.addEventListener("edit:sidebarAdd", handleSidebarAdd);
-
-	drafts.restoreFromDrafts();
 
 	return () => {
 		window.removeEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -239,34 +476,28 @@ function collectFromDOM() {
 	const coverImgEl = document.querySelector(".wx-cover-img") as HTMLImageElement | null;
 	if (coverImgEl) {
 		coverImage = coverImgEl.src;
-		originalCoverImage = coverImgEl.src;
 	}
 	const avatarEl = document.querySelector(".wx-avatar") as HTMLImageElement | null;
 	if (avatarEl) {
 		coverAvatar = avatarEl.src;
-		originalCoverAvatar = avatarEl.src;
 	} else {
 		coverAvatar = profileConfig.avatar || "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640";
-		originalCoverAvatar = profileConfig.avatar || "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640";
 	}
 	const nameEl = document.querySelector(".wx-name");
 	if (nameEl) {
 		coverName = nameEl.textContent?.trim() || "";
-		originalCoverName = nameEl.textContent?.trim() || "";
 	}
 	const bioEl = document.querySelector(".wx-bio");
 	if (bioEl) {
 		coverBio = bioEl.textContent?.trim() || "";
-		originalCoverBio = bioEl.textContent?.trim() || "";
 	}
 
-	const result: MomentEntry[] = [];
+	const result: MomentItem[] = [];
 
 	function collectCards(container: Element | null) {
 		if (!container) return;
 		container.querySelectorAll<HTMLElement>(".moment-card").forEach((el) => {
 			const id = el.id || "";
-			const slug = id.replace(/\.mdx?$/, "");
 			const author = el.querySelector(".user-name")?.textContent?.trim() || "";
 			const avatarEl = el.querySelector(".card-avatar img") as HTMLImageElement | null;
 			const avatar = avatarEl?.src || "";
@@ -274,6 +505,7 @@ function collectFromDOM() {
 			const published = (timeEl?.getAttribute("datetime") || "").slice(0, 10);
 			const pinned = !!el.querySelector(".pinned-badge");
 			const location = el.querySelector(".location")?.textContent?.trim() || "";
+			const device = el.querySelector(".device")?.textContent?.trim() || "";
 			const contentEl = el.querySelector(".moment-markdown-content");
 			const bodyHtml = contentEl?.innerHTML || "";
 			const body = htmlToMarkdown(bodyHtml);
@@ -293,8 +525,7 @@ function collectFromDOM() {
 			});
 
 			result.push({
-				id: slug || genId("mom"),
-				slug,
+				id: id || genId("mom"),
 				author,
 				avatar,
 				pinned,
@@ -302,8 +533,9 @@ function collectFromDOM() {
 				images,
 				tags,
 				location,
-				device: "",
+				device,
 				body,
+				enabled: true,
 			});
 		});
 	}
@@ -315,6 +547,56 @@ function collectFromDOM() {
 
 	moments = result;
 	originalMoments = deepClone(result);
+}
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/momentsConfig.ts");
+	if (existing && existing.content) {
+		try {
+			const repoMoments: MomentItem[] = parseMomentsFromTS(existing.content);
+			const repoCover = parseMomentsCoverFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoMoments.map((m) => [m.id, m]));
+			moments = moments.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(moments.map((m) => m.id));
+			for (const g of repoMoments) {
+				if (!existingIds.has(g.id)) {
+					moments = [...moments, { ...g, id: g.id || genId("mom") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			if (repoCover) {
+				coverImage = repoCover.cover_image;
+				coverAvatar = repoCover.cover_avatar;
+				coverName = repoCover.cover_name;
+				coverBio = repoCover.cover_bio;
+			}
+
+			originalMoments = deepClone(moments);
+		} catch (e) {
+			console.error("Failed to parse repo moments:", e);
+		}
+	} else {
+		originalTS = buildMomentsConfigTS(
+			moments,
+			{ cover_image: coverImage, cover_avatar: coverAvatar, cover_name: coverName, cover_bio: coverBio },
+		);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
 }
 
 function hideSSRContent() {
@@ -340,11 +622,8 @@ function showSSRContent() {
 }
 
 function handleCancel() {
+	editMode = false;
 	moments = deepClone(originalMoments);
-	coverImage = originalCoverImage;
-	coverAvatar = originalCoverAvatar;
-	coverName = originalCoverName;
-	coverBio = originalCoverBio;
 	editingIndex = -1;
 	drafts.clearDrafts();
 	showSSRContent();
@@ -375,7 +654,7 @@ function updatePreview(index: number) {
 
 function updateField(
 	index: number,
-	field: keyof MomentEntry,
+	field: keyof MomentItem,
 	value: string | string[] | boolean,
 ) {
 	moments[index] = { ...moments[index], [field]: value };
@@ -400,7 +679,7 @@ function cancelItemEdit(index: number) {
 	if (m._draft && !m.body.trim()) {
 		moments = moments.filter((_, i) => i !== index);
 	} else {
-		const orig = originalMoments.find((o) => o.slug === m.slug && !m._draft);
+		const orig = originalMoments.find((o) => o.id === m.id && !m._draft);
 		if (orig) {
 			moments[index] = deepClone(orig);
 			moments = [...moments];
@@ -458,9 +737,8 @@ function togglePinned(index: number) {
 function handleAdd() {
 	const now = new Date();
 	const dateStr = now.toISOString().slice(0, 10);
-	const newMoment: MomentEntry = {
+	const newMoment: MomentItem = {
 		id: genId("mom"),
-		slug: "",
 		author: profileConfig.name || "",
 		avatar: (profileConfig as any).avatar || "",
 		pinned: false,
@@ -470,6 +748,7 @@ function handleAdd() {
 		location: "",
 		device: "",
 		body: "",
+		enabled: true,
 		_draft: true,
 	};
 	moments = [newMoment, ...moments];
@@ -477,18 +756,6 @@ function handleAdd() {
 	imagesInput = "";
 	tagsInput = "";
 	editPreview = "";
-}
-
-function slugify(text: string): string {
-	return (
-		text
-			.toLowerCase()
-			.trim()
-			.replace(/[\s]+/g, "-")
-			.replace(/[^\w\u4e00-\u9fa5-]/g, "")
-			.replace(/-+/g, "-")
-			.replace(/^-|-$/g, "") || "moment"
-	);
 }
 
 function parseImagesInput(input: string): string[] {
@@ -505,123 +772,13 @@ function parseTagsInput(input: string): string[] {
 		.filter((s) => s);
 }
 
-function buildMomentMd(m: MomentEntry): string {
-	const lines = ["---"];
-	if (m.author) lines.push(`author: "${m.author.replace(/"/g, '\\"')}"`);
-	if (m.avatar) lines.push(`avatar: "${m.avatar}"`);
-	lines.push(`pinned: ${m.pinned}`);
-	lines.push(`published: ${m.published}`);
-	if (m.location) lines.push(`location: "${m.location.replace(/"/g, '\\"')}"`);
-	if (m.device) lines.push(`device: "${m.device.replace(/"/g, '\\"')}"`);
-	if (m.images && m.images.length > 0) {
-		lines.push(`images:`);
-		m.images.forEach((img) => {
-			lines.push(`  - "${img}"`);
-		});
-	}
-	if (m.tags && m.tags.length > 0) {
-		lines.push(`tags:`);
-		m.tags.forEach((tag) => {
-			lines.push(`  - "${tag.replace(/"/g, '\\"')}"`);
-		});
-	}
-	lines.push("---");
-	lines.push("");
-	lines.push(m.body.trim());
-	lines.push("");
-	return lines.join("\n");
-}
-
-async function submitMoments(
-	momentsToSubmit: MomentEntry[],
-): Promise<boolean> {
-	let allOk = true;
-
-	if (coverImage !== originalCoverImage || coverAvatar !== originalCoverAvatar || coverName !== originalCoverName || coverBio !== originalCoverBio) {
-		const coverLines = ["---", "published: 2024-01-01"];
-		if (coverImage) coverLines.push(`cover_image: "${coverImage.replace(/"/g, '\\"')}"`);
-		if (coverAvatar) coverLines.push(`cover_avatar: "${coverAvatar.replace(/"/g, '\\"')}"`);
-		if (coverName) coverLines.push(`cover_name: "${coverName.replace(/"/g, '\\"')}"`);
-		if (coverBio) coverLines.push(`cover_bio: "${coverBio.replace(/"/g, '\\"')}"`);
-		coverLines.push("---");
-		coverLines.push("");
-		const coverMd = coverLines.join("\n");
-		const coverPath = "src/content/moments/_cover.md";
-		const coverFile = await getRepoFile(coverPath, repoConfig);
-		if (coverFile && coverFile.sha) {
-			const ok = await updateRepoFile(coverPath, coverMd, coverFile.sha, "chore(moments): update cover settings", repoConfig);
-			if (!ok) allOk = false;
-		} else {
-			const ok = await createRepoFile(coverPath, coverMd, "chore(moments): add cover settings", repoConfig);
-			if (!ok) allOk = false;
-		}
-	}
-
-	for (let i = 0; i < momentsToSubmit.length; i++) {
-		const entry = momentsToSubmit[i];
-		if (entry._deleted) {
-			if (entry.slug && !entry._draft) {
-				const filePath = `src/content/moments/${entry.slug}.md`;
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file && file.sha) {
-					const ok = await deleteRepoFile(
-						filePath,
-						file.sha,
-						`chore(moments): remove ${entry.slug}`,
-						repoConfig,
-					);
-					if (!ok) allOk = false;
-				}
-			}
-			continue;
-		}
-
-		const md = buildMomentMd(entry);
-		let slug = entry.slug;
-
-		if (entry._draft || !slug) {
-			const bodyPreview = entry.body.slice(0, 20).replace(/[^\w\u4e00-\u9fa5]/g, "");
-			slug = `${entry.published}-${slugify(bodyPreview || "moment").slice(0, 30)}`;
-			const filePath = `src/content/moments/${slug}.md`;
-			const ok = await createRepoFile(
-				filePath,
-				md,
-				`chore(moments): add ${slug}`,
-				repoConfig,
-			);
-			if (!ok) allOk = false;
-		} else {
-			const filePath = `src/content/moments/${slug}.md`;
-			let sha = entry.sha;
-			if (!sha) {
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file) sha = file.sha;
-			}
-			if (sha) {
-				const ok = await updateRepoFile(
-					filePath,
-					md,
-					sha,
-					`chore(moments): update ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			} else {
-				const ok = await createRepoFile(
-					filePath,
-					md,
-					`chore(moments): create ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			}
-		}
-	}
-
-	return allOk;
-}
-
 function handleSaveDraft() {
+	const cleanData = moments.map(({ _draft, _deleted, ...rest }) => ({
+		...rest,
+		id: rest.id || genId("mom"),
+		enabled: rest.enabled !== false,
+	}));
+	moments = cleanData;
 	drafts.saveToDrafts();
 }
 
@@ -639,16 +796,14 @@ async function handleSubmit() {
 	}
 	saving = true;
 	try {
-		const ok = await submitMoments(moments);
-		if (ok) {
-			showToast("保存成功！页面将刷新以应用更改", "success");
-			drafts.clearDrafts();
-			originalMoments = deepClone(moments);
-			originalMomentsJson = serializeMoments();
-			setTimeout(() => window.location.reload(), 1200);
-		} else {
-			showToast("部分操作失败，请检查 GitHub App 权限配置", "error");
-		}
+		const cleanData = moments.map(({ _draft, _deleted, ...rest }) => ({
+			...rest,
+			id: rest.id || genId("mom"),
+			enabled: rest.enabled !== false,
+		}));
+		moments = cleanData;
+		drafts.saveToDrafts();
+		await drafts.submitDrafts();
 	} catch (err) {
 		showToast("保存出错：" + (err as Error).message, "error");
 		console.error(err);
@@ -656,36 +811,6 @@ async function handleSubmit() {
 		saving = false;
 	}
 }
-
-registerSubmitHandler(pageKey, async (draft) => {
-	if (draft.payload?.type === "repo" && draft.payload.content !== undefined) {
-		let parsedMoments: MomentEntry[] = [];
-		try {
-			const parsed = JSON.parse(String(draft.payload.content));
-			if (Array.isArray(parsed)) {
-				parsedMoments = parsed.map((e: any) => ({
-					id: e.id || genId("mom"),
-					slug: e.slug || "",
-					author: e.author || "",
-					avatar: e.avatar || "",
-					pinned: !!e.pinned,
-					published: e.published || new Date().toISOString().slice(0, 10),
-					images: Array.isArray(e.images) ? e.images : [],
-					tags: Array.isArray(e.tags) ? e.tags : [],
-					location: e.location || "",
-					device: e.device || "",
-					body: e.body || "",
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		} catch {
-			return false;
-		}
-		return await submitMoments(parsedMoments);
-	}
-	return false;
-});
 
 function getGridCols(count: number) {
 	if (count === 1) return 1;
@@ -860,6 +985,14 @@ function getGridCols(count: number) {
                     置顶
                   </label>
                 </div>
+              </div>
+              <div class="moments-form-group">
+                <label>头像 URL（可选）</label>
+                <input type="text" class="moments-input" value={moment.avatar || ""} oninput={(e) => updateField(i, "avatar", (e.target as HTMLInputElement).value)} placeholder="头像图片链接" />
+              </div>
+              <div class="moments-form-group">
+                <label>设备（可选）</label>
+                <input type="text" class="moments-input" value={moment.device || ""} oninput={(e) => updateField(i, "device", (e.target as HTMLInputElement).value)} placeholder="发布设备" />
               </div>
               <div class="moments-form-group">
                 <label>内容（Markdown）</label>

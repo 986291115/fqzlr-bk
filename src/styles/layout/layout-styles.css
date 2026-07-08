@@ -1,5 +1,44 @@
 /* Layout specific styles */
 
+/* === Grid item 溢出修复 ===
+ * 防止主内容区的 grid item 被内容（特别是 grid 布局和 form 控件）撑大
+ * 导致内容溢出到侧边栏区域
+ */
+#main-grid {
+    min-width: 0;
+}
+#main-content-wrapper {
+    min-width: 0;
+    overflow: hidden;
+}
+#content-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+#main-content-wrapper * {
+    min-width: 0;
+}
+#main-content-wrapper .grid,
+#main-content-wrapper [class*="grid"] {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+#main-content-wrapper input,
+#main-content-wrapper textarea,
+#main-content-wrapper select,
+#main-content-wrapper button {
+    min-width: 0;
+}
+/* 全局卡片基础样式：防止溢出 */
+.card-base {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 /* User controlled visibility - 通过 html 属性控制，在渲染前就生效 */
 /* 用户关闭时隐藏水波纹 */
 html[data-waves-enabled="false"] #header-waves {

@@ -1,129 +1,39 @@
 ---
-import { getCollection } from "astro:content";
-import * as path from "node:path";
-import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import NotebooksEditor from "@/components/edit/NotebooksEditor.svelte";
+import {
+	getEnabledFolders,
+	getFolderStats,
+} from "@/config/notebooksConfig";
 
-// 预加载笔记本文件夹内的封面图片
-const notebookCoverFiles = import.meta.glob<ImageMetadata>(
-	"../../content/life/notebooks/**/*.{jpg,jpeg,png,webp,avif,gif,svg}",
-	{ import: "default" },
-);
+const folders = getEnabledFolders();
 
-const allEntries = await getCollection("notebooks");
+const notebooks = folders.map((folder) => {
+	const stats = getFolderStats(folder.slug);
+	return {
+		id: folder.slug,
+		name: folder.name,
+		cover: folder.cover,
+		summary: folder.summary,
+		entries: stats.count,
+		updatedAt: stats.latestDate ? new Date(stats.latestDate) : new Date(0),
+		selfPath: `/life/notebooks/${folder.slug}/`,
+		folderName: folder.slug,
+		coverSrc: folder.cover || null,
+	};
+});
 
-const sortByDateDesc = <T extends Record<string, unknown>>(
-	list: T[],
-	field: keyof T,
-) =>
-	[...list].sort((a, b) => {
-		const aDate = a[field] instanceof Date ? a[field]!.getTime() : 0;
-		const bDate = b[field] instanceof Date ? b[field]!.getTime() : 0;
-		return bDate - aDate;
-	});
-
-const notebooks = allEntries
-	.map((entry) => {
-		const normalizedId = entry.id.replace(/\\/g, "/");
-		if (normalizedId === "readme" || normalizedId === "readme.md") {
-			return null;
-		}
-		const isNotebookRoot =
-			normalizedId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
-			normalizedId.match(/^([^/]+)\/_index$/);
-
-		if (!isNotebookRoot) {
-			return null;
-		}
-
-		const folderName = isNotebookRoot[1];
-
-		const folderEntries = allEntries.filter((item) => {
-			const itemId = item.id.replace(/\\/g, "/");
-			const isIndexFile =
-				itemId === `${folderName}/_index` ||
-				itemId === `${folderName}/_index.md` ||
-				itemId === `${folderName}/_index.json`;
-			return itemId.startsWith(`${folderName}/`) && !isIndexFile;
-		});
-
-		const sortedEntries = sortByDateDesc(
-			folderEntries.map((e) => e.data),
-			"date",
-		);
-		const latestEntry = sortedEntries[0];
-
-		return {
-			id: entry.id,
-			name: entry.data.name,
-			cover: entry.data.cover,
-			summary: entry.data.summary,
-			entries: folderEntries.length,
-			updatedAt:
-				latestEntry?.date instanceof Date ? latestEntry.date : new Date(0),
-			selfPath: `/life/notebooks/${folderName}/`,
-			folderName,
-		};
-	})
-	.filter(Boolean);
-
-// 解析封面图：本地图片 → Astro ImageMetadata，URL → 直接使用
-const notebooksWithCovers = await Promise.all(
-	notebooks
-		.filter((b) => b !== null)
-		.map(async (book) => {
-			let coverSrc: string | null = null;
-			const rawCover = book.cover as string | undefined;
-			if (rawCover) {
-				if (rawCover.startsWith("http://") || rawCover.startsWith("https://")) {
-					coverSrc = rawCover;
-				} else {
-					const imageKey = path
-						.normalize(
-							path.join(
-								"../../content/life/notebooks",
-								book.folderName,
-								rawCover,
-							),
-						)
-						.replace(/\\/g, "/");
-					const loader = notebookCoverFiles[imageKey];
-					if (loader) {
-						try {
-							const img = await loader();
-							coverSrc = img.src;
-						} catch {
-							coverSrc = null;
-						}
-					}
-				}
-			}
-			return { ...book, coverSrc };
-		}),
-);
-
-const sortedNotebooks = sortByDateDesc(notebooksWithCovers, "updatedAt");
-
-const editorInitialItems = sortedNotebooks.map((nb) => ({
-	id: nb.folderName,
-	folderName: nb.folderName,
-	name: nb.name as string,
-	cover: (nb.coverSrc as string) || "",
-	summary: nb.summary as string,
-	tags: [],
-	entries: nb.entries as number,
-	updatedAt:
-		nb.updatedAt instanceof Date
-			? nb.updatedAt.toISOString().slice(0, 10)
-			: new Date().toISOString().slice(0, 10),
-}));
+const sortedNotebooks = [...notebooks].sort((a, b) => {
+	const aTime = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0;
+	const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0;
+	return bTime - aTime;
+});
 ---
 
 <MainGridLayout title="笔记本" description="成长日记、学习复盘、灵感随笔">
 	<div data-no-swup>
-		<NotebooksEditor client:only initialItems={editorInitialItems as any} />
+		<NotebooksEditor client:load />
 	</div>
 
 	<div class="diary-page flex w-full flex-col gap-6">
@@ -137,9 +47,9 @@ const editorInitialItems = sortedNotebooks.map((nb) => ({
 					<div class="mt-6 p-4 rounded-xl bg-[var(--btn-regular-bg)] text-left text-sm">
 						<p class="text-[var(--text-color)] mb-2">创建步骤：</p>
 						<ol class="text-[var(--content-meta)] space-y-1 list-decimal list-inside">
-							<li>在 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">src/content/life/notebooks/</code> 下创建文件夹</li>
-							<li>在文件夹内创建 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">_index.json</code> 文件</li>
-							<li>在文件夹内创建 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">*.md</code> 文件作为日记条目</li>
+							<li>在 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">src/config/notebooksConfig.ts</code> 中添加笔记本分类</li>
+							<li>在同一文件中添加笔记条目</li>
+							<li>或者使用编辑模式在线创建</li>
 						</ol>
 					</div>
 				</div>

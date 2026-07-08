@@ -266,14 +266,15 @@ function parseYamlValue(v: string): any {
 // ============ Load article from local files ============
 function loadArticleFromLocal(pathParam: string): boolean {
 	const possibleKeys: string[] = [];
-	const baseRelPath = `../../content/${pathParam}`;
+	const normalizedPath = pathParam.replace(/\/+$/, "").toLowerCase();
+	const baseRelPath = `../../content/${normalizedPath}`;
 	possibleKeys.push(baseRelPath + ".md");
 	possibleKeys.push(baseRelPath + ".mdx");
-	if (!pathParam.includes("/")) {
-		possibleKeys.push(`../../content/posts/${pathParam}.md`);
-		possibleKeys.push(`../../content/posts/${pathParam}.mdx`);
-		possibleKeys.push(`../../content/posts/blog/${pathParam}.md`);
-		possibleKeys.push(`../../content/posts/blog/${pathParam}.mdx`);
+	possibleKeys.push(`../../content/posts/${normalizedPath}.md`);
+	possibleKeys.push(`../../content/posts/${normalizedPath}.mdx`);
+	if (!normalizedPath.includes("/")) {
+		possibleKeys.push(`../../content/posts/blog/${normalizedPath}.md`);
+		possibleKeys.push(`../../content/posts/blog/${normalizedPath}.mdx`);
 	}
 
 	for (const key of possibleKeys) {
@@ -317,7 +318,6 @@ function loadArticleFromLocal(pathParam: string): boolean {
 	}
 
 	// 大小写不敏感匹配（遍历所有 postFiles）
-	const normalizedPath = pathParam.toLowerCase();
 	for (const [key, rawContent] of Object.entries(postFiles)) {
 		// 去掉前缀和扩展名，得到相对路径
 		const relPath = key
@@ -469,20 +469,23 @@ async function loadArticle(pathParam: string) {
 		}
 
 		let paths: { path: string; ext: ".md" | ".mdx" }[] = [];
+		const cleanPath = pathParam.replace(/\/+$/, "");
 
-		if (pathParam.includes("/")) {
-			const basePath = `src/content/${pathParam}`;
+		if (cleanPath.includes("/")) {
+			const basePath = `src/content/${cleanPath}`;
 			paths.push({ path: basePath + ".md", ext: ".md" });
 			paths.push({ path: basePath + ".mdx", ext: ".mdx" });
+			paths.push({ path: `src/content/posts/${cleanPath}.md`, ext: ".md" });
+			paths.push({ path: `src/content/posts/${cleanPath}.mdx`, ext: ".mdx" });
 		} else {
-			paths.push({ path: `src/content/posts/${pathParam}.md`, ext: ".md" });
-			paths.push({ path: `src/content/posts/${pathParam}.mdx`, ext: ".mdx" });
+			paths.push({ path: `src/content/posts/${cleanPath}.md`, ext: ".md" });
+			paths.push({ path: `src/content/posts/${cleanPath}.mdx`, ext: ".mdx" });
 			paths.push({
-				path: `src/content/posts/blog/${pathParam}.md`,
+				path: `src/content/posts/blog/${cleanPath}.md`,
 				ext: ".md",
 			});
 			paths.push({
-				path: `src/content/posts/blog/${pathParam}.mdx`,
+				path: `src/content/posts/blog/${cleanPath}.mdx`,
 				ext: ".mdx",
 			});
 		}

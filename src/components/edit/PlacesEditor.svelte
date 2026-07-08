@@ -1,30 +1,27 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import {
+	hasValidToken,
 	showToast,
-	genId,
-	deepClone,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
-	deleteRepoFile,
-	registerSubmitHandler,
+	genId,
+	deepClone,
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
-import { repoConfig } from "@/config/editConfig";
 
 interface PlaceItem {
 	id: string;
-	slug: string;
-	province: string;
-	city: string;
-	district: string;
-	experience: string;
-	visitCount: number;
 	date: string;
-	body: string;
-	sha?: string;
+	province: string;
+	city?: string;
+	district?: string;
+	experience?: string;
+	visitCount: number;
+	location?: string;
+	lat?: number;
+	lng?: number;
+	enabled?: boolean;
 	_draft?: boolean;
 	_deleted?: boolean;
 }
@@ -34,26 +31,225 @@ let saving = $state(false);
 let places = $state<PlaceItem[]>([]);
 let originalPlaces = $state<PlaceItem[]>([]);
 let editingIndex = $state(-1);
+let repoLoaded = $state(false);
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const pageKey = "places";
 const pageName = "旅行足迹";
 
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
+				}
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
+					}
+				}
+			}
+			return line;
+		})
+		.join("\n");
+}
+
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
+
+function parsePlacesFromTS(tsContent: string): PlaceItem[] {
+	const items = parseArrayFromTS(tsContent, "export const placesConfig: PlaceItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `place-${index}`,
+		date: item.date || new Date().toISOString().slice(0, 10),
+		province: item.province || "",
+		city: item.city || "",
+		district: item.district || "",
+		experience: item.experience || "",
+		visitCount: item.visitCount || 1,
+		location: item.location || "",
+		lat: item.lat,
+		lng: item.lng,
+		enabled: item.enabled !== false,
+	}));
+}
+
+function buildPlaceObject(p: PlaceItem): string {
+	const obj: any = {
+		id: p.id,
+		date: p.date,
+		province: p.province,
+	};
+	if (p.city) obj.city = p.city;
+	if (p.district) obj.district = p.district;
+	if (p.experience) obj.experience = p.experience;
+	obj.visitCount = p.visitCount;
+	if (p.location) obj.location = p.location;
+	if (p.lat !== undefined) obj.lat = p.lat;
+	if (p.lng !== undefined) obj.lng = p.lng;
+	obj.enabled = p.enabled !== false;
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
+	);
+}
+
+function buildPlacesConfigTS(
+	placesList: PlaceItem[],
+	originalContent?: string,
+): string {
+	const placeEntries = placesList.map((p) => buildPlaceObject(p));
+	const placesArrayContent = placeEntries.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const placesConfig: PlaceItem[] = [",
+			placesArrayContent,
+		);
+		return result;
+	}
+
+	return `/**
+ * 足迹/旅行地点配置
+ * 用于管理足迹地图与旅行记录
+ */
+
+export interface PlaceItem {
+	id: string;
+	date: string;
+	province: string;
+	city?: string;
+	district?: string;
+	experience?: string;
+	visitCount: number;
+	location?: string;
+	lat?: number;
+	lng?: number;
+	enabled?: boolean;
+}
+
+export interface PlacesPageConfig {
+	title?: string;
+	description?: string;
+}
+
+export const placesPageConfig: PlacesPageConfig = {
+	title: "去过的地方",
+	description: "足迹地图与旅行记录",
+};
+
+export const placesConfig: PlaceItem[] = [
+${placesArrayContent}
+];
+
+export function getAllPlaces(): PlaceItem[] {
+	return [...placesConfig].sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	);
+}
+
+export function getEnabledPlaces(): PlaceItem[] {
+	const enabled = placesConfig.filter((p) => p.enabled !== false);
+	return enabled.sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	);
+}
+
+export function getTotalVisitCount(places: PlaceItem[]): number {
+	return places.reduce((acc, p) => acc + (p.visitCount || 1), 0);
+}
+
+export function getThisYearVisitCount(places: PlaceItem[]): number {
+	const currentYear = new Date().getFullYear();
+	return places.filter((p) => {
+		const d = new Date(p.date);
+		return !Number.isNaN(d.getTime()) && d.getFullYear() === currentYear;
+	}).length;
+}
+`;
+}
+
 const drafts = setupRepoDrafts({
 	pageKey,
 	pageName,
-	getContent: () => JSON.stringify(places),
+	getContent: () =>
+		buildPlacesConfigTS(
+			places.filter((m) => !m._deleted),
+			originalTS,
+		),
 	setContent: (v) => {
-		try {
-			const parsed = JSON.parse(v);
-			if (Array.isArray(parsed)) places = parsed;
-		} catch {}
+		const parsed = parsePlacesFromTS(v);
+		if (parsed.length > 0 || v.includes("placesConfig")) {
+			places = parsed;
+		}
 	},
-	getPath: () => `${pageKey}-items`,
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => JSON.stringify(originalPlaces),
-	setOriginalContent: () => {},
-	getCommitMsg: () => `chore(${pageKey}): 更新${pageName}`,
+	getPath: () => "src/config/placesConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
+	getCommitMsg: (isEdit) =>
+		isEdit ? `chore(places): 更新旅行足迹` : `chore(places): 创建足迹配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
@@ -72,15 +268,13 @@ $effect(() => {
 onMount(() => {
 	ensureIconify();
 	collectFromDOM();
-	originalPlaces = deepClone(places);
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
 	window.addEventListener("edit:sidebarSubmit", handleSidebarSubmit);
 	window.addEventListener("edit:sidebarCancel", handleSidebarCancel);
 	window.addEventListener("edit:sidebarAdd", handleSidebarAdd);
-
-	drafts.restoreFromDrafts();
 
 	return () => {
 		window.removeEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -145,21 +339,61 @@ function collectFromDOM() {
 		const dateText =
 			metaDiv?.querySelector("div:last-child")?.textContent?.trim() || "";
 		const date = dateText || new Date().toISOString().slice(0, 10);
-		const slug = date + "-" + genId("pl").slice(-4);
 		result.push({
 			id: genId("pl"),
-			slug,
 			province,
 			city,
 			district: "",
 			experience,
 			visitCount,
 			date,
-			body: "",
+			enabled: true,
 		});
 	});
 	places = result;
 	originalPlaces = deepClone(result);
+}
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/placesConfig.ts");
+	if (existing && existing.content) {
+		try {
+			const repoPlaces: PlaceItem[] = parsePlacesFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoPlaces.map((m) => [m.id, m]));
+			places = places.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+						location: repoItem.location ?? m.location,
+						lat: repoItem.lat ?? m.lat,
+						lng: repoItem.lng ?? m.lng,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(places.map((m) => m.id));
+			for (const g of repoPlaces) {
+				if (!existingIds.has(g.id)) {
+					places = [...places, { ...g, id: g.id || genId("pl") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			originalPlaces = deepClone(places);
+		} catch (e) {
+			console.error("Failed to parse repo places:", e);
+		}
+	} else {
+		originalTS = buildPlacesConfigTS(places);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
 }
 
 function hideSSRContent() {
@@ -225,7 +459,7 @@ function cancelItemEdit(index: number) {
 	if (p._draft && !p.province.trim()) {
 		places = places.filter((_, i) => i !== index);
 	} else {
-		const orig = originalPlaces.find((o) => o.slug === p.slug && !p._draft);
+		const orig = originalPlaces.find((o) => o.id === p.id && !p._draft);
 		if (orig) {
 			places[index] = deepClone(orig);
 			places = [...places];
@@ -278,14 +512,14 @@ function handleAdd() {
 	places = [
 		{
 			id: genId("pl"),
-			slug: "",
 			province: "",
 			city: "",
 			district: "",
 			experience: "",
 			visitCount: 1,
 			date: new Date().toISOString().slice(0, 10),
-			body: "",
+			location: "",
+			enabled: true,
 			_draft: true,
 		},
 		...places,
@@ -293,117 +527,35 @@ function handleAdd() {
 	editingIndex = 0;
 }
 
-function slugify(text: string): string {
-	return (
-		text
-			.toLowerCase()
-			.trim()
-			.replace(/[\s]+/g, "-")
-			.replace(/[^\w\u4e00-\u9fa5-]/g, "")
-			.replace(/-+/g, "-")
-			.replace(/^-|-$/g, "") || "place"
-	);
-}
-
-function buildPlaceMd(p: PlaceItem): string {
-	const lines = ["---"];
-	lines.push(`date: ${p.date}`);
-	lines.push(`province: "${p.province.replace(/"/g, '\\"')}"`);
-	if (p.city) lines.push(`city: "${p.city.replace(/"/g, '\\"')}"`);
-	if (p.district) lines.push(`district: "${p.district.replace(/"/g, '\\"')}"`);
-	if (p.experience)
-		lines.push(`experience: "${p.experience.replace(/"/g, '\\"')}"`);
-	lines.push(`visitCount: ${p.visitCount}`);
-	lines.push("---");
-	if (p.body && p.body.trim()) {
-		lines.push("");
-		lines.push(p.body.trim());
-		lines.push("");
-	}
-	return lines.join("\n");
-}
-
-async function submitItems(itemsToSubmit: PlaceItem[]): Promise<boolean> {
-	let allOk = true;
-
-	for (let i = 0; i < itemsToSubmit.length; i++) {
-		const p = itemsToSubmit[i];
-		if (p._deleted) {
-			if (p.slug && !p._draft) {
-				const filePath = `src/content/life/places/${p.slug}.md`;
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file && file.sha) {
-					const ok = await deleteRepoFile(
-						filePath,
-						file.sha,
-						`chore(${pageKey}): remove ${p.slug}`,
-						repoConfig,
-					);
-					if (!ok) allOk = false;
-				}
-			}
-			continue;
-		}
-
-		const md = buildPlaceMd(p);
-		let slug = p.slug;
-
-		if (p._draft || !slug) {
-			slug = `${p.date}-${slugify(p.province + p.city).slice(0, 20)}`;
-			const ok = await createRepoFile(
-				`src/content/life/places/${slug}.md`,
-				md,
-				`chore(${pageKey}): add ${slug}`,
-				repoConfig,
-			);
-			if (!ok) allOk = false;
-		} else {
-			const filePath = `src/content/life/places/${slug}.md`;
-			let sha = p.sha;
-			if (!sha) {
-				const f = await getRepoFile(filePath, repoConfig);
-				if (f) sha = f.sha;
-			}
-			if (sha) {
-				const ok = await updateRepoFile(
-					filePath,
-					md,
-					sha,
-					`chore(${pageKey}): update ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			} else {
-				const ok = await createRepoFile(
-					filePath,
-					md,
-					`chore(${pageKey}): create ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			}
-		}
-	}
-
-	return allOk;
-}
-
 function handleSaveDraft() {
+	const cleanData = places.map(({ _draft, _deleted, ...rest }) => ({
+		...rest,
+		id: rest.id || genId("pl"),
+		enabled: rest.enabled !== false,
+	}));
+	places = cleanData;
 	drafts.saveToDrafts();
 }
 
 async function handleSubmit() {
+	if (editingIndex >= 0) {
+		finishEdit(editingIndex);
+		if (editingIndex >= 0) return;
+	}
+	if (!hasValidToken()) {
+		showToast("GitHub 代理未配置，请联系管理员", "warning");
+		return;
+	}
 	saving = true;
 	try {
-		const ok = await submitItems(places);
-		if (ok) {
-			showToast("保存成功！页面将刷新以应用更改", "success");
-			drafts.clearDrafts();
-			originalPlaces = deepClone(places);
-			setTimeout(() => window.location.reload(), 1200);
-		} else {
-			showToast("部分操作失败，请检查 GitHub App 权限配置", "error");
-		}
+		const cleanData = places.map(({ _draft, _deleted, ...rest }) => ({
+			...rest,
+			id: rest.id || genId("pl"),
+			enabled: rest.enabled !== false,
+		}));
+		places = cleanData;
+		drafts.saveToDrafts();
+		await drafts.submitDrafts();
 	} catch (err) {
 		showToast("保存出错：" + (err as Error).message, "error");
 		console.error(err);
@@ -411,35 +563,6 @@ async function handleSubmit() {
 		saving = false;
 	}
 }
-
-registerSubmitHandler(pageKey, async (draft) => {
-	if (draft.payload?.content !== undefined) {
-		let parsedItems: PlaceItem[] = [];
-		try {
-			const parsed = JSON.parse(String(draft.payload.content));
-			if (Array.isArray(parsed)) {
-				parsedItems = parsed.map((e: any) => ({
-					id: e.id || genId("pl"),
-					slug: e.slug || "",
-					province: e.province || "",
-					city: e.city || "",
-					district: e.district || "",
-					experience: e.experience || "",
-					visitCount: e.visitCount || 1,
-					date: e.date || new Date().toISOString().slice(0, 10),
-					body: e.body || "",
-					sha: e.sha,
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		} catch {
-			return false;
-		}
-		return await submitItems(parsedItems);
-	}
-	return false;
-});
 </script>
 
 {#if editMode}
@@ -503,7 +626,7 @@ registerSubmitHandler(pageKey, async (draft) => {
                   <input
                     type="text"
                     class="pl-input"
-                    value={p.city}
+                    value={p.city || ""}
                     oninput={(e) => updateField(i, "city", (e.target as HTMLInputElement).value)}
                     placeholder="如：杭州"
                   />
@@ -515,7 +638,7 @@ registerSubmitHandler(pageKey, async (draft) => {
                   <input
                     type="text"
                     class="pl-input"
-                    value={p.district}
+                    value={p.district || ""}
                     oninput={(e) => updateField(i, "district", (e.target as HTMLInputElement).value)}
                     placeholder="如：西湖区"
                   />
@@ -545,10 +668,50 @@ registerSubmitHandler(pageKey, async (draft) => {
                 <input
                   type="text"
                   class="pl-input"
-                  value={p.experience}
+                  value={p.experience || ""}
                   oninput={(e) => updateField(i, "experience", (e.target as HTMLInputElement).value)}
                   placeholder="旅行体验描述"
                 />
+              </div>
+              <div class="pl-form-row">
+                <div class="pl-form-group">
+                  <label>位置名称</label>
+                  <input
+                    type="text"
+                    class="pl-input"
+                    value={p.location || ""}
+                    oninput={(e) => updateField(i, "location", (e.target as HTMLInputElement).value)}
+                    placeholder="具体位置"
+                  />
+                </div>
+                <div class="pl-form-group">
+                  <label>纬度</label>
+                  <input
+                    type="number"
+                    step="any"
+                    class="pl-input"
+                    value={p.lat ?? ""}
+                    oninput={(e) => {
+                      const val = (e.target as HTMLInputElement).value;
+                      updateField(i, "lat", val ? parseFloat(val) : undefined as any);
+                    }}
+                    placeholder="如：30.2741"
+                  />
+                </div>
+                <div class="pl-form-group">
+                  <label>经度</label>
+                  <input
+                    type="number"
+                    step="any"
+                    class="pl-input"
+                    value={p.lng ?? ""}
+                    oninput={(e) => {
+                      const val = (e.target as HTMLInputElement).value;
+                      updateField(i, "lng", val ? parseFloat(val) : undefined as any);
+                    }}
+                    placeholder="如：120.1551"
+                  />
+                </div>
               </div>
               <div class="pl-form-actions">
                 <button class="pl-btn pl-btn-cancel" onclick={() => cancelItemEdit(i)}>取消</button>

@@ -955,7 +955,8 @@
 	background: transparent !important;
 	border: none !important;
 }
-/* 首页导航栏透明 */
+
+/* 首页导航栏透明 */
 .lg\:is-home #navbar.scrolled > div {
 	background: transparent !important;
 	border: none !important;

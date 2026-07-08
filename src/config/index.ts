@@ -34,6 +34,22 @@ export { folderIconConfig } from "./folderIconConfig"; // 文件夹图标配置
 export { fontConfig } from "./fontConfig"; // 字体配置
 export { footerConfig } from "./footerConfig"; // 页脚配置
 export { friendsPageConfig, friendsConfig, getEnabledFriends } from "./friendsConfig"; // 友链配置
+export { momentsConfig, momentsCover, momentsPageConfig, getEnabledMoments } from "./momentsConfig"; // 说说配置
+export {
+	notebookFolders,
+	notebookNotes,
+	notebooksPageConfig,
+	getEnabledFolders,
+	getFolderBySlug,
+	getEnabledNotes,
+	getNotesByFolder,
+	getNoteById,
+	getNoteByFolderAndSlug,
+	getFolderStats,
+} from "./notebooksConfig"; // 笔记本配置
+export { routinesConfig, routinePageConfig, getAllRoutines, getEnabledRoutines } from "./routinesConfig"; // 日常规划配置
+export { placesConfig, placesPageConfig, getAllPlaces, getEnabledPlaces, getTotalVisitCount, getThisYearVisitCount } from "./placesConfig"; // 足迹配置
+export { albumConfig, albumPageConfig, getEnabledAlbums, getAlbumById } from "./albumConfig"; // 相册配置
 export { pengyouConfig } from "./pengyouConfig"; // 朋友圈配置
 export { homePortfolioShutterConfig } from "./homePortfolioShutterConfig";
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
@@ -51,3 +67,16 @@ export { siteConfig } from "./siteConfig"; // 站点基础配置
 export { skillsConfig } from "./skillsConfig";
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置
 export { calendarConfig } from "./calendarConfig"; // 日历配置
+export {
+	daohangConfig,
+	daohangPageConfig,
+	categoryOrder,
+	categoryIcons,
+	getAllDaohang,
+	getEnabledDaohang,
+	getDaohangByCategory,
+	getFeaturedDaohang,
+	getAllCategories,
+	getEnabledCategories,
+	getCategoryIcon,
+} from "./daohangConfig"; // 导航配置

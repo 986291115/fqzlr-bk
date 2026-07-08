@@ -1,10 +1,10 @@
 ---
-import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import Navbar from "@components/layout/Navbar.astro";
 import MusicVisualizer from "@components/features/music-visualizer/MusicVisualizer.svelte";
 import Layout from "@layouts/Layout.astro";
 import { musicPlayerConfig, siteConfig } from "@/config";
+import { bangumiConfig } from "@/config/bangumiConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 
@@ -16,26 +16,21 @@ if (!siteConfig.pages.musicPage) {
 	return Astro.redirect("/404/");
 }
 
-const customBangumi = await getCollection("bangumi");
-
-const musicEntries = customBangumi
-	.filter((item) => item.data.category === "music")
+const musicEntries = bangumiConfig
+	.filter((item) => item.category === "music" && item.enabled !== false)
 	.map((item) => {
-		const { data } = item;
-		const imageSrc =
-			typeof data.image === "string" ? data.image : data.image.src;
 		return {
-			title: data.title,
-			artist: data.artist || "",
-			image: imageSrc,
-			audioUrl: data.audioUrl || "",
-			lrcUrl: data.lrcUrl || "",
-			metingServer: data.metingServer || "",
-			metingId: data.metingId || "",
-			score: data.score || 0,
-			status: data.status,
-			comment: data.comment || "",
-			published: data.published?.toISOString() || new Date().toISOString(),
+			title: item.title,
+			artist: item.artist || "",
+			image: item.image,
+			audioUrl: item.audioUrl || "",
+			lrcUrl: item.lrcUrl || "",
+			metingServer: item.metingServer || "",
+			metingId: item.metingId || "",
+			score: item.score || 0,
+			status: item.status,
+			comment: item.comment || "",
+			published: item.published || new Date().toISOString(),
 		};
 	})
 	.sort(
@@ -79,7 +74,7 @@ const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
 	<main id="swup-container" class="music-visualizer-swup transition-main">
 		<h1 class="sr-only">{i18n(I18nKey.musicPageTitle)}</h1>
 		<div class="music-visualizer-page">
-			<MusicVisualizer client:only="svelte" />
+			<MusicVisualizer client:load />
 		</div>
 	</main>
 

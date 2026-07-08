@@ -1,13 +1,12 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import {
+	hasValidToken,
 	showToast,
 	genId,
 	deepClone,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
 
@@ -19,15 +18,18 @@ interface Photo {
 }
 
 interface AlbumItem {
-	id?: string;
+	id: string;
 	title: string;
-	desc?: string;
-	date?: string;
+	subtitle?: string;
+	date: string;
 	location?: string;
-	tags?: string[];
+	tags: string[];
 	cover?: string;
 	photos: Photo[];
+	draft?: boolean;
+	enabled?: boolean;
 	_draft?: boolean;
+	_deleted?: boolean;
 }
 
 let editMode = $state(false);
@@ -38,114 +40,228 @@ let editingIndex = $state(-1);
 let editingPhotosIndex = $state(-1);
 let repoLoaded = $state(false);
 let selectedPhotos = $state<Set<number>>(new Set());
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const pageKey = "album";
 const pageName = "相册";
 
-function parseFrontmatter(content: string): Record<string, any> {
-	const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
-	if (!match) return {};
-	const yaml = match[1];
-	const result: Record<string, any> = {};
-	const lines = yaml.split("\n");
-	let currentKey = "";
-	let currentValue = "";
-	let inMultiline = false;
-
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith("#")) continue;
-
-		if (inMultiline) {
-			if (trimmed.startsWith("- ")) {
-				if (!Array.isArray(result[currentKey])) {
-					result[currentKey] = [];
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
 				}
-				result[currentKey].push(trimmed.slice(2).replace(/^['"]|['"]$/g, ""));
-			} else if (!trimmed.startsWith(" ") && !trimmed.startsWith("\t")) {
-				inMultiline = false;
-			}
-		}
-
-		if (!inMultiline) {
-			const colonIndex = trimmed.indexOf(":");
-			if (colonIndex !== -1) {
-				currentKey = trimmed.substring(0, colonIndex).trim();
-				currentValue = trimmed.substring(colonIndex + 1).trim();
-				if (currentValue.startsWith("[") && currentValue.endsWith("]")) {
-					try {
-						result[currentKey] = JSON.parse(currentValue);
-					} catch {
-						result[currentKey] = currentValue;
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
 					}
-				} else if (currentValue.startsWith("-")) {
-					result[currentKey] = [currentValue.slice(2).replace(/^['"]|['"]$/g, "")];
-					inMultiline = true;
-				} else {
-					result[currentKey] = currentValue.replace(/^['"]|['"]$/g, "");
 				}
 			}
-		}
-	}
-
-	return result;
+			return line;
+		})
+		.join("\n");
 }
 
-function buildAlbumMarkdown(album: AlbumItem): string {
-	const frontmatter: Record<string, any> = {
-		title: album.title,
-		desc: album.desc || "",
-		date: album.date || "",
-		location: album.location || "",
-		tags: album.tags || [],
-		cover: album.cover || "",
-		photos: album.photos.map(p => ({
-			url: p.url,
-			title: p.title || "",
-			desc: p.desc || "",
-			isCover: p.isCover || false,
-		})),
-	};
-
-	let yaml = "---\n";
-	for (const [key, value] of Object.entries(frontmatter)) {
-		if (Array.isArray(value)) {
-			yaml += `${key}:\n`;
-			value.forEach(v => {
-				yaml += `  - ${v}\n`;
-			});
-		} else if (typeof value === "object") {
-			yaml += `${key}:\n`;
-			for (const [k, v] of Object.entries(value)) {
-				yaml += `  - ${k}: ${v}\n`;
-			}
-		} else {
-			yaml += `${key}: "${value}"\n`;
-		}
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
 	}
-	yaml += "---\n\n";
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
 
-	return yaml;
+function parseAlbumsFromTS(tsContent: string): AlbumItem[] {
+	const items = parseArrayFromTS(tsContent, "export const albumConfig: AlbumItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `album-${index}`,
+		title: item.title || "",
+		subtitle: item.subtitle || "",
+		date: item.date || new Date().toISOString().slice(0, 10),
+		location: item.location || "",
+		tags: Array.isArray(item.tags) ? item.tags : [],
+		cover: item.cover || "",
+		photos: Array.isArray(item.photos)
+			? item.photos.map((p: any) => {
+					if (typeof p === "string") {
+						return { url: p, title: "", desc: "", isCover: false };
+					}
+					return {
+						url: p.url || p.src || "",
+						title: p.title || "",
+						desc: p.desc || p.caption || "",
+						isCover: !!p.isCover,
+					};
+				})
+			: [],
+		draft: !!item.draft,
+		enabled: item.enabled !== false,
+	}));
+}
+
+function buildAlbumObject(a: AlbumItem): string {
+	const photos = a.photos.map((p) => p.url);
+	const obj: any = {
+		id: a.id,
+		title: a.title,
+	};
+	if (a.subtitle) obj.subtitle = a.subtitle;
+	if (a.cover) obj.cover = a.cover;
+	obj.date = a.date;
+	if (a.location) obj.location = a.location;
+	obj.tags = a.tags;
+	obj.photos = photos;
+	if (a.draft) obj.draft = a.draft;
+	obj.enabled = a.enabled !== false;
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
+	);
+}
+
+function buildAlbumConfigTS(
+	albumList: AlbumItem[],
+	originalContent?: string,
+): string {
+	const albumEntries = albumList.map((a) => buildAlbumObject(a));
+	const albumsArrayContent = albumEntries.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const albumConfig: AlbumItem[] = [",
+			albumsArrayContent,
+		);
+		return result;
+	}
+
+	return `/**
+ * 相册页面配置
+ * 用于管理相册展示的内容
+ */
+
+export interface Photo {
+	url: string;
+	alt?: string;
+	caption?: string;
+}
+
+export interface AlbumItem {
+	id: string;
+	title: string;
+	subtitle?: string;
+	cover?: string;
+	date: string;
+	location?: string;
+	photos: string[];
+	tags: string[];
+	draft?: boolean;
+	enabled?: boolean;
+}
+
+export interface AlbumPageConfig {
+	title?: string;
+	description?: string;
+	showComment?: boolean;
+}
+
+export const albumPageConfig: AlbumPageConfig = {
+	title: "相册",
+	description: "记录生活中的美好瞬间",
+	showComment: true,
+};
+
+export const albumConfig: AlbumItem[] = [
+${albumsArrayContent}
+];
+
+export function getEnabledAlbums(): AlbumItem[] {
+	const enabled = albumConfig.filter((a) => a.enabled !== false && a.draft !== true);
+	return enabled.sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	);
+}
+
+export function getAlbumById(id: string): AlbumItem | undefined {
+	return albumConfig.find((a) => a.id === id);
+}
+`;
 }
 
 const drafts = setupRepoDrafts({
-	pageKey: "album",
-	pageName: "相册",
-	getContent: () => JSON.stringify(albums),
+	pageKey,
+	pageName,
+	getContent: () =>
+		buildAlbumConfigTS(
+			albums.filter((m) => !m._deleted),
+			originalTS,
+		),
 	setContent: (v) => {
-		try {
-			albums = JSON.parse(v);
-		} catch {
-			console.error("Failed to parse album drafts");
+		const parsedAlbums = parseAlbumsFromTS(v);
+		if (parsedAlbums.length > 0 || v.includes("albumConfig")) {
+			albums = parsedAlbums;
 		}
 	},
-	getPath: () => "src/content/album",
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => "",
-	setOriginalContent: () => {},
+	getPath: () => "src/config/albumConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
 	getCommitMsg: (isEdit) =>
-		isEdit ? `chore: update albums` : `chore: create albums`,
+		isEdit ? `chore(album): 更新相册` : `chore(album): 创建相册配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
@@ -164,7 +280,7 @@ $effect(() => {
 onMount(() => {
 	ensureIconify();
 	collectFromDOM();
-	loadAlbums();
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
@@ -185,9 +301,6 @@ function handleSidebarModeChange(e: Event) {
 	const detail = (e as CustomEvent).detail;
 	if (detail?.pageKey !== pageKey) return;
 	if (detail.editing) {
-		if (!repoLoaded) {
-			loadAlbums();
-		}
 		editMode = true;
 		hideSSRGrid();
 		editingIndex = -1;
@@ -201,14 +314,13 @@ function handleSidebarModeChange(e: Event) {
 function handleSidebarSaveDraft(e: Event) {
 	const detail = (e as CustomEvent).detail;
 	if (detail?.pageKey !== pageKey) return;
-	drafts.saveToDrafts();
-	showToast("已保存草稿", "success");
+	handleSaveDraft();
 }
 
 function handleSidebarSubmit(e: Event) {
 	const detail = (e as CustomEvent).detail;
 	if (detail?.pageKey !== pageKey) return;
-	handleSave();
+	handleSubmit();
 }
 
 function handleSidebarCancel(e: Event) {
@@ -221,74 +333,6 @@ function handleSidebarAdd(e: Event) {
 	const detail = (e as CustomEvent).detail;
 	if (detail?.pageKey !== pageKey) return;
 	addAlbum();
-}
-
-async function loadAlbums() {
-	const grid = document.getElementById("album-grid");
-	if (!grid) return;
-
-	const albumCards = grid.querySelectorAll(".album-card");
-	let hasLoadedFromAPI = false;
-
-	for (const card of albumCards) {
-		const link = card.querySelector("a") as HTMLAnchorElement;
-		if (!link) continue;
-
-		const albumId = link.href.split("/album/")[1]?.replace("/", "");
-		if (!albumId) continue;
-
-		try {
-			const filePath = `src/content/album/${albumId}.md`;
-			const existing = await getRepoFile(filePath);
-			if (existing && existing.content) {
-				const frontmatter = parseFrontmatter(existing.content);
-				const photos: Photo[] = [];
-				if (Array.isArray(frontmatter.photos)) {
-					frontmatter.photos.forEach((p: any) => {
-						photos.push({
-							url: p.url || p,
-							title: p.title,
-							desc: p.desc,
-							isCover: p.isCover,
-						});
-					});
-				}
-
-				const existingAlbumIndex = albums.findIndex(a => a.id === albumId);
-				if (existingAlbumIndex >= 0) {
-					albums[existingAlbumIndex] = {
-						id: albumId,
-						title: frontmatter.title || albums[existingAlbumIndex].title,
-						desc: frontmatter.desc || albums[existingAlbumIndex].desc,
-						date: frontmatter.date || albums[existingAlbumIndex].date,
-						location: frontmatter.location || albums[existingAlbumIndex].location,
-						tags: frontmatter.tags || albums[existingAlbumIndex].tags || [],
-						cover: frontmatter.cover || albums[existingAlbumIndex].cover,
-						photos,
-					};
-				} else {
-					albums = [...albums, {
-						id: albumId,
-						title: frontmatter.title || "",
-						desc: frontmatter.desc,
-						date: frontmatter.date,
-						location: frontmatter.location,
-						tags: frontmatter.tags || [],
-						cover: frontmatter.cover,
-						photos,
-					}];
-				}
-				hasLoadedFromAPI = true;
-			}
-		} catch (e) {
-			console.warn("Failed to load album from API:", albumId, e);
-		}
-	}
-
-	albums = [...albums];
-	originalAlbums = deepClone(albums);
-	repoLoaded = true;
-	drafts.restoreFromDrafts();
 }
 
 function collectFromDOM() {
@@ -323,12 +367,13 @@ function collectFromDOM() {
 		items.push({
 			id: albumId || genId("al"),
 			title,
-			desc: "",
+			subtitle: "",
 			date,
 			location,
 			tags: tags.length > 0 ? tags : [],
 			cover: img?.src || "",
 			photos: [],
+			enabled: true,
 		});
 	});
 
@@ -350,6 +395,48 @@ function collectFromDOM() {
 			albums = [...albums];
 		}
 	}
+}
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/albumConfig.ts");
+	if (existing && existing.content) {
+		try {
+			const repoAlbums: AlbumItem[] = parseAlbumsFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoAlbums.map((m) => [m.id, m]));
+			albums = albums.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+						photos: repoItem.photos.length > 0 ? repoItem.photos : m.photos,
+						subtitle: repoItem.subtitle || m.subtitle,
+						draft: repoItem.draft ?? m.draft,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(albums.map((m) => m.id));
+			for (const g of repoAlbums) {
+				if (!existingIds.has(g.id)) {
+					albums = [...albums, { ...g, id: g.id || genId("al") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			originalAlbums = deepClone(albums);
+		} catch (e) {
+			console.error("Failed to parse repo albums:", e);
+		}
+	} else {
+		originalTS = buildAlbumConfigTS(albums);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
 }
 
 function hideSSRGrid() {
@@ -406,26 +493,37 @@ function cancelItemEdit(index: number) {
 function deleteAlbum(index: number) {
 	const album = albums[index];
 	if (!confirm(`确定要删除相册「${album.title || "未命名"}」吗？`)) return;
-	albums = albums.filter((_, i) => i !== index);
+	if (album._draft) {
+		albums = albums.filter((_, i) => i !== index);
+	} else {
+		albums[index] = { ...albums[index], _deleted: true };
+		albums = [...albums];
+	}
 	if (editingIndex === index) editingIndex = -1;
 	else if (editingIndex > index) editingIndex--;
-	showToast("已删除，记得点击保存", "info");
+	showToast("已标记删除，记得点击保存", "info");
+}
+
+function restoreAlbum(index: number) {
+	albums[index] = { ...albums[index], _deleted: false };
+	albums = [...albums];
 }
 
 function addAlbum() {
 	const newAlbum: AlbumItem = {
 		id: genId("al"),
 		title: "",
-		desc: "",
+		subtitle: "",
 		date: new Date().toISOString().split("T")[0],
 		location: "",
 		tags: [],
 		cover: "",
 		photos: [],
+		enabled: true,
 		_draft: true,
 	};
-	albums = [...albums, newAlbum];
-	editingIndex = albums.length - 1;
+	albums = [newAlbum, ...albums];
+	editingIndex = 0;
 }
 
 function openPhotos(index: number) {
@@ -476,7 +574,7 @@ function deleteSelectedPhotos() {
 	}
 	albums = [...albums];
 	selectedPhotos = new Set();
-	showToast(`已删除 ${selectedPhotos.size} 张照片`, "info");
+	showToast(`已删除照片`, "info");
 }
 
 function deleteSinglePhoto(index: number) {
@@ -530,35 +628,38 @@ function updateAlbumField(index: number, field: keyof AlbumItem, value: string) 
 	albums = [...albums];
 }
 
-async function handleSave() {
+function handleSaveDraft() {
+	const cleanData = albums.map(({ _draft, _deleted, ...rest }) => ({
+		...rest,
+		id: rest.id || genId("al"),
+		enabled: rest.enabled !== false,
+	}));
+	albums = cleanData;
+	drafts.saveToDrafts();
+}
+
+async function handleSubmit() {
 	if (editingIndex >= 0) {
 		finishEdit(editingIndex);
 		if (editingIndex >= 0) return;
 	}
-
+	if (!hasValidToken()) {
+		showToast("GitHub 代理未配置，请联系管理员", "warning");
+		return;
+	}
 	saving = true;
 	try {
-		const cleanAlbums = albums.map(({ _draft, ...rest }) => ({
+		const cleanData = albums.map(({ _draft, _deleted, ...rest }) => ({
 			...rest,
 			id: rest.id || genId("al"),
+			enabled: rest.enabled !== false,
 		}));
-
-		for (const album of cleanAlbums) {
-			const content = buildAlbumMarkdown(album);
-			const filePath = `src/content/album/${album.id}.md`;
-			const existing = await getRepoFile(filePath);
-			if (existing) {
-				await updateRepoFile(filePath, content, existing.sha, `chore: update album ${album.title}`);
-			} else {
-				await createRepoFile(filePath, content, `chore: create album ${album.title}`);
-			}
-		}
-
+		albums = cleanData;
 		drafts.saveToDrafts();
 		await drafts.submitDrafts();
-	} catch (e: any) {
-		console.error("Save failed:", e);
-		showToast(e?.message || "保存失败", "error");
+	} catch (err) {
+		showToast("保存出错：" + (err as Error).message, "error");
+		console.error(err);
 	} finally {
 		saving = false;
 	}
@@ -632,138 +733,148 @@ async function handleSave() {
 	</div>
 {:else if editMode}
 	<div class="edit-albums-grid" id="edit-albums-grid">
-		{#each albums as album, i}
-			<div
-				class="edit-album-card"
-				class:edit-album-card-draft={album._draft}
-				class:edit-album-card-editing={editingIndex === i}
-			>
-				{#if editingIndex !== i}
-					<div class="card-action-row">
-						<button class="action-btn action-edit" onclick={() => startEdit(i)} title="编辑相册信息">
-							<iconify-icon icon="material-symbols:edit-outline-rounded"></iconify-icon>
-						</button>
-						<button class="action-btn action-photos" onclick={() => openPhotos(i)} title="管理照片">
-							<iconify-icon icon="material-symbols:collections-rounded"></iconify-icon>
-						</button>
-						<button class="action-btn action-delete" onclick={() => deleteAlbum(i)} title="删除相册">
-							<iconify-icon icon="material-symbols:delete-outline-rounded"></iconify-icon>
-						</button>
-					</div>
+		{#each albums as album, i (i + "-" + album.id)}
+			{#if !album._deleted}
+				<div
+					class="edit-album-card"
+					class:edit-album-card-draft={album._draft}
+					class:edit-album-card-editing={editingIndex === i}
+				>
+					{#if editingIndex !== i}
+						<div class="card-action-row">
+							<button class="action-btn action-edit" onclick={() => startEdit(i)} title="编辑相册信息">
+								<iconify-icon icon="material-symbols:edit-outline-rounded"></iconify-icon>
+							</button>
+							<button class="action-btn action-photos" onclick={() => openPhotos(i)} title="管理照片">
+								<iconify-icon icon="material-symbols:collections-rounded"></iconify-icon>
+							</button>
+							<button class="action-btn action-delete" onclick={() => deleteAlbum(i)} title="删除相册">
+								<iconify-icon icon="material-symbols:delete-outline-rounded"></iconify-icon>
+							</button>
+						</div>
 
-					<div class="card-display">
-						<div class="card-cover-wrap">
-							{#if album.cover}
-								<img src={album.cover} alt={album.title} class="card-cover" loading="lazy" />
-							{:else}
-								<div class="card-cover-placeholder">
-									<iconify-icon icon="material-symbols:photo-album"></iconify-icon>
-								</div>
-							{/if}
-						</div>
-						<div class="card-info">
-							<h3 class="card-title">{album.title || "（未命名）"}</h3>
-							<p class="card-desc">{album.desc || "暂无描述"}</p>
-							<div class="card-meta">
-								{#if album.date}
-									<span>{album.date}</span>
+						<div class="card-display">
+							<div class="card-cover-wrap">
+								{#if album.cover}
+									<img src={album.cover} alt={album.title} class="card-cover" loading="lazy" />
+								{:else}
+									<div class="card-cover-placeholder">
+										<iconify-icon icon="material-symbols:photo-album"></iconify-icon>
+									</div>
 								{/if}
-								{#if album.location}
-									<span>{album.location}</span>
-								{/if}
-								<span>{album.photos.length} 张照片</span>
 							</div>
-							{#if album.tags && album.tags.length > 0}
-								<div class="card-tags">
-									{#each album.tags.slice(0, 3) as tag}
-										<span class="card-tag">{tag}</span>
-									{/each}
+							<div class="card-info">
+								<h3 class="card-title">{album.title || "（未命名）"}</h3>
+								<p class="card-desc">{album.subtitle || "暂无描述"}</p>
+								<div class="card-meta">
+									{#if album.date}
+										<span>{album.date}</span>
+									{/if}
+									{#if album.location}
+										<span>{album.location}</span>
+									{/if}
+									<span>{album.photos.length} 张照片</span>
 								</div>
-							{/if}
+								{#if album.tags && album.tags.length > 0}
+									<div class="card-tags">
+										{#each album.tags.slice(0, 3) as tag}
+											<span class="card-tag">{tag}</span>
+										{/each}
+									</div>
+								{/if}
+							</div>
 						</div>
+					{:else}
+						<div class="card-edit-form">
+							<div class="edit-form-header">
+								<iconify-icon icon="material-symbols:edit-document-outline-rounded" class="text-lg"></iconify-icon>
+								<span>编辑相册</span>
+								{#if album._draft}
+									<span class="draft-badge">新增</span>
+								{/if}
+							</div>
+							<div class="form-group">
+								<label>相册名称</label>
+								<input
+									type="text"
+									value={album.title}
+									oninput={(e) => updateAlbumField(i, "title", (e.target as HTMLInputElement).value)}
+									placeholder="相册名称"
+									class="form-input"
+								/>
+							</div>
+							<div class="form-group">
+								<label>相册描述</label>
+								<textarea
+									value={album.subtitle || ""}
+									oninput={(e) => updateAlbumField(i, "subtitle", (e.target as HTMLTextAreaElement).value)}
+									placeholder="相册描述"
+									class="form-textarea"
+									rows={2}
+								></textarea>
+							</div>
+							<div class="form-group">
+								<label>日期</label>
+								<input
+									type="date"
+									value={album.date || ""}
+									oninput={(e) => updateAlbumField(i, "date", (e.target as HTMLInputElement).value)}
+									class="form-input"
+								/>
+							</div>
+							<div class="form-group">
+								<label>地点</label>
+								<input
+									type="text"
+									value={album.location || ""}
+									oninput={(e) => updateAlbumField(i, "location", (e.target as HTMLInputElement).value)}
+									placeholder="地点"
+									class="form-input"
+								/>
+							</div>
+							<div class="form-group">
+								<label>标签（用逗号分隔）</label>
+								<input
+									type="text"
+									value={album.tags?.join(", ") || ""}
+									oninput={(e) => {
+										const tags = (e.target as HTMLInputElement).value.split(",").map(t => t.trim()).filter(Boolean);
+										albums[i] = { ...albums[i], tags };
+										albums = [...albums];
+									}}
+									placeholder="标签1, 标签2"
+									class="form-input"
+								/>
+							</div>
+							<div class="form-group">
+								<label>封面URL</label>
+								<input
+									type="text"
+									value={album.cover || ""}
+									oninput={(e) => updateAlbumField(i, "cover", (e.target as HTMLInputElement).value)}
+									placeholder="https://example.com/cover.jpg"
+									class="form-input"
+								/>
+							</div>
+							<div class="form-actions">
+								<button class="form-btn form-btn-cancel" onclick={() => cancelItemEdit(i)}>取消</button>
+								<button class="form-btn form-btn-save" onclick={() => finishEdit(i)}>完成</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="edit-album-card edit-album-card-deleted">
+					<div class="deleted-info">
+						<iconify-icon icon="material-symbols:delete-outline-rounded"></iconify-icon>
+						<span>已标记删除</span>
 					</div>
-				{:else}
-					<div class="card-edit-form">
-						<div class="edit-form-header">
-							<iconify-icon icon="material-symbols:edit-document-outline-rounded" class="text-lg"></iconify-icon>
-							<span>编辑相册</span>
-							{#if album._draft}
-								<span class="draft-badge">新增</span>
-							{/if}
-						</div>
-						<div class="form-group">
-							<label>相册名称</label>
-							<input
-								type="text"
-								value={album.title}
-								oninput={(e) => updateAlbumField(i, "title", (e.target as HTMLInputElement).value)}
-								placeholder="相册名称"
-								class="form-input"
-							/>
-						</div>
-						<div class="form-group">
-							<label>相册描述</label>
-							<textarea
-								value={album.desc || ""}
-								oninput={(e) => updateAlbumField(i, "desc", (e.target as HTMLTextAreaElement).value)}
-								placeholder="相册描述"
-								class="form-textarea"
-								rows={2}
-							></textarea>
-						</div>
-						<div class="form-group">
-							<label>日期</label>
-							<input
-								type="date"
-								value={album.date || ""}
-								oninput={(e) => updateAlbumField(i, "date", (e.target as HTMLInputElement).value)}
-								class="form-input"
-							/>
-						</div>
-						<div class="form-group">
-							<label>地点</label>
-							<input
-								type="text"
-								value={album.location || ""}
-								oninput={(e) => updateAlbumField(i, "location", (e.target as HTMLInputElement).value)}
-								placeholder="地点"
-								class="form-input"
-							/>
-						</div>
-						<div class="form-group">
-							<label>标签（用逗号分隔）</label>
-							<input
-								type="text"
-								value={album.tags?.join(", ") || ""}
-								oninput={(e) => {
-									const tags = (e.target as HTMLInputElement).value.split(",").map(t => t.trim()).filter(Boolean);
-									albums[i] = { ...albums[i], tags };
-									albums = [...albums];
-								}}
-								placeholder="标签1, 标签2"
-								class="form-input"
-							/>
-						</div>
-						<div class="form-group">
-							<label>封面URL</label>
-							<input
-								type="text"
-								value={album.cover || ""}
-								oninput={(e) => updateAlbumField(i, "cover", (e.target as HTMLInputElement).value)}
-								placeholder="https://example.com/cover.jpg"
-								class="form-input"
-							/>
-						</div>
-						<div class="form-actions">
-							<button class="form-btn form-btn-cancel" onclick={() => cancelItemEdit(i)}>取消</button>
-							<button class="form-btn form-btn-save" onclick={() => finishEdit(i)}>完成</button>
-						</div>
-					</div>
-				{/if}
-			</div>
+					<button class="form-btn form-btn-restore" onclick={() => restoreAlbum(i)}>撤销删除</button>
+				</div>
+			{/if}
 		{/each}
 
-		{#if albums.length === 0}
+		{#if albums.filter(m => !m._deleted).length === 0}
 			<div class="empty-state">
 				<iconify-icon icon="material-symbols:photo-library" class="text-4xl mb-2 opacity-40"></iconify-icon>
 				<p>暂无相册，点击"添加"开始添加</p>
@@ -803,6 +914,23 @@ async function handleSave() {
 	.edit-album-card-editing {
 		border-color: hsla(var(--theme-hue, 165), 70%, 50%, 0.6);
 		box-shadow: 0 0 0 3px hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+	}
+	.edit-album-card-deleted {
+		opacity: 0.6;
+		border-style: dashed;
+		border-color: rgba(239, 68, 68, 0.3);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 12px 20px;
+	}
+
+	.deleted-info {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: #ef4444;
 	}
 
 	.card-action-row {
@@ -970,6 +1098,22 @@ async function handleSave() {
 	:global(.dark) .form-btn-cancel { background: #2d2d44; color: #d1d5db; }
 	.form-btn-save { background: hsl(var(--theme-hue, 165), 70%, 50%); color: white; }
 	.form-btn-save:hover { background: hsl(var(--theme-hue, 165), 75%, 45%); }
+	.form-btn-restore {
+		padding: 6px 14px;
+		border-radius: 8px;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		border: 1px solid #22c55e;
+		background: transparent;
+		color: #22c55e;
+		transition: all 0.15s;
+		font-family: inherit;
+	}
+	.form-btn-restore:hover {
+		background: #22c55e;
+		color: white;
+	}
 
 	.empty-state {
 		grid-column: 1 / -1;

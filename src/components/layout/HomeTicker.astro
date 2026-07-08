@@ -1,6 +1,8 @@
 ---
 import { getCollection } from "astro:content";
 import { announcementConfig, profileConfig } from "@/config";
+import { getEnabledMoments } from "@/config/momentsConfig";
+import { getEnabledChangelog } from "@/config/changelogConfig";
 import { getPostUrlBySlug } from "@/utils/url-utils";
 
 // 收集统计
@@ -31,9 +33,9 @@ try {
 } catch {}
 
 try {
-	const moments = await getCollection("moments");
+	const moments = getEnabledMoments();
 	const count = moments.filter(
-		(m) => new Date(m.data.published) >= threeDaysAgo,
+		(m) => new Date(m.published) >= threeDaysAgo,
 	).length;
 	if (count > 0) updateParts.push(`${count} 条动态`);
 } catch {}
@@ -58,9 +60,9 @@ try {
 } catch {}
 
 try {
-	const changelog = await getCollection("changelog");
+	const changelog = getEnabledChangelog();
 	const count = changelog.filter(
-		(c) => new Date(c.data.date) >= threeDaysAgo,
+		(c) => new Date(c.date) >= threeDaysAgo,
 	).length;
 	if (count > 0) updateParts.push(`${count} 条日志`);
 } catch {}

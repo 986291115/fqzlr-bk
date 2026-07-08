@@ -1,21 +1,17 @@
 ---
-import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import ChangelogEditor from "@/components/edit/ChangelogEditor.svelte";
+import { getEnabledChangelog } from "@/config/changelogConfig";
 
 if (!siteConfig.pages.changelog) {
 	return Astro.redirect("/404/");
 }
 
-const entries = await getCollection("changelog");
-
-const sorted = entries.sort(
-	(a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
+const sorted = getEnabledChangelog();
 
 const typeConfig = {
 	feature: {
@@ -80,18 +76,18 @@ const displaySubtitle = i18n(I18nKey.changelogSubtitle);
       <div class="cl-timeline" id="cl-timeline">
         {sorted.length > 0 ? (
           sorted.map((entry) => {
-            const t = typeConfig[entry.data.type];
-            const dateStr = entry.data.date.toISOString().slice(0, 10);
+            const t = typeConfig[entry.type];
+            const dateStr = entry.date;
             return (
-              <article class={`cl-entry ${t.cls}`} data-type={entry.data.type}>
+              <article class={`cl-entry ${t.cls}`} data-type={entry.type} data-id={entry.id}>
                 <div class="cl-entry-dot"></div>
                 <div class="cl-entry-body">
                   <div class="cl-entry-meta">
-                    <time datetime={dateStr}>{dateStr}{entry.data.time ? " · " + entry.data.time : ""}</time>
-                    <span class="cl-entry-version">{entry.data.version}</span>
+                    <time datetime={dateStr}>{dateStr}{entry.time ? " · " + entry.time : ""}</time>
+                    <span class="cl-entry-version">{entry.version}</span>
                   </div>
                   <div class="cl-entry-card">
-                    <p class="cl-entry-text">{entry.data.description}</p>
+                    <p class="cl-entry-text">{entry.description}</p>
                   </div>
                 </div>
               </article>
@@ -105,7 +101,7 @@ const displaySubtitle = i18n(I18nKey.changelogSubtitle);
         )}
       </div>
 
-      <ChangelogEditor client:only />
+      <ChangelogEditor client:load />
 
     </div>
   </div>

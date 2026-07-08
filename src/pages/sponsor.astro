@@ -41,7 +41,7 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
 
         <!-- 赞助编辑器 -->
         <div data-no-swup>
-          <SponsorEditor client:only />
+          <SponsorEditor client:load />
         </div>
 
         {sponsorConfig.usage && (

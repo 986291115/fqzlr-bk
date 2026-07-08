@@ -6,29 +6,24 @@ import {
 	showToast,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
-	deleteRepoFile,
 	genId,
 	deepClone,
-	registerSubmitHandler,
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
-import { repoConfig } from "@/config/editConfig";
 
-interface ChangelogEntry {
+type ChangelogType = "feature" | "improvement" | "fix" | "removal";
+
+interface ChangelogItem {
 	id: string;
-	slug: string;
 	version: string;
 	date: string;
-	type: string;
-	description: string;
-	body: string;
 	time?: string;
-	sha?: string;
+	type: ChangelogType;
+	description: string;
+	body?: string;
+	enabled?: boolean;
 	_draft?: boolean;
 	_deleted?: boolean;
-	_newMd?: string;
 }
 
 const typeOptions = [
@@ -60,68 +55,209 @@ const typeOptions = [
 
 let editMode = $state(false);
 let saving = $state(false);
-let entries = $state<ChangelogEntry[]>([]);
-let originalEntries = $state<ChangelogEntry[]>([]);
-let originalEntriesJson = $state("");
+let changelogs = $state<ChangelogItem[]>([]);
+let originalChangelogs = $state<ChangelogItem[]>([]);
 let editingIndex = $state(-1);
 let editPreview = $state("");
+let repoLoaded = $state(false);
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const pageKey = "changelog";
 const pageName = "更新日志";
 
-function serializeEntries(): string {
-	return JSON.stringify(
-		entries.map((e) => ({
-			id: e.id,
-			slug: e.slug,
-			version: e.version,
-			date: e.date,
-			type: e.type,
-			description: e.description,
-			body: e.body,
-			time: e.time,
-			_draft: e._draft,
-			_deleted: e._deleted,
-		})),
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
+				}
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
+					}
+				}
+			}
+			return line;
+		})
+		.join("\n");
+}
+
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
+
+function parseChangelogFromTS(tsContent: string): ChangelogItem[] {
+	const items = parseArrayFromTS(tsContent, "export const changelogConfig: ChangelogItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `changelog-${index}`,
+		version: item.version || "",
+		date: item.date || new Date().toISOString().slice(0, 10),
+		time: item.time || "",
+		type: (item.type as ChangelogType) || "improvement",
+		description: item.description || "",
+		body: item.body || "",
+		enabled: item.enabled !== false,
+	}));
+}
+
+function buildChangelogObject(c: ChangelogItem): string {
+	const obj: any = {
+		id: c.id,
+		version: c.version,
+		date: c.date,
+	};
+	if (c.time) obj.time = c.time;
+	obj.type = c.type;
+	obj.description = c.description;
+	if (c.body) obj.body = c.body;
+	obj.enabled = c.enabled !== false;
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
 	);
 }
 
-function deserializeEntries(json: string) {
-	try {
-		const parsed = JSON.parse(json);
-		if (Array.isArray(parsed)) {
-			entries = parsed.map((e: any) => ({
-				id: e.id || genId("cl"),
-				slug: e.slug || "",
-				version: e.version || "",
-				date: e.date || new Date().toISOString().slice(0, 10),
-				type: e.type || "improvement",
-				description: e.description || "",
-				body: e.body || "",
-				time: e.time || "",
-				sha: e.sha,
-				_draft: !!e._draft,
-				_deleted: !!e._deleted,
-			}));
-		}
-	} catch {}
+function buildChangelogConfigTS(
+	changelogList: ChangelogItem[],
+	originalContent?: string,
+): string {
+	const changelogEntries = changelogList.map((c) => buildChangelogObject(c));
+	const changelogArrayContent = changelogEntries.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const changelogConfig: ChangelogItem[] = [",
+			changelogArrayContent,
+		);
+		return result;
+	}
+
+	return `/**
+ * 更新日志配置
+ * 用于管理网站更新日志内容
+ */
+
+export type ChangelogType = "feature" | "improvement" | "fix" | "removal";
+
+export interface ChangelogItem {
+	id: string;
+	version: string;
+	date: string;
+	time?: string;
+	type: ChangelogType;
+	description: string;
+	body?: string;
+	enabled?: boolean;
+}
+
+export interface ChangelogPageConfig {
+	title?: string;
+	description?: string;
+}
+
+export const changelogPageConfig: ChangelogPageConfig = {
+	title: "更新日志",
+	description: "记录网站的每一次迭代与成长",
+};
+
+export const changelogConfig: ChangelogItem[] = [
+${changelogArrayContent}
+];
+
+export function getEnabledChangelog(): ChangelogItem[] {
+	const enabled = changelogConfig.filter((c) => c.enabled !== false);
+	return enabled.sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	);
+}
+`;
 }
 
 const drafts = setupRepoDrafts({
 	pageKey,
 	pageName,
-	getContent: () => serializeEntries(),
-	setContent: (v) => deserializeEntries(v),
-	getPath: () => "changelog-entries",
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => originalEntriesJson,
-	setOriginalContent: () => {},
-	getCommitMsg: () => "chore(changelog): 更新日志",
+	getContent: () =>
+		buildChangelogConfigTS(
+			changelogs.filter((m) => !m._deleted),
+			originalTS,
+		),
+	setContent: (v) => {
+		const parsed = parseChangelogFromTS(v);
+		if (parsed.length > 0 || v.includes("changelogConfig")) {
+			changelogs = parsed;
+		}
+	},
+	getPath: () => "src/config/changelogConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
+	getCommitMsg: (isEdit) =>
+		isEdit ? `chore(changelog): 更新日志` : `chore(changelog): 创建更新日志配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
 });
+
 let hasChanges = $derived(drafts.hasLocalChanges());
 
 $effect(() => {
@@ -132,22 +268,16 @@ $effect(() => {
 	);
 });
 
-function getTypeInfo(type: string) {
-	return typeOptions.find((t) => t.value === type) || typeOptions[1];
-}
-
 onMount(() => {
 	ensureIconify();
 	collectFromDOM();
-	originalEntriesJson = serializeEntries();
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
 	window.addEventListener("edit:sidebarSubmit", handleSidebarSubmit);
 	window.addEventListener("edit:sidebarCancel", handleSidebarCancel);
 	window.addEventListener("edit:sidebarAdd", handleSidebarAdd);
-
-	drafts.restoreFromDrafts();
 
 	return () => {
 		window.removeEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -195,59 +325,72 @@ function handleSidebarAdd(e: Event) {
 	handleAdd();
 }
 
-function htmlToMarkdown(html: string): string {
-	if (!html) return "";
-	return html
-		.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "## $1\n")
-		.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "### $1\n")
-		.replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, "#### $1\n")
-		.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, "$1\n")
-		.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, "**$1**")
-		.replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, "**$1**")
-		.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, "*$1*")
-		.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, "*$1*")
-		.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`")
-		.replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, "[$2]($1)")
-		.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, "$1")
-		.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, "$1")
-		.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, "- $1\n")
-		.replace(/<br\s*\/?>/gi, "\n")
-		.replace(/<hr\s*\/?>/gi, "---\n")
-		.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, "> $1\n")
-		.replace(/<[^>]+>/g, "")
-		.replace(/&nbsp;/g, " ")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&amp;/g, "&")
-		.replace(/&quot;/g, '"')
-		.trim();
-}
-
 function collectFromDOM() {
 	const timeline = document.getElementById("cl-timeline");
 	if (!timeline) return;
-	const result: ChangelogEntry[] = [];
+	const result: ChangelogItem[] = [];
 	timeline.querySelectorAll<HTMLElement>(".cl-entry").forEach((el) => {
-		const type = el.dataset.type || "improvement";
+		const id = el.dataset.id || "";
+		const type = (el.dataset.type as ChangelogType) || "improvement";
 		const version =
 			el.querySelector(".cl-entry-version")?.textContent?.trim() || "";
 		const timeEl = el.querySelector("time");
 		const date = (timeEl?.getAttribute("datetime") || "").slice(0, 10);
 		const description =
 			el.querySelector(".cl-entry-text")?.textContent?.trim() || "";
-		const slug = `${date}-${version.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 		result.push({
-			id: slug,
-			slug,
+			id: id || genId("cl"),
 			version,
 			date,
 			type,
 			description,
 			body: description,
+			enabled: true,
 		});
 	});
-	entries = result;
-	originalEntries = deepClone(result);
+	changelogs = result;
+	originalChangelogs = deepClone(result);
+}
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/changelogConfig.ts");
+	if (existing && existing.content) {
+		try {
+			const repoChangelogs: ChangelogItem[] = parseChangelogFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoChangelogs.map((m) => [m.id, m]));
+			changelogs = changelogs.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+						body: repoItem.body ?? m.body,
+						time: repoItem.time ?? m.time,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(changelogs.map((m) => m.id));
+			for (const g of repoChangelogs) {
+				if (!existingIds.has(g.id)) {
+					changelogs = [...changelogs, { ...g, id: g.id || genId("cl") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			originalChangelogs = deepClone(changelogs);
+		} catch (e) {
+			console.error("Failed to parse repo changelog:", e);
+		}
+	} else {
+		originalTS = buildChangelogConfigTS(changelogs);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
 }
 
 function hideSSRContent() {
@@ -265,10 +408,15 @@ function showSSRContent() {
 }
 
 function handleCancel() {
-	entries = deepClone(originalEntries);
+	editMode = false;
+	changelogs = deepClone(originalChangelogs);
 	editingIndex = -1;
 	drafts.clearDrafts();
 	showSSRContent();
+}
+
+function getTypeInfo(type: string) {
+	return typeOptions.find((t) => t.value === type) || typeOptions[1];
 }
 
 function startEdit(index: number) {
@@ -277,70 +425,69 @@ function startEdit(index: number) {
 }
 
 function updatePreview(index: number) {
-	const e = entries[index];
-	if (!e) {
+	const c = changelogs[index];
+	if (!c) {
 		editPreview = "";
 		return;
 	}
 	try {
-		editPreview = marked.parse(e.body || "", {
+		editPreview = marked.parse(c.body || "", {
 			gfm: true,
 			breaks: true,
 		}) as string;
 	} catch {
-		editPreview = e.body || "";
+		editPreview = c.body || "";
 	}
 }
 
 function updateField(
 	index: number,
-	field: keyof ChangelogEntry,
-	value: string,
+	field: keyof ChangelogItem,
+	value: string | string[] | boolean,
 ) {
-	entries[index] = { ...entries[index], [field]: value };
-	entries = [...entries];
+	changelogs[index] = { ...changelogs[index], [field]: value };
+	changelogs = [...changelogs];
 	if (field === "body") {
 		updatePreview(index);
 	}
 }
 
 function finishEdit(index: number) {
-	const e = entries[index];
-	if (!e.version.trim()) {
+	const c = changelogs[index];
+	if (!c.version.trim()) {
 		showToast("版本号不能为空", "warning");
 		return;
 	}
-	if (!e.description.trim()) {
+	if (!c.description.trim()) {
 		showToast("更新简述不能为空", "warning");
 		return;
 	}
 	editingIndex = -1;
-
 	showToast("已修改，记得点击保存", "info");
 }
 
 function cancelItemEdit(index: number) {
-	const e = entries[index];
-	if (e._draft && !e.version.trim()) {
-		entries = entries.filter((_, i) => i !== index);
+	const c = changelogs[index];
+	if (c._draft && !c.version.trim()) {
+		changelogs = changelogs.filter((_, i) => i !== index);
 	} else {
-		const orig = originalEntries.find((o) => o.slug === e.slug && !e._draft);
+		const orig = originalChangelogs.find((o) => o.id === c.id && !c._draft);
 		if (orig) {
-			entries[index] = deepClone(orig);
-			entries = [...entries];
+			changelogs[index] = deepClone(orig);
+			changelogs = [...changelogs];
 		}
 	}
 	editingIndex = -1;
 }
 
 function deleteItem(index: number) {
-	const e = entries[index];
-	if (!confirm(`确定要删除「${e.version || "该条目"}」吗？`)) return;
-	if (e._draft) {
-		entries = entries.filter((_, i) => i !== index);
+	const c = changelogs[index];
+	if (!confirm(`确定要删除「${c.version || "该条目"}」吗？`)) return;
+	if (c._draft) {
+		changelogs = changelogs.filter((_, i) => i !== index);
 	} else {
-		entries[index] = { ...entries[index], _deleted: true };
-		entries = [...entries];
+		changelogs[index] = { ...changelogs[index], _deleted: true };
+		changelogs = [...changelogs];
 	}
 
 	if (editingIndex === index) editingIndex = -1;
@@ -350,146 +497,54 @@ function deleteItem(index: number) {
 
 function moveUp(index: number) {
 	if (index <= 0) return;
-	const arr = [...entries];
+	const arr = [...changelogs];
 	[arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
-	entries = arr;
+	changelogs = arr;
 
 	if (editingIndex === index) editingIndex = index - 1;
 	else if (editingIndex === index - 1) editingIndex = index;
 }
 
 function moveDown(index: number) {
-	if (index >= entries.length - 1) return;
-	const arr = [...entries];
+	if (index >= changelogs.length - 1) return;
+	const arr = [...changelogs];
 	[arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
-	entries = arr;
+	changelogs = arr;
 
 	if (editingIndex === index) editingIndex = index + 1;
 	else if (editingIndex === index + 1) editingIndex = index;
 }
 
 function restoreItem(index: number) {
-	entries[index] = { ...entries[index], _deleted: false };
-	entries = [...entries];
+	changelogs[index] = { ...changelogs[index], _deleted: false };
+	changelogs = [...changelogs];
 }
 
 function handleAdd() {
 	const today = new Date().toISOString().slice(0, 10);
-	const newEntry: ChangelogEntry = {
+	const newEntry: ChangelogItem = {
 		id: genId("cl"),
-		slug: "",
 		version: "",
 		date: today,
+		time: "",
 		type: "improvement",
 		description: "",
 		body: "",
+		enabled: true,
 		_draft: true,
 	};
-	entries = [newEntry, ...entries];
+	changelogs = [newEntry, ...changelogs];
 	editingIndex = 0;
-
 	editPreview = "";
 }
 
-function slugify(text: string): string {
-	return (
-		text
-			.toLowerCase()
-			.trim()
-			.replace(/[\s]+/g, "-")
-			.replace(/[^\w\u4e00-\u9fa5-]/g, "")
-			.replace(/-+/g, "-")
-			.replace(/^-|-$/g, "") || "entry"
-	);
-}
-
-function buildChangelogMd(e: ChangelogEntry): string {
-	const lines = ["---"];
-	lines.push(`version: "${e.version.replace(/"/g, '\\"')}"`);
-	lines.push(`date: ${e.date}`);
-	lines.push(`type: ${e.type}`);
-	if (e.time) {
-		lines.push(`time: "${e.time}"`);
-	}
-	if (e.description) {
-		lines.push(`description: "${e.description.replace(/"/g, '\\"')}"`);
-	}
-	lines.push("---");
-	lines.push("");
-	lines.push(e.body.trim());
-	lines.push("");
-	return lines.join("\n");
-}
-
-async function submitEntries(
-	entriesToSubmit: ChangelogEntry[],
-): Promise<boolean> {
-	let allOk = true;
-
-	for (let i = 0; i < entriesToSubmit.length; i++) {
-		const entry = entriesToSubmit[i];
-		if (entry._deleted) {
-			if (entry.slug && !entry._draft) {
-				const filePath = `src/content/changelog/${entry.slug}.md`;
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file && file.sha) {
-					const ok = await deleteRepoFile(
-						filePath,
-						file.sha,
-						`chore(changelog): remove ${entry.slug}`,
-						repoConfig,
-					);
-					if (!ok) allOk = false;
-				}
-			}
-			continue;
-		}
-
-		const md = buildChangelogMd(entry);
-		let slug = entry.slug;
-
-		if (entry._draft || !slug) {
-			slug = `${entry.date}-${slugify(entry.version + " " + entry.description).slice(0, 30)}`;
-			const filePath = `src/content/changelog/${slug}.md`;
-			const ok = await createRepoFile(
-				filePath,
-				md,
-				`chore(changelog): add ${slug}`,
-				repoConfig,
-			);
-			if (!ok) allOk = false;
-		} else {
-			const filePath = `src/content/changelog/${slug}.md`;
-			let sha = entry.sha;
-			if (!sha) {
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file) sha = file.sha;
-			}
-			if (sha) {
-				const ok = await updateRepoFile(
-					filePath,
-					md,
-					sha,
-					`chore(changelog): update ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			} else {
-				const ok = await createRepoFile(
-					filePath,
-					md,
-					`chore(changelog): create ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			}
-		}
-	}
-
-	return allOk;
-}
-
 function handleSaveDraft() {
+	const cleanData = changelogs.map(({ _draft, _deleted, ...rest }) => ({
+		...rest,
+		id: rest.id || genId("cl"),
+		enabled: rest.enabled !== false,
+	}));
+	changelogs = cleanData;
 	drafts.saveToDrafts();
 }
 
@@ -504,16 +559,14 @@ async function handleSubmit() {
 	}
 	saving = true;
 	try {
-		const ok = await submitEntries(entries);
-		if (ok) {
-			showToast("保存成功！页面将刷新以应用更改", "success");
-			drafts.clearDrafts();
-			originalEntries = deepClone(entries);
-			originalEntriesJson = serializeEntries();
-			setTimeout(() => window.location.reload(), 1200);
-		} else {
-			showToast("部分操作失败，请检查 GitHub App 权限配置", "error");
-		}
+		const cleanData = changelogs.map(({ _draft, _deleted, ...rest }) => ({
+			...rest,
+			id: rest.id || genId("cl"),
+			enabled: rest.enabled !== false,
+		}));
+		changelogs = cleanData;
+		drafts.saveToDrafts();
+		await drafts.submitDrafts();
 	} catch (err) {
 		showToast("保存出错：" + (err as Error).message, "error");
 		console.error(err);
@@ -521,39 +574,12 @@ async function handleSubmit() {
 		saving = false;
 	}
 }
-
-registerSubmitHandler(pageKey, async (draft) => {
-	if (draft.payload?.type === "repo" && draft.payload.content !== undefined) {
-		let parsedEntries: ChangelogEntry[] = [];
-		try {
-			const parsed = JSON.parse(String(draft.payload.content));
-			if (Array.isArray(parsed)) {
-				parsedEntries = parsed.map((e: any) => ({
-					id: e.id || genId("cl"),
-					slug: e.slug || "",
-					version: e.version || "",
-					date: e.date || new Date().toISOString().slice(0, 10),
-					type: e.type || "improvement",
-					description: e.description || "",
-					body: e.body || "",
-					time: e.time || "",
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		} catch {
-			return false;
-		}
-		return await submitEntries(parsedEntries);
-	}
-	return false;
-});
 </script>
 
 
 {#if editMode}
   <div class="cl-edit-list">
-    {#each entries as entry, i (i + "-" + entry.id)}
+    {#each changelogs as entry, i (i + "-" + entry.id)}
       {#if !entry._deleted}
         <div
           class="cl-edit-card"
@@ -567,7 +593,7 @@ registerSubmitHandler(pageKey, async (draft) => {
                   <iconify-icon icon="material-symbols:keyboard-arrow-up-rounded"></iconify-icon>
                 </button>
               {/if}
-              {#if i < entries.filter(e => !e._deleted).length - 1}
+              {#if i < changelogs.filter(e => !e._deleted).length - 1}
                 <button class="cl-action-btn cl-action-move" onclick={() => moveDown(i)} title="下移">
                   <iconify-icon icon="material-symbols:keyboard-arrow-down-rounded"></iconify-icon>
                 </button>
@@ -629,11 +655,15 @@ registerSubmitHandler(pageKey, async (draft) => {
                 <input type="text" class="cl-input" value={entry.description} oninput={(e) => updateField(i, "description", (e.target as HTMLInputElement).value)} placeholder="一句话描述这次更新" />
               </div>
               <div class="cl-form-group">
+                <label>时间（可选）</label>
+                <input type="text" class="cl-input" value={entry.time || ""} oninput={(e) => updateField(i, "time", (e.target as HTMLInputElement).value)} placeholder="如 22:00" />
+              </div>
+              <div class="cl-form-group">
                 <label>详细内容（Markdown）</label>
                 <div class="cl-md-split">
                   <textarea
                     class="cl-md-textarea"
-                    value={entry.body}
+                    value={entry.body || ""}
                     oninput={(e) => updateField(i, "body", (e.target as HTMLTextAreaElement).value)}
                     placeholder="详细的更新说明，支持 Markdown..."
                     spellcheck="false"
@@ -659,7 +689,7 @@ registerSubmitHandler(pageKey, async (draft) => {
       {/if}
     {/each}
 
-    {#if entries.filter(e => !e._deleted).length === 0}
+    {#if changelogs.filter(e => !e._deleted).length === 0}
       <div class="cl-empty-state">
         <iconify-icon icon="material-symbols:history-toggle-off-rounded" style="font-size:48px;opacity:0.3;"></iconify-icon>
         <p>暂无更新日志，点击"添加"创建第一条</p>

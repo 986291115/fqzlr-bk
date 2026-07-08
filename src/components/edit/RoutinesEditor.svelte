@@ -2,22 +2,17 @@
 import { onMount } from "svelte";
 import { marked } from "marked";
 import {
+	hasValidToken,
 	showToast,
-	genId,
-	deepClone,
 	ensureIconify,
 	getRepoFile,
-	updateRepoFile,
-	createRepoFile,
-	deleteRepoFile,
-	registerSubmitHandler,
+	genId,
+	deepClone,
 } from "@/utils/editMode";
 import { setupRepoDrafts } from "@/utils/draftHelpers";
-import { repoConfig } from "@/config/editConfig";
 
 interface RoutineItem {
 	id: string;
-	slug: string;
 	name: string;
 	time: string;
 	icon: string;
@@ -25,7 +20,8 @@ interface RoutineItem {
 	description: string;
 	body: string;
 	updatedAt: string;
-	sha?: string;
+	order: number;
+	enabled: boolean;
 	_draft?: boolean;
 	_deleted?: boolean;
 }
@@ -36,6 +32,9 @@ let routines = $state<RoutineItem[]>([]);
 let originalRoutines = $state<RoutineItem[]>([]);
 let editingIndex = $state(-1);
 let editPreview = $state("");
+let repoLoaded = $state(false);
+let fileSha = $state<string | null>(null);
+let originalTS = $state<string>("");
 
 const emojiOptions = [
 	"📌", "📝", "🎯", "⏰", "💪", "🧘", "📚", "💤",
@@ -46,22 +45,207 @@ const emojiOptions = [
 const pageKey = "routines";
 const pageName = "日常规划";
 
+function stripLineComments(code: string): string {
+	const lines = code.split("\n");
+	return lines
+		.map((line) => {
+			let inStr = false;
+			let quotes = 0;
+			for (let i = 0; i < line.length - 1; i++) {
+				if (line[i] === '"' && (i === 0 || line[i - 1] !== "\\")) {
+					inStr = !inStr;
+					quotes++;
+				}
+				if (!inStr && line[i] === "/" && line[i + 1] === "/") {
+					if (quotes % 2 === 0) {
+						return line.substring(0, i);
+					}
+				}
+			}
+			return line;
+		})
+		.join("\n");
+}
+
+function parseArrayFromTS(tsContent: string, startMarker: string): any[] {
+	tsContent = tsContent.replace(/\r\n/g, "\n");
+	const startIdx = tsContent.indexOf(startMarker);
+	if (startIdx === -1) return [];
+	let bracketStart = tsContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return [];
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < tsContent.length && depth > 0) {
+		if (tsContent[idx] === "[") depth++;
+		else if (tsContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	let arrayStr = tsContent.substring(bracketStart + 1, idx).trim();
+	arrayStr = stripLineComments(arrayStr);
+	arrayStr = arrayStr.replace(/,(\s*[\]\}])/g, "$1");
+	arrayStr = arrayStr.replace(/,(\s*)$/, "$1");
+	arrayStr = arrayStr.replace(/^(\s*)(\w+)\s*:/gm, '$1"$2":');
+	try {
+		return JSON.parse(`[${arrayStr}]`);
+	} catch (e) {
+		console.error("Failed to parse array from TS:", e);
+		return [];
+	}
+}
+
+function parseRoutinesFromTS(tsContent: string): RoutineItem[] {
+	const items = parseArrayFromTS(tsContent, "export const routinesConfig: RoutineItem[] = [");
+	return items.map((item: any, index: number) => ({
+		id: item.id || `routine-${index}`,
+		name: item.name || "",
+		time: item.time || "",
+		icon: item.icon || "📌",
+		color: item.color || "",
+		description: item.description || "",
+		body: item.body || "",
+		updatedAt: item.updatedAt || new Date().toISOString().slice(0, 10),
+		order: typeof item.order === "number" ? item.order : index + 1,
+		enabled: item.enabled !== false,
+	}));
+}
+
+function buildRoutineObject(r: RoutineItem): string {
+	const obj: any = {
+		id: r.id,
+		name: r.name,
+		time: r.time,
+		icon: r.icon,
+		color: r.color,
+		description: r.description,
+		body: r.body,
+		updatedAt: r.updatedAt,
+		order: r.order,
+		enabled: r.enabled !== false,
+	};
+
+	const json = JSON.stringify(obj, null, 2)
+		.split("\n")
+		.map((line, i, arr) =>
+			i === arr.length - 1 ? `\t\t${line},` : `\t\t${line}`,
+		)
+		.join("\n");
+	return json;
+}
+
+function replaceArrayInTS(
+	originalContent: string,
+	startMarker: string,
+	newArrayContent: string,
+): string {
+	const startIdx = originalContent.indexOf(startMarker);
+	if (startIdx === -1) return originalContent;
+	let bracketStart = originalContent.indexOf("[", startIdx);
+	if (bracketStart === -1) return originalContent;
+	let depth = 1;
+	let idx = bracketStart + 1;
+	while (idx < originalContent.length && depth > 0) {
+		if (originalContent[idx] === "[") depth++;
+		else if (originalContent[idx] === "]") depth--;
+		if (depth > 0) idx++;
+	}
+	return (
+		originalContent.substring(0, bracketStart + 1) +
+		"\n" +
+		newArrayContent +
+		"\n\t]" +
+		originalContent.substring(idx + 1)
+	);
+}
+
+function buildRoutinesConfigTS(
+	routineList: RoutineItem[],
+	originalContent?: string,
+): string {
+	const routineEntries = routineList.map((r) => buildRoutineObject(r));
+	const routinesArrayContent = routineEntries.join("\n");
+
+	if (originalContent) {
+		let result = originalContent;
+		result = replaceArrayInTS(
+			result,
+			"export const routinesConfig: RoutineItem[] = [",
+			routinesArrayContent,
+		);
+		return result;
+	}
+
+	return `/**
+ * 日常规划页面配置
+ * 用于管理日常规划展示的内容
+ */
+
+// 日常规划项类型定义
+export interface RoutineItem {
+	id: string;
+	name: string;
+	time: string;
+	icon: string;
+	color: string;
+	description: string;
+	body: string;
+	updatedAt: string;
+	order: number;
+	enabled: boolean;
+}
+
+// 日常规划页面配置
+export interface RoutinePageConfig {
+	title?: string;
+	description?: string;
+}
+
+// 日常规划页面配置
+export const routinePageConfig: RoutinePageConfig = {
+	title: "日常规划",
+	description: "记录和规划生活中的各项事务",
+};
+
+// 日常规划列表配置
+export const routinesConfig: RoutineItem[] = [
+${routinesArrayContent}
+];
+
+// 获取所有日常规划（按 order 排序，相同 order 按 updatedAt 倒序）
+export function getAllRoutines(): RoutineItem[] {
+	return [...routinesConfig].sort((a, b) => {
+		if (a.order !== b.order) return a.order - b.order;
+		return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+	});
+}
+
+// 获取启用的日常规划
+export function getEnabledRoutines(): RoutineItem[] {
+	return getAllRoutines().filter((r) => r.enabled !== false);
+}
+`;
+}
+
 const drafts = setupRepoDrafts({
 	pageKey,
 	pageName,
-	getContent: () => JSON.stringify(routines),
+	getContent: () =>
+		buildRoutinesConfigTS(
+			routines.filter((m) => !m._deleted),
+			originalTS,
+		),
 	setContent: (v) => {
-		try {
-			const parsed = JSON.parse(v);
-			if (Array.isArray(parsed)) routines = parsed;
-		} catch {}
+		const parsed = parseRoutinesFromTS(v);
+		if (parsed.length > 0 || v.includes("routinesConfig")) {
+			routines = parsed;
+		}
 	},
-	getPath: () => `${pageKey}-items`,
-	getSha: () => null,
-	setSha: () => {},
-	getOriginalContent: () => JSON.stringify(originalRoutines),
-	setOriginalContent: () => {},
-	getCommitMsg: () => `chore(${pageKey}): 更新${pageName}`,
+	getPath: () => "src/config/routinesConfig.ts",
+	getSha: () => fileSha,
+	setSha: (v) => (fileSha = v),
+	getOriginalContent: () => originalTS,
+	setOriginalContent: (v) => (originalTS = v),
+	getCommitMsg: (isEdit) =>
+		isEdit ? `chore(routines): 更新日常规划` : `chore(routines): 创建日常规划配置`,
 	onSubmitted: () => {
 		setTimeout(() => window.location.reload(), 1200);
 	},
@@ -80,15 +264,13 @@ $effect(() => {
 onMount(() => {
 	ensureIconify();
 	collectFromDOM();
-	originalRoutines = deepClone(routines);
+	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
 	window.addEventListener("edit:sidebarSaveDraft", handleSidebarSaveDraft);
 	window.addEventListener("edit:sidebarSubmit", handleSidebarSubmit);
 	window.addEventListener("edit:sidebarCancel", handleSidebarCancel);
 	window.addEventListener("edit:sidebarAdd", handleSidebarAdd);
-
-	drafts.restoreFromDrafts();
 
 	return () => {
 		window.removeEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -166,7 +348,7 @@ function htmlToMarkdown(html: string): string {
 
 function collectFromDOM() {
 	const result: RoutineItem[] = [];
-	document.querySelectorAll(".routine-card").forEach((card) => {
+	document.querySelectorAll(".routine-card").forEach((card, index) => {
 		const iconEl = card.querySelector(".routine-icon-wrap span");
 		const icon = iconEl?.textContent?.trim() || "📌";
 		const nameEl = card.querySelector(".routine-title");
@@ -178,10 +360,8 @@ function collectFromDOM() {
 		const contentEl = card.querySelector(".routine-content");
 		const bodyHtml = contentEl?.innerHTML || "";
 		const body = htmlToMarkdown(bodyHtml);
-		const slug = slugify(name) || genId("rt").slice(-6);
 		result.push({
 			id: genId("rt"),
-			slug,
 			name,
 			time,
 			icon,
@@ -189,10 +369,53 @@ function collectFromDOM() {
 			description,
 			body,
 			updatedAt: new Date().toISOString().slice(0, 10),
+			order: index + 1,
+			enabled: true,
 		});
 	});
 	routines = result;
 	originalRoutines = deepClone(result);
+}
+
+async function loadRepoData() {
+	const existing = await getRepoFile("src/config/routinesConfig.ts");
+	if (existing && existing.content) {
+		try {
+			const repoRoutines: RoutineItem[] = parseRoutinesFromTS(existing.content);
+			originalTS = existing.content;
+			fileSha = existing.sha || null;
+
+			const repoMap = new Map(repoRoutines.map((m) => [m.id, m]));
+			routines = routines.map((m) => {
+				const repoItem = repoMap.get(m.id);
+				if (repoItem) {
+					return {
+						...m,
+						enabled: repoItem.enabled ?? m.enabled,
+						order: repoItem.order ?? m.order,
+						color: repoItem.color ?? m.color,
+					};
+				}
+				return m;
+			});
+
+			const existingIds = new Set(routines.map((m) => m.id));
+			for (const g of repoRoutines) {
+				if (!existingIds.has(g.id)) {
+					routines = [...routines, { ...g, id: g.id || genId("rt") }];
+					existingIds.add(g.id);
+				}
+			}
+
+			originalRoutines = deepClone(routines);
+		} catch (e) {
+			console.error("Failed to parse repo routines:", e);
+		}
+	} else {
+		originalTS = buildRoutinesConfigTS(routines);
+	}
+	repoLoaded = true;
+	drafts.restoreFromDrafts();
 }
 
 function hideSSRContent() {
@@ -247,7 +470,7 @@ function updatePreview(index: number) {
 function updateField(
 	index: number,
 	field: keyof RoutineItem,
-	value: string | number,
+	value: string | number | boolean,
 ) {
 	routines[index] = { ...routines[index], [field]: value };
 	routines = [...routines];
@@ -269,7 +492,7 @@ function cancelItemEdit(index: number) {
 	if (r._draft && !r.name.trim()) {
 		routines = routines.filter((_, i) => i !== index);
 	} else {
-		const orig = originalRoutines.find((o) => o.slug === r.slug && !r._draft);
+		const orig = originalRoutines.find((o) => o.id === r.id && !r._draft);
 		if (orig) {
 			routines[index] = deepClone(orig);
 			routines = [...routines];
@@ -296,6 +519,9 @@ function moveUp(index: number) {
 	if (index <= 0) return;
 	const arr = [...routines];
 	[arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+	const tempOrder = arr[index - 1].order;
+	arr[index - 1].order = arr[index].order;
+	arr[index].order = tempOrder;
 	routines = arr;
 	if (editingIndex === index) editingIndex = index - 1;
 	else if (editingIndex === index - 1) editingIndex = index;
@@ -305,6 +531,9 @@ function moveDown(index: number) {
 	if (index >= routines.length - 1) return;
 	const arr = [...routines];
 	[arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+	const tempOrder = arr[index].order;
+	arr[index].order = arr[index + 1].order;
+	arr[index + 1].order = tempOrder;
 	routines = arr;
 	if (editingIndex === index) editingIndex = index + 1;
 	else if (editingIndex === index + 1) editingIndex = index;
@@ -316,10 +545,10 @@ function restoreItem(index: number) {
 }
 
 function handleAdd() {
+	const maxOrder = routines.length > 0 ? Math.max(...routines.map((r) => r.order)) : 0;
 	routines = [
 		{
 			id: genId("rt"),
-			slug: "",
 			name: "",
 			time: "",
 			icon: "📌",
@@ -327,6 +556,8 @@ function handleAdd() {
 			description: "",
 			body: "",
 			updatedAt: new Date().toISOString().slice(0, 10),
+			order: maxOrder + 1,
+			enabled: true,
 			_draft: true,
 		},
 		...routines,
@@ -335,115 +566,35 @@ function handleAdd() {
 	editPreview = "";
 }
 
-function slugify(text: string): string {
-	return (
-		text
-			.toLowerCase()
-			.trim()
-			.replace(/[\s]+/g, "-")
-			.replace(/[^\w\u4e00-\u9fa5-]/g, "")
-			.replace(/-+/g, "-")
-			.replace(/^-|-$/g, "") || "routine"
-	);
-}
-
-function buildRoutineMd(r: RoutineItem): string {
-	const lines = ["---"];
-	lines.push(`name: "${r.name.replace(/"/g, '\\"')}"`);
-	if (r.time) lines.push(`time: "${r.time.replace(/"/g, '\\"')}"`);
-	if (r.icon) lines.push(`icon: "${r.icon}"`);
-	if (r.color) lines.push(`color: "${r.color}"`);
-	if (r.description)
-		lines.push(`description: "${r.description.replace(/"/g, '\\"')}"`);
-	lines.push(`updatedAt: ${r.updatedAt}`);
-	lines.push("---");
-	lines.push("");
-	lines.push(r.body.trim());
-	lines.push("");
-	return lines.join("\n");
-}
-
-async function submitItems(itemsToSubmit: RoutineItem[]): Promise<boolean> {
-	let allOk = true;
-
-	for (let i = 0; i < itemsToSubmit.length; i++) {
-		const r = itemsToSubmit[i];
-		if (r._deleted) {
-			if (r.slug && !r._draft) {
-				const filePath = `src/content/routines/${r.slug}.md`;
-				const file = await getRepoFile(filePath, repoConfig);
-				if (file && file.sha) {
-					const ok = await deleteRepoFile(
-						filePath,
-						file.sha,
-						`chore(${pageKey}): remove ${r.slug}`,
-						repoConfig,
-					);
-					if (!ok) allOk = false;
-				}
-			}
-			continue;
-		}
-
-		const md = buildRoutineMd(r);
-		let slug = r.slug;
-
-		if (r._draft || !slug) {
-			slug = slugify(r.name);
-			const ok = await createRepoFile(
-				`src/content/routines/${slug}.md`,
-				md,
-				`chore(${pageKey}): add ${slug}`,
-				repoConfig,
-			);
-			if (!ok) allOk = false;
-		} else {
-			const filePath = `src/content/routines/${slug}.md`;
-			let sha = r.sha;
-			if (!sha) {
-				const f = await getRepoFile(filePath, repoConfig);
-				if (f) sha = f.sha;
-			}
-			if (sha) {
-				const ok = await updateRepoFile(
-					filePath,
-					md,
-					sha,
-					`chore(${pageKey}): update ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			} else {
-				const ok = await createRepoFile(
-					filePath,
-					md,
-					`chore(${pageKey}): create ${slug}`,
-					repoConfig,
-				);
-				if (!ok) allOk = false;
-			}
-		}
-	}
-
-	return allOk;
-}
-
 function handleSaveDraft() {
+	const cleanData = routines.map(({ _draft, _deleted, ...rest }) => ({
+		...rest,
+		id: rest.id || genId("rt"),
+		enabled: rest.enabled !== false,
+	}));
+	routines = cleanData;
 	drafts.saveToDrafts();
 }
 
 async function handleSubmit() {
+	if (editingIndex >= 0) {
+		finishEdit(editingIndex);
+		if (editingIndex >= 0) return;
+	}
+	if (!hasValidToken()) {
+		showToast("GitHub 代理未配置，请联系管理员", "warning");
+		return;
+	}
 	saving = true;
 	try {
-		const ok = await submitItems(routines);
-		if (ok) {
-			showToast("保存成功！页面将刷新以应用更改", "success");
-			drafts.clearDrafts();
-			originalRoutines = deepClone(routines);
-			setTimeout(() => window.location.reload(), 1200);
-		} else {
-			showToast("部分操作失败，请检查 GitHub App 权限配置", "error");
-		}
+		const cleanData = routines.map(({ _draft, _deleted, ...rest }) => ({
+			...rest,
+			id: rest.id || genId("rt"),
+			enabled: rest.enabled !== false,
+		}));
+		routines = cleanData;
+		drafts.saveToDrafts();
+		await drafts.submitDrafts();
 	} catch (err) {
 		showToast("保存出错：" + (err as Error).message, "error");
 		console.error(err);
@@ -451,35 +602,6 @@ async function handleSubmit() {
 		saving = false;
 	}
 }
-
-registerSubmitHandler(pageKey, async (draft) => {
-	if (draft.payload?.content !== undefined) {
-		let parsedItems: RoutineItem[] = [];
-		try {
-			const parsed = JSON.parse(String(draft.payload.content));
-			if (Array.isArray(parsed)) {
-				parsedItems = parsed.map((e: any) => ({
-					id: e.id || genId("rt"),
-					slug: e.slug || "",
-					name: e.name || "",
-					time: e.time || "",
-					icon: e.icon || "📌",
-					color: e.color || "",
-					description: e.description || "",
-					body: e.body || "",
-					updatedAt: e.updatedAt || new Date().toISOString().slice(0, 10),
-					sha: e.sha,
-					_draft: !!e._draft,
-					_deleted: !!e._deleted,
-				}));
-			}
-		} catch {
-			return false;
-		}
-		return await submitItems(parsedItems);
-	}
-	return false;
-});
 </script>
 
 {#if editMode}
@@ -592,6 +714,16 @@ registerSubmitHandler(pageKey, async (draft) => {
                 />
               </div>
               <div class="rt-form-group">
+                <label>颜色</label>
+                <input
+                  type="text"
+                  class="rt-input"
+                  value={r.color}
+                  oninput={(e) => updateField(i, "color", (e.target as HTMLInputElement).value)}
+                  placeholder="如：#22c55e"
+                />
+              </div>
+              <div class="rt-form-group">
                 <label>详细内容（Markdown）</label>
                 <div class="rt-md-split">
                   <textarea
@@ -612,6 +744,26 @@ registerSubmitHandler(pageKey, async (draft) => {
                   value={r.updatedAt}
                   oninput={(e) => updateField(i, "updatedAt", (e.target as HTMLInputElement).value)}
                 />
+              </div>
+              <div class="rt-form-group">
+                <label>排序</label>
+                <input
+                  type="number"
+                  class="rt-input"
+                  value={r.order}
+                  oninput={(e) => updateField(i, "order", parseInt((e.target as HTMLInputElement).value) || 0)}
+                  placeholder="排序值，数字越小越靠前"
+                />
+              </div>
+              <div class="rt-form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={r.enabled}
+                    onchange={(e) => updateField(i, "enabled", (e.target as HTMLInputElement).checked)}
+                  />
+                  启用
+                </label>
               </div>
               <div class="rt-form-actions">
                 <button class="rt-btn rt-btn-cancel" onclick={() => cancelItemEdit(i)}>取消</button>

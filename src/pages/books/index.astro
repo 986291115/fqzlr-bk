@@ -1,14 +1,13 @@
 ---
-import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import { Icon } from "astro-icon/components";
 import Bookshelf from "@/components/pages/books/Bookshelf.astro";
 import { siteConfig } from "@/config";
+import { bangumiConfig } from "@/config/bangumiConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
-import { removeFileExtension } from "@/utils/url-utils";
 import BangumiEditor from "@/components/edit/BangumiEditor.svelte";
 
 if (!siteConfig.pages.books) {
@@ -17,52 +16,30 @@ if (!siteConfig.pages.books) {
 
 const buildTime = formatDateI18nWithTime(new Date());
 
-const customBangumi = await getCollection("bangumi");
-
-const bookItems = customBangumi
-	.filter((item) => item.data.category === "book")
+const bookItemsRaw = bangumiConfig
+	.filter((item) => item.category === "book" && item.enabled !== false)
 	.sort((a, b) => {
-		const dateA = a.data.published?.getTime() || 0;
-		const dateB = b.data.published?.getTime() || 0;
+		const dateA = new Date(a.published).getTime() || 0;
+		const dateB = new Date(b.published).getTime() || 0;
 		return dateB - dateA;
-	})
+	});
+
+const bookItems = bookItemsRaw
 	.map((item) => {
-		const imageSrc =
-			typeof item.data.image === "string"
-				? item.data.image
-				: item.data.image.src;
-		const slug = removeFileExtension(item.id);
-		const link = `/books/${slug}/`;
+		const link = `/books/${item.id}/`;
 
 		return {
-			title: item.data.title,
-			coverImage: imageSrc,
+			title: item.title,
+			coverImage: item.image,
 			link,
-			status: item.data.status,
-			score: item.data.score || 0,
+			status: item.status,
+			score: item.score || 0,
 		};
 	});
 
 const readingCount = bookItems.filter((b) => b.status === 3).length;
 const readCount = bookItems.filter((b) => b.status === 2).length;
 const wishCount = bookItems.filter((b) => b.status === 1).length;
-
-const editorInitialItems = bookItems.map((item) => {
-	const slug = item.link.replace(/^\/books\//, "").replace(/\/$/, "");
-	return {
-		id: slug,
-		slug,
-		title: item.title,
-		name_cn: item.title,
-		category: "book",
-		status: item.status,
-		score: item.score || 0,
-		image: item.coverImage as string,
-		tags: [],
-		comment: "",
-		published: new Date().toISOString().slice(0, 10),
-	};
-});
 ---
 
 <MainGridLayout title={i18n(I18nKey.booksTitle)} description={i18n(I18nKey.booksSubtitle)}>
@@ -106,10 +83,10 @@ const editorInitialItems = bookItems.map((item) => {
 
 			<div data-no-swup>
 				<BangumiEditor
-					client:only
+					client:load
 					defaultCategory="book"
 					customPageName="书架"
-					initialItems={editorInitialItems as any}
+					initialItems={bookItemsRaw}
 				/>
 			</div>
 

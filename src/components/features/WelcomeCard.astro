@@ -4,6 +4,8 @@
  * Lanyard 风格悬挂卡片 — 符合 Firefly 极简无色风格
  */
 import { getCollection } from "astro:content";
+import { getEnabledMoments } from "@/config/momentsConfig";
+import { getEnabledChangelog } from "@/config/changelogConfig";
 import { getPostUrlBySlug } from "@/utils/url-utils";
 
 interface RawItem {
@@ -27,7 +29,7 @@ try {
 		});
 } catch {}
 try {
-	const moments = await getCollection("moments");
+	const moments = getEnabledMoments();
 	for (const m of moments) {
 		let t = (m.body || "").replace(/[#*`]/g, "").trim();
 		if (t.length > 40) t = t.substring(0, 40) + "...";
@@ -35,7 +37,7 @@ try {
 		allItems.push({
 			type: "moment",
 			title: t,
-			date: new Date(m.data.published),
+			date: new Date(m.published),
 			url: "/moments/",
 		});
 	}
@@ -97,12 +99,12 @@ try {
 	}
 } catch {}
 try {
-	const changelog = await getCollection("changelog");
+	const changelog = getEnabledChangelog();
 	for (const c of changelog)
 		allItems.push({
 			type: "changelog",
-			title: c.data.description,
-			date: new Date(c.data.date),
+			title: c.description,
+			date: new Date(c.date),
 			url: "/changelog/",
 		});
 } catch {}
