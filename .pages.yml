@@ -1,0 +1,279 @@
+# ============================================================
+# PagesCMS 配置文件
+# 文档: https://pagescms.org/docs/configuration
+# ============================================================
+
+# ------------------------------------------------------------
+# 媒体配置
+# ------------------------------------------------------------
+media:
+  input: public/assets/images
+  output: /assets/images
+
+# ------------------------------------------------------------
+# 全局设置
+# ------------------------------------------------------------
+settings:
+  content:
+    merge: true
+
+# ------------------------------------------------------------
+# 内容集合
+# ------------------------------------------------------------
+content:
+  # ==========================================================
+  # 1. 博客文章
+  # ==========================================================
+  - name: posts
+    label: 博客文章
+    type: collection
+    path: src/content/posts
+    subfolders: true
+    fields:
+      - name: title
+        label: 标题
+        type: string
+        required: true
+
+      - name: published
+        label: 发布日期
+        type: date
+        required: true
+        options:
+          time: false
+          format: yyyy-MM-dd
+
+      - name: updated
+        label: 更新日期
+        type: date
+        options:
+          time: false
+          format: yyyy-MM-dd
+
+      - name: draft
+        label: 草稿
+        type: boolean
+        default: false
+
+      - name: description
+        label: 文章描述
+        type: text
+
+      - name: image
+        label: 封面图
+        type: image
+
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+
+      - name: category
+        label: 分类
+        type: string
+
+      - name: pinned
+        label: 置顶
+        type: boolean
+        default: false
+
+      - name: author
+        label: 作者
+        type: string
+
+      - name: comment
+        label: 开启评论
+        type: boolean
+        default: true
+
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ==========================================================
+  # 2. 特殊页面
+  # ==========================================================
+  - name: spec
+    label: 特殊页面
+    type: collection
+    path: src/content/spec
+    fields:
+      - name: body
+        label: 页面内容
+        type: rich-text
+
+  # ==========================================================
+  # 3. 生活记录 - 足迹
+  # ==========================================================
+  - name: places
+    label: 足迹
+    type: collection
+    path: src/content/life/places
+    fields:
+      - name: title
+        label: 标题
+        type: string
+
+      - name: date
+        label: 日期
+        type: date
+        options:
+          time: false
+          format: yyyy-MM-dd
+
+      - name: province
+        label: 省份
+        type: string
+
+      - name: city
+        label: 城市
+        type: string
+
+      - name: lat
+        label: 纬度
+        type: number
+
+      - name: lng
+        label: 经度
+        type: number
+
+      - name: visitCount
+        label: 访问次数
+        type: number
+        default: 1
+
+      - name: experience
+        label: 体验
+        type: text
+
+      - name: description
+        label: 描述
+        type: text
+
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ==========================================================
+  # 4. 生活记录 - 笔记本
+  # ==========================================================
+  - name: notebooks
+    label: 笔记本
+    type: collection
+    path: src/content/life/notebooks
+    subfolders: true
+    fields:
+      - name: name
+        label: 笔记本名称
+        type: string
+
+      - name: cover
+        label: 封面
+        type: image
+
+      - name: summary
+        label: 摘要
+        type: text
+
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ==========================================================
+  # 5. 相册
+  # ==========================================================
+  - name: album
+    label: 相册
+    type: collection
+    path: src/content/album
+    fields:
+      - name: title
+        label: 相册标题
+        type: string
+        required: true
+
+      - name: subtitle
+        label: 副标题
+        type: string
+
+      - name: cover
+        label: 封面图
+        type: image
+
+      - name: date
+        label: 日期
+        type: date
+        options:
+          time: false
+          format: yyyy-MM-dd
+
+      - name: location
+        label: 位置
+        type: string
+
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+
+      - name: photos
+        label: 照片列表
+        type: image
+        list: true
+
+      - name: draft
+        label: 草稿
+        type: boolean
+        default: false
+
+      - name: body
+        label: 描述
+        type: rich-text
+
+  # ==========================================================
+  # 6. 资源 - 公告 / 每日名言
+  # ==========================================================
+  - name: ziyuan
+    label: 站点资源
+    type: collection
+    path: src/content/ziyuan
+    fields:
+      - name: title
+        label: 标题
+        type: string
+        required: true
+
+      - name: content
+        label: 内容
+        type: text
+
+      - name: closable
+        label: 可关闭
+        type: boolean
+        default: true
+
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ==========================================================
+  # 7. 弹幕
+  # ==========================================================
+  - name: danmu
+    label: 弹幕
+    type: collection
+    path: src/content/danmu
+    fields:
+      - name: nickname
+        label: 昵称
+        type: string
+        required: true
+
+      - name: time
+        label: 时间
+        type: string

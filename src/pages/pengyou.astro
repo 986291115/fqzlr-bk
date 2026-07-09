@@ -161,6 +161,17 @@ function formatDate(dateString: string): string {
 			</p>
 		</div>
 
+		<div id="pengyou-rss-sources" style="display:none">
+			{rss.map((source) => (
+				<div
+					class="pengyou-rss-source"
+					data-name={source.name}
+					data-url={source.url}
+					data-enabled={source.enabled !== false ? "true" : "false"}
+				></div>
+			))}
+		</div>
+
 		<div data-no-swup>
 			<PengyouEditor client:load />
 		</div>

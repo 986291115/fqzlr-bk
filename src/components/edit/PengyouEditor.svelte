@@ -283,6 +283,7 @@ $effect(() => {
 
 onMount(() => {
 	ensureIconify();
+	collectFromDOM();
 	loadRepoData();
 
 	window.addEventListener("edit:sidebarModeChange", handleSidebarModeChange);
@@ -299,6 +300,32 @@ onMount(() => {
 		window.removeEventListener("edit:sidebarAdd", handleSidebarAdd);
 	};
 });
+
+function collectFromDOM() {
+	const container = document.getElementById("pengyou-rss-sources");
+	if (!container) return;
+	const items: PengyouRSSItem[] = [];
+	container.querySelectorAll(".pengyou-rss-source").forEach((el) => {
+		const div = el as HTMLDivElement;
+		const name = div.dataset.name || "";
+		const url = div.dataset.url || "";
+		const enabled = div.dataset.enabled !== "false";
+		if (name && url) {
+			items.push({
+				id: genId("py"),
+				name,
+				url,
+				enabled,
+			});
+		}
+	});
+	if (items.length > 0) {
+		rssSources = items;
+		const ts = buildPengyouConfigTS(items);
+		originalTS = ts;
+		originalSources = deepClone(items);
+	}
+}
 
 function handleSidebarModeChange(e: Event) {
 	const detail = (e as CustomEvent).detail;
@@ -343,15 +370,35 @@ async function loadRepoData() {
 		try {
 			const repoItems: PengyouRSSItem[] = parseRSSFromTS(existing.content);
 			originalTS = existing.content;
-			rssSources = repoItems.length > 0 ? repoItems : [{
-				id: genId("py"),
-				name: "",
-				url: "",
-				enabled: true,
-			}];
+			const repoMap = new Map(
+				repoItems.map((s) => [s.url, s]),
+			);
+			rssSources = rssSources.map((s) => {
+				const repoItem = repoMap.get(s.url);
+				if (repoItem) {
+					return {
+						...s,
+						enabled: repoItem.enabled ?? s.enabled,
+						name: repoItem.name || s.name,
+					};
+				}
+				return s;
+			});
+			const existingUrls = new Set(
+				rssSources.map((s) => s.url),
+			);
+			for (const g of repoItems) {
+				if (!existingUrls.has(g.url)) {
+					rssSources = [...rssSources, { ...g, id: g.id || genId("py") }];
+					existingUrls.add(g.url);
+				}
+			}
 			originalSources = deepClone(rssSources);
 		} catch (e) {
 			console.error("Failed to parse repo pengyou config:", e);
+		}
+	} else {
+		if (rssSources.length === 0) {
 			rssSources = [{
 				id: genId("py"),
 				name: "",
@@ -359,13 +406,6 @@ async function loadRepoData() {
 				enabled: true,
 			}];
 		}
-	} else {
-		rssSources = [{
-			id: genId("py"),
-			name: "",
-			url: "",
-			enabled: true,
-		}];
 		originalTS = buildPengyouConfigTS(rssSources);
 	}
 	repoLoaded = true;
