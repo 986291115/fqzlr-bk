@@ -60,11 +60,11 @@ export const friendsConfig: FriendLink[] = [
 		  "weight": 10,
 		  "enabled": true
 		},
-				{
+		{
 		  "title": "团子和蛋糕",
 		  "imgurl": "https://re.tsh520.cn/zl/tx.webp",
 		  "desc": "如果你喜欢那么欢迎来到我的世界！",
-		  "siteurl": "https://blog.tsh520.cn",
+		  "siteurl": "https://blog.tsh520.cn/",
 		  "tags": [
 		    "Blog"
 		  ],
@@ -93,7 +93,6 @@ export const friendsConfig: FriendLink[] = [
 		  "weight": 10,
 		  "enabled": true
 		},
-
 		{
 		  "title": "Re.Y.Ju.hao | 个人主页",
 		  "imgurl": "https://img.cdn1.vip/i/69f03a1c79908_1777351196.webp",
@@ -241,7 +240,7 @@ export const friendsConfig: FriendLink[] = [
 		  "title": "miuo",
 		  "imgurl": "https://blog.miuo.me/avatar.avif",
 		  "desc": "记录文章、笔记、实验和暂时不想丢掉的内容。",
-		  "siteurl": "https://blog.miuo.me/",
+		  "siteurl": "https://miuo.me/",
 		  "tags": [
 		    "Blog"
 		  ],
@@ -402,7 +401,7 @@ export const friendsConfig: FriendLink[] = [
 		  "weight": 10,
 		  "enabled": true
 		},
-];
+	];
 
 // 获取启用的友链并进行排序
 export const getEnabledFriends = (): FriendLink[] => {
