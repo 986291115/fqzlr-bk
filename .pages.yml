@@ -18,262 +18,563 @@ settings:
     merge: true
 
 # ------------------------------------------------------------
-# 内容集合
+# 内容分组
 # ------------------------------------------------------------
 content:
-  # ==========================================================
-  # 1. 博客文章
-  # ==========================================================
-  - name: posts
-    label: 博客文章
-    type: collection
-    path: src/content/posts
-    subfolders: true
-    fields:
-      - name: title
-        label: 标题
-        type: string
-        required: true
 
-      - name: published
-        label: 发布日期
-        type: date
-        required: true
-        options:
-          time: false
-          format: yyyy-MM-dd
+  # ============================================================
+  # 一、内容管理
+  # ============================================================
+  - name: content-group
+    label: 内容管理
+    type: group
+    items:
 
-      - name: updated
-        label: 更新日期
-        type: date
-        options:
-          time: false
-          format: yyyy-MM-dd
+      # 1. 博客文章
+      - name: posts
+        label: 博客文章
+        type: collection
+        path: src/content/posts
+        subfolders: true
+        view:
+          primary: title
+          sort: published
+          order: desc
+        fields:
+          - name: title
+            label: 标题
+            type: string
+            required: true
 
-      - name: draft
-        label: 草稿
-        type: boolean
-        default: false
+          - name: published
+            label: 发布日期
+            type: date
+            required: true
+            options:
+              time: false
+              format: yyyy-MM-dd
 
-      - name: description
-        label: 文章描述
-        type: text
+          - name: updated
+            label: 更新日期
+            type: date
+            options:
+              time: false
+              format: yyyy-MM-dd
 
-      - name: image
-        label: 封面图
-        type: image
+          - name: draft
+            label: 草稿
+            type: boolean
+            default: false
 
-      - name: tags
-        label: 标签
-        type: string
-        list: true
+          - name: description
+            label: 文章描述
+            type: text
 
-      - name: category
-        label: 分类
-        type: string
+          - name: image
+            label: 封面图
+            type: image
 
-      - name: pinned
-        label: 置顶
-        type: boolean
-        default: false
+          - name: tags
+            label: 标签
+            type: string
+            list: true
 
-      - name: author
-        label: 作者
-        type: string
+          - name: category
+            label: 分类
+            type: string
 
-      - name: comment
-        label: 开启评论
-        type: boolean
-        default: true
+          - name: pinned
+            label: 置顶
+            type: boolean
+            default: false
 
-      - name: body
-        label: 正文
-        type: rich-text
+          - name: author
+            label: 作者
+            type: string
 
-  # ==========================================================
-  # 2. 特殊页面
-  # ==========================================================
-  - name: spec
-    label: 特殊页面
-    type: collection
-    path: src/content/spec
-    fields:
-      - name: body
-        label: 页面内容
-        type: rich-text
+          - name: comment
+            label: 开启评论
+            type: boolean
+            default: true
 
-  # ==========================================================
-  # 3. 生活记录 - 足迹
-  # ==========================================================
-  - name: places
-    label: 足迹
-    type: collection
-    path: src/content/life/places
-    fields:
-      - name: title
-        label: 标题
-        type: string
+          - name: body
+            label: 正文
+            type: rich-text
 
-      - name: date
-        label: 日期
-        type: date
-        options:
-          time: false
-          format: yyyy-MM-dd
+      # 2. 特殊页面
+      - name: spec
+        label: 特殊页面
+        type: collection
+        path: src/content/spec
+        view:
+          primary: title
+        fields:
+          - name: title
+            label: 标题
+            type: string
 
-      - name: province
-        label: 省份
-        type: string
+          - name: body
+            label: 页面内容
+            type: rich-text
 
-      - name: city
-        label: 城市
-        type: string
+      # 3. 站点资源
+      - name: ziyuan
+        label: 站点资源
+        type: collection
+        path: src/content/ziyuan
+        view:
+          primary: title
+        fields:
+          - name: title
+            label: 标题
+            type: string
+            required: true
 
-      - name: lat
-        label: 纬度
-        type: number
+          - name: content
+            label: 内容
+            type: text
 
-      - name: lng
-        label: 经度
-        type: number
+          - name: closable
+            label: 可关闭
+            type: boolean
+            default: true
 
-      - name: visitCount
-        label: 访问次数
-        type: number
-        default: 1
+          - name: body
+            label: 正文
+            type: rich-text
 
-      - name: experience
-        label: 体验
-        type: text
+  # ============================================================
+  # 二、相册管理
+  # ============================================================
+  - name: album-group
+    label: 相册管理
+    type: group
+    items:
 
-      - name: description
-        label: 描述
-        type: text
+      - name: album
+        label: 相册
+        type: collection
+        path: src/content/album
+        view:
+          primary: title
+          sort: date
+          order: desc
+        fields:
+          - name: title
+            label: 相册标题
+            type: string
+            required: true
 
-      - name: body
-        label: 正文
-        type: rich-text
+          - name: subtitle
+            label: 副标题
+            type: string
 
-  # ==========================================================
-  # 4. 生活记录 - 笔记本
-  # ==========================================================
-  - name: notebooks
-    label: 笔记本
-    type: collection
-    path: src/content/life/notebooks
-    subfolders: true
-    fields:
-      - name: name
-        label: 笔记本名称
-        type: string
+          - name: cover
+            label: 封面图
+            type: image
 
-      - name: cover
-        label: 封面
-        type: image
+          - name: date
+            label: 日期
+            type: date
+            options:
+              time: false
+              format: yyyy-MM-dd
 
-      - name: summary
-        label: 摘要
-        type: text
+          - name: location
+            label: 位置
+            type: string
 
-      - name: tags
-        label: 标签
-        type: string
-        list: true
+          - name: tags
+            label: 标签
+            type: string
+            list: true
 
-      - name: body
-        label: 正文
-        type: rich-text
+          - name: photos
+            label: 照片列表
+            type: image
+            list: true
 
-  # ==========================================================
-  # 5. 相册
-  # ==========================================================
-  - name: album
-    label: 相册
-    type: collection
-    path: src/content/album
-    fields:
-      - name: title
-        label: 相册标题
-        type: string
-        required: true
+          - name: draft
+            label: 草稿
+            type: boolean
+            default: false
 
-      - name: subtitle
-        label: 副标题
-        type: string
+          - name: body
+            label: 描述
+            type: rich-text
 
-      - name: cover
-        label: 封面图
-        type: image
+      - name: album-config
+        label: 相册配置
+        type: file
+        path: src/config/albumConfig.ts
+        format: code
 
-      - name: date
-        label: 日期
-        type: date
-        options:
-          time: false
-          format: yyyy-MM-dd
+  # ============================================================
+  # 三、生活记录
+  # ============================================================
+  - name: life-group
+    label: 生活记录
+    type: group
+    items:
 
-      - name: location
-        label: 位置
-        type: string
+      # 足迹
+      - name: places
+        label: 足迹
+        type: collection
+        path: src/content/life/places
+        view:
+          primary: title
+          sort: date
+          order: desc
+        fields:
+          - name: title
+            label: 标题
+            type: string
 
-      - name: tags
-        label: 标签
-        type: string
-        list: true
+          - name: date
+            label: 日期
+            type: date
+            options:
+              time: false
+              format: yyyy-MM-dd
 
-      - name: photos
-        label: 照片列表
-        type: image
-        list: true
+          - name: province
+            label: 省份
+            type: string
 
-      - name: draft
-        label: 草稿
-        type: boolean
-        default: false
+          - name: city
+            label: 城市
+            type: string
 
-      - name: body
-        label: 描述
-        type: rich-text
+          - name: lat
+            label: 纬度
+            type: number
 
-  # ==========================================================
-  # 6. 资源 - 公告 / 每日名言
-  # ==========================================================
-  - name: ziyuan
-    label: 站点资源
-    type: collection
-    path: src/content/ziyuan
-    fields:
-      - name: title
-        label: 标题
-        type: string
-        required: true
+          - name: lng
+            label: 经度
+            type: number
 
-      - name: content
-        label: 内容
-        type: text
+          - name: visitCount
+            label: 访问次数
+            type: number
+            default: 1
 
-      - name: closable
-        label: 可关闭
-        type: boolean
-        default: true
+          - name: experience
+            label: 体验
+            type: text
 
-      - name: body
-        label: 正文
-        type: rich-text
+          - name: description
+            label: 描述
+            type: text
 
-  # ==========================================================
-  # 7. 弹幕
-  # ==========================================================
-  - name: danmu
-    label: 弹幕
-    type: collection
-    path: src/content/danmu
-    fields:
-      - name: nickname
-        label: 昵称
-        type: string
-        required: true
+          - name: body
+            label: 正文
+            type: rich-text
 
-      - name: time
-        label: 时间
-        type: string
+      - name: places-config
+        label: 足迹配置
+        type: file
+        path: src/config/placesConfig.ts
+        format: code
+
+      # 笔记本
+      - name: notebooks
+        label: 笔记本
+        type: collection
+        path: src/content/life/notebooks
+        subfolders: true
+        view:
+          primary: name
+        fields:
+          - name: name
+            label: 笔记本名称
+            type: string
+
+          - name: cover
+            label: 封面
+            type: image
+
+          - name: summary
+            label: 摘要
+            type: text
+
+          - name: tags
+            label: 标签
+            type: string
+            list: true
+
+          - name: body
+            label: 正文
+            type: rich-text
+
+      - name: notebooks-config
+        label: 笔记本配置
+        type: file
+        path: src/config/notebooksConfig.ts
+        format: code
+
+      # 日常规划
+      - name: routines-config
+        label: 日常规划
+        type: file
+        path: src/config/routinesConfig.ts
+        format: code
+
+  # ============================================================
+  # 四、社交互动
+  # ============================================================
+  - name: social-group
+    label: 社交互动
+    type: group
+    items:
+
+      - name: friends-config
+        label: 友链管理
+        type: file
+        path: src/config/friendsConfig.ts
+        format: code
+
+      - name: pengyou-config
+        label: 朋友圈RSS
+        type: file
+        path: src/config/pengyouConfig.ts
+        format: code
+
+      - name: danmu
+        label: 弹幕
+        type: collection
+        path: src/content/danmu
+        view:
+          primary: nickname
+        fields:
+          - name: nickname
+            label: 昵称
+            type: string
+            required: true
+
+          - name: time
+            label: 时间
+            type: string
+
+          - name: color
+            label: 颜色
+            type: string
+
+          - name: text
+            label: 内容
+            type: text
+            required: true
+
+  # ============================================================
+  # 五、我的收藏
+  # ============================================================
+  - name: collection-group
+    label: 我的收藏
+    type: group
+    items:
+
+      - name: bangumi-config
+        label: 番剧/影视/游戏/书籍
+        type: file
+        path: src/config/bangumiConfig.ts
+        format: code
+
+      - name: music-config
+        label: 音乐配置
+        type: file
+        path: src/config/musicConfig.ts
+        format: code
+
+      - name: calendar-config
+        label: 日历配置
+        type: file
+        path: src/config/calendarConfig.ts
+        format: code
+
+  # ============================================================
+  # 六、站点设置
+  # ============================================================
+  - name: site-group
+    label: 站点设置
+    type: group
+    items:
+
+      - name: site-config
+        label: 基础配置
+        type: file
+        path: src/config/siteConfig.ts
+        format: code
+
+      - name: profile-config
+        label: 个人资料
+        type: file
+        path: src/config/profileConfig.ts
+        format: code
+
+      - name: moments-config
+        label: 说说页面配置
+        type: file
+        path: src/config/momentsConfig.ts
+        format: code
+
+      - name: changelog-config
+        label: 更新日志
+        type: file
+        path: src/config/changelogConfig.ts
+        format: code
+
+      - name: sponsor-config
+        label: 赞助配置
+        type: file
+        path: src/config/sponsorConfig.ts
+        format: code
+
+      - name: daohang-config
+        label: 网站导航
+        type: file
+        path: src/config/daohangConfig.ts
+        format: code
+
+      - name: projects-config
+        label: 网站导航(旧版)
+        type: file
+        path: src/config/projectsConfig.ts
+        format: code
+
+      - name: nav-config
+        label: 导航栏配置
+        type: file
+        path: src/config/navBarConfig.ts
+        format: code
+
+      - name: sidebar-config
+        label: 侧边栏配置
+        type: file
+        path: src/config/sidebarConfig.ts
+        format: code
+
+      - name: footer-config
+        label: 页脚配置
+        type: file
+        path: src/config/footerConfig.ts
+        format: code
+
+      - name: relationship-config
+        label: 关系配置
+        type: file
+        path: src/config/relationshipConfig.ts
+        format: code
+
+  # ============================================================
+  # 七、外观设置
+  # ============================================================
+  - name: appearance-group
+    label: 外观设置
+    type: group
+    items:
+
+      - name: cover-config
+        label: 封面图配置
+        type: file
+        path: src/config/coverImageConfig.ts
+        format: code
+
+      - name: wallpaper-config
+        label: 背景壁纸
+        type: file
+        path: src/config/backgroundWallpaper.ts
+        format: code
+
+      - name: sakura-config
+        label: 樱花效果
+        type: file
+        path: src/config/sakuraConfig.ts
+        format: code
+
+      - name: pio-config
+        label: 看板娘配置
+        type: file
+        path: src/config/pioConfig.ts
+        format: code
+
+      - name: font-config
+        label: 字体配置
+        type: file
+        path: src/config/fontConfig.ts
+        format: code
+
+      - name: home-config
+        label: 首页组件配置
+        type: file
+        path: src/config/homePortfolioShutterConfig.ts
+        format: code
+
+      - name: skills-config
+        label: 技能配置
+        type: file
+        path: src/config/skillsConfig.ts
+        format: code
+
+      - name: folder-icon-config
+        label: 文件夹图标
+        type: file
+        path: src/config/folderIconConfig.ts
+        format: code
+
+  # ============================================================
+  # 八、评论与交互
+  # ============================================================
+  - name: comment-group
+    label: 评论与交互
+    type: group
+    items:
+
+      - name: comment-config
+        label: 评论系统配置
+        type: file
+        path: src/config/commentConfig.ts
+        format: code
+
+      - name: announcement-config
+        label: 公告配置
+        type: file
+        path: src/config/announcementConfig.ts
+        format: code
+
+      - name: category-links
+        label: 分类链接配置
+        type: file
+        path: src/config/categoryLinks.ts
+        format: code
+
+  # ============================================================
+  # 九、功能配置
+  # ============================================================
+  - name: feature-group
+    label: 功能配置
+    type: group
+    items:
+
+      - name: edit-config
+        label: 编辑功能配置
+        type: file
+        path: src/config/editConfig.ts
+        format: code
+
+      - name: ad-config
+        label: 广告配置
+        type: file
+        path: src/config/adConfig.ts
+        format: code
+
+      - name: license-config
+        label: 协议配置
+        type: file
+        path: src/config/licenseConfig.ts
+        format: code
+
+      - name: expressive-code-config
+        label: 代码高亮配置
+        type: file
+        path: src/config/expressiveCodeConfig.ts
+        format: code
