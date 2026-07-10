@@ -168,6 +168,43 @@ const danmuCollection = defineCollection({
 	}),
 });
 
+// ============================================================================
+// 番剧/影音/游戏/书籍集合 - 追番追剧、游戏、音乐、读书
+// 目录：src/content/bangumi/
+// 子目录：anime(动漫影视), game(游戏), music(音乐), book(书籍)
+// ============================================================================
+const bangumiCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/bangumi" }),
+	schema: z.object({
+		title: z.string(),
+		category: z.string(),
+		status: z.number().optional().default(0),
+		image: z.union([z.string(), z.object({ src: z.string() })]).optional().default(""),
+		score: z.number().optional().default(0),
+		tags: z.array(z.string()).optional().default([]),
+		published: z.date().optional(),
+		description: z.string().optional().default(""),
+
+		// 音乐专属字段
+		artist: z.string().optional().default(""),
+		audioUrl: z.string().optional().default(""),
+		lrcUrl: z.string().optional().default(""),
+		metingServer: z.string().optional().default(""),
+		metingId: z.string().optional().default(""),
+
+		// 微信读书专属字段
+		doc_type: z.string().optional(),
+		bookId: z.string().optional(),
+		reviewCount: z.number().optional(),
+		noteCount: z.number().optional(),
+
+		// 其他兼容字段
+		author: z.string().optional().default(""),
+		cover: z.string().optional().default(""),
+		rating: z.number().optional(),
+	}),
+});
+
 /**
  * 导出所有内容集合
  *
@@ -180,4 +217,5 @@ export const collections = {
 	life: lifeCollection,
 	ziyuan: ziyuanCollection,
 	danmu: danmuCollection,
+	bangumi: bangumiCollection,
 };

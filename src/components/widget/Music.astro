@@ -48,5 +48,5 @@ const playlistJson = JSON.stringify(musicEntries);
 ---
 
 <WidgetLayout id={`${widgetId}-layout`} class={className} style={style} name={i18n(I18nKey.music)}>
-    <MusicPlayer id={widgetId} externalPlaylist={playlistJson} metingApiBase={metingApiBase} />
+    <MusicPlayer id={widgetId} externalPlaylist={playlistJson} />
 </WidgetLayout>

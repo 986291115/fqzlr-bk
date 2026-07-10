@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
 import Search from "@/components/controls/Search.svelte";
+import AISearch from "@/components/controls/AISearch.svelte";
 import MusicPlayer from "@/components/features/MusicPlayer.astro";
 import PostDirectoryList from "@/components/widget/PostDirectoryList.astro";
 import { musicPlayerConfig } from "@/config/musicConfig";
@@ -93,6 +94,12 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
           <span class="dock-btn-label">音乐</span>
         </button>
       )}
+
+      <!-- AI 搜索 -->
+      <button class="dock-btn" id="dock-ai-btn" aria-label="AI 助手" type="button">
+        <span class="dock-btn-icon"><Icon name="material-symbols:smart-toy-outline" class="text-2xl" /></span>
+        <span class="dock-btn-label">AI</span>
+      </button>
 
 
       <!-- 笔记本 -->
@@ -194,12 +201,15 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
 {musicPlayerConfig.showInNavbar !== false && (
 <div class="dock-drawer dock-drawer-closed" id="dock-drawer-music">
   <div class="dock-drawer-title">[ {i18n(I18nKey.music)} ]</div>
-  <MusicPlayer externalPlaylist={dockMusicPlaylist} metingApiBase={metingApiBase} />
+  <MusicPlayer lazy externalPlaylist={dockMusicPlaylist} />
 </div>
 )}
 
 <!-- Search 组件（创建 #search-panel，由 dock 按钮触发） -->
 <Search client:load />
+
+<!-- AI 搜索组件 -->
+<AISearch client:load />
 
 <!-- TOC 抽屉 -->
 <div class="dock-drawer dock-drawer-closed" id="dock-drawer-toc">
@@ -214,6 +224,19 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
   <div class="dock-drawer-title">[ 全部文章 ]</div>
   <PostDirectoryList />
 </div>
+
+<script id="dock-music-playlist" type="application/json" set:html={dockMusicPlaylist}></script>
+
+<script is:inline>
+  (function() {
+    try {
+      var el = document.getElementById('dock-music-playlist');
+      window.__dockMusicPlaylist = el ? JSON.parse(el.textContent) : [];
+    } catch(e) {
+      window.__dockMusicPlaylist = [];
+    }
+  })();
+</script>
 
 <script>
   let _dockAbort: AbortController | null = null;
@@ -264,6 +287,12 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
         const input = searchPanel.querySelector("input") as HTMLInputElement;
         if (input) setTimeout(() => input.focus(), 100);
       }
+    });
+
+    // AI 搜索
+    document.getElementById("dock-ai-btn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.dispatchEvent(new CustomEvent("toggle-ai-search"));
     });
 
     // 标签 & 音乐 & TOC & 文章 抽屉
@@ -376,6 +405,39 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
     }
     updateVisibility();
     window.addEventListener("scroll", updateVisibility, { passive: true, signal });
+
+    // 音乐按钮播放旋转
+    const musicBtn = document.getElementById("dock-music-btn");
+    function updateMusicIconSpin() {
+      if (!musicBtn) return;
+      const mgr = (window as any).__fireflyMusic;
+      const isPlaying = mgr?.getState()?.isPlaying ?? false;
+      musicBtn.classList.toggle("is-playing", isPlaying);
+    }
+    updateMusicIconSpin();
+    window.addEventListener("fm:play-state", updateMusicIconSpin, { signal });
+
+    // 音乐抽屉懒加载：首次打开时触发 MusicManager 初始化
+    const musicDrawerBtn = musicBtn;
+    const musicDrawerEl = document.getElementById("dock-drawer-music");
+    if (musicDrawerBtn && musicDrawerEl) {
+      musicDrawerBtn.addEventListener("click", () => {
+        const mgr = (window as any).__fireflyMusic;
+        if (mgr && !mgr.getState().initialized) {
+          const widget = musicDrawerEl.querySelector(".music-player-widget");
+          const loadingEl = widget?.querySelector(".music-loading") as HTMLElement | null;
+          if (loadingEl) {
+            loadingEl.classList.remove("opacity-0", "pointer-events-none");
+          }
+          const playlistData = (window as any).__dockMusicPlaylist;
+          if (playlistData && playlistData.length > 0) {
+            mgr.setExternalPlaylist(playlistData, false);
+          } else {
+            mgr.init();
+          }
+        }
+      });
+    }
 
     // 页面切换后重新绑定
     document.addEventListener("astro:page-load", () => bindDockEvents(), { signal });

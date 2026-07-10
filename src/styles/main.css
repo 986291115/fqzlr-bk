@@ -38,6 +38,8 @@
 @import './components/dropdown.css';
 @import './components/pagination.css';
 @import './components/floating-dock.css';
+@import './components/floating-lyrics.css';
+@import './components/ai-search.css';
 @import './components/post-list.css';
 @import './components/home-hero.css';
 @import './components/home-ticker.css';

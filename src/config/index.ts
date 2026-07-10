@@ -23,6 +23,7 @@ export type {
 	WidgetComponentType,
 } from "../types/config";
 export { adConfig1, adConfig2 } from "./adConfig"; // 广告配置
+export { aiSearchConfig } from "./aiSearchConfig"; // AI 搜索配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 // 样式配置
 export { backgroundWallpaper } from "./backgroundWallpaper"; // 背景壁纸配置

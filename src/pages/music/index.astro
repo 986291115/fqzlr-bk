@@ -80,10 +80,15 @@ const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
 
 	<Comment customPath="/music/" />
 
-	<script is:inline define:vars={{ collectionPlaylistJson: JSON.stringify(collectionPlaylist), metingApiUrl: metingApiBase }}>
+	<script id="music-page-playlist" type="application/json" set:html={JSON.stringify(collectionPlaylist)}></script>
+	<script id="music-page-config" type="application/json" set:html={JSON.stringify({ metingApiUrl: metingApiBase })}></script>
+
+	<script is:inline>
 	(function() {
-		var collectionPlaylist = JSON.parse(collectionPlaylistJson);
-		var metingApi = metingApiUrl;
+		var playlistEl = document.getElementById('music-page-playlist');
+		var configEl = document.getElementById('music-page-config');
+		var collectionPlaylist = playlistEl ? JSON.parse(playlistEl.textContent) : [];
+		var metingApi = configEl ? JSON.parse(configEl.textContent).metingApiUrl : '';
 
 		async function resolveMetingTracks(playlist) {
 			var base = metingApi + '?server=';
@@ -115,7 +120,7 @@ const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
 		async function loadBangumiPlaylist(mgr) {
 			var resolved = await resolveMetingTracks(collectionPlaylist);
 			if (resolved.length > 0) {
-				mgr.loadExternalPlaylist(resolved);
+				mgr.setExternalPlaylist(resolved, false);
 			}
 		}
 
