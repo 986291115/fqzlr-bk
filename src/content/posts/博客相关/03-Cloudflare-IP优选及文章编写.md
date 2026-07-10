@@ -9,11 +9,18 @@ tags:
   - Astro
   - Markdown
   - 博客
+slug: cloudflare-ip-optimize-and-writing
 category: 教程
 draft: false
 pinned: false
 author: fqzlr
 ---
+
+<iframe width="100%" height="468"
+  src="//player.bilibili.com/player.html?bvid=BV1Hk9fBTE6H&p=1&autoplay=0"
+  scrolling="no" border="0" frameborder="no"
+  framespacing="0" allowfullscreen="true">
+</iframe>
 
 ## 为什么要做 IP 优选
 
@@ -56,28 +63,32 @@ Cloudflare 的默认节点对国内访问不太友好，有时候打开很慢。
 
 ## 文章编写规范
 
-博客部署好了，接下来就是写文章。Astro 博客用 Markdown 格式，有一些固定规范。
+博客部署好了，接下来就是写文章。Firefly 用 Markdown（`.md`）或 MDX（`.mdx`）格式，功能很丰富。
 
 ### 文章放哪
 
-所有文章放在项目源码的 `src/content/posts/` 目录下，文件后缀 `.md`。文件名建议用英文或拼音，避免中文路径可能带来的问题。
-
-图片等资源放在 `src/content/posts/images/` 或 `src/assets/` 下，用相对路径引用。
+所有文章放在 `src/content/posts/` 目录下，可以建子目录来组织。图片等资源放在同目录或 `src/assets/` 下。文件名建议用英文连字符格式（如 `cloudflare-ip-optimize.md`），避免中文路径问题。
 
 ### Frontmatter 必须写
 
-每篇文章顶部必须有一段 YAML 元数据，用 `---` 包裹：
+每篇文章顶部用 `---` 包裹 YAML 元数据：
 
 ```yaml
 ---
-title: 文章标题
-date: 2026-05-03 19:00:00
-description: 简短描述，100字以内，用于SEO和列表展示
-cover: /src/content/posts/images/cover.jpg
-tags: [标签1, 标签2]
-categories: 分类名
-draft: false
-author: 作者名
+title: "文章标题"           # 必填
+published: 2026-05-03       # 必填，发布日期
+updated: 2026-05-04         # 可选，更新日期
+description: "文章简介"      # 可选，首页卡片显示
+image:                      # 可选，封面图（相对路径/网络链接/随机图API都行）
+tags:
+  - 标签1
+  - 标签2
+category: 分类名             # 可选
+draft: false                # true 则隐藏不显示
+pinned: false               # true 则置顶
+slug: my-custom-url         # 可选，自定义URL路径
+author: 作者名               # 可选
+comment: true               # 可选，是否开启评论
 ---
 ```
 
@@ -86,13 +97,83 @@ author: 作者名
 | 字段 | 必填 | 说明 |
 |------|------|------|
 | `title` | 是 | 文章标题 |
-| `date` | 是 | 发布时间，格式 `YYYY-MM-DD HH:MM` |
-| `description` | 否 | 文章摘要 |
-| `cover` | 否 | 封面图路径 |
+| `published` | 是 | 发布日期，格式 `YYYY-MM-DD` |
+| `updated` | 否 | 更新日期 |
+| `description` | 否 | 首页卡片显示的简介 |
+| `image` | 否 | 封面图，支持相对路径、绝对路径、网络链接、随机图 API |
 | `tags` | 否 | 标签列表 |
-| `categories` | 否 | 分类 |
-| `draft` | 是 | `true` 为草稿不会显示，`false` 正式发布 |
+| `category` | 否 | 分类 |
+| `draft` | 否 | `true` 为草稿不显示，`false` 正式发布 |
+| `pinned` | 否 | `true` 置顶显示 |
+| `slug` | 否 | 自定义 URL 路径，建议英文连字符 |
 | `author` | 否 | 作者名 |
+| `comment` | 否 | 是否开启评论，默认 true |
+| `licenseName` | 否 | 许可证名称（如 CC BY-NC-SA 4.0） |
+| `password` | 否 | 文章密码，设置后需输入密码才能查看 |
+
+### 数学公式（KaTeX）
+
+主题内置 KaTeX，直接用就行。
+
+行内公式用单 `$`：`$E = mc^2$`
+
+块级公式用双 `$$`：
+
+```
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+```
+
+### Mermaid 图表
+
+用 `mermaid` 代码块即可渲染各种图表：
+
+````
+```mermaid
+graph TD
+    A[开始] --> B{条件}
+    B -->|是| C[执行]
+    B -->|否| D[结束]
+```
+````
+
+还支持时序图、甘特图、饼图、类图、状态图等。
+
+### 提醒框
+
+用 GitHub 风格的语法，很直观：
+
+```markdown
+> [!NOTE]
+> 普通提示
+
+> [!TIP]
+> 小技巧
+
+> [!WARNING]
+> 注意
+
+> [!CAUTION]
+> 危险操作
+```
+
+### 嵌入视频
+
+直接粘贴 iframe：
+
+```html
+<iframe src="//player.bilibili.com/player.html?bvid=BV1xxxxx"
+  scrolling="no" border="0" frameborder="no"
+  framespacing="0" allowfullscreen="true">
+</iframe>
+```
+
+### GitHub 仓库卡片
+
+```markdown
+::github{repo="CuteLeaf/Firefly"}
+```
 
 ### 编辑器选择
 
@@ -113,6 +194,8 @@ git push
 
 推到 GitHub 后 Cloudflare 自动构建上线，刷新博客就能看到了。
 
+> 官方文档：[docs-firefly.cuteleaf.cn/zh/guide/writing](https://docs-firefly.cuteleaf.cn/zh/guide/writing.html)
+>
 > 文字版：[fqzlr.com/posts/blog/ip](https://fqzlr.com/posts/blog/ip/)
 >
 > 视频链接：[BV1Hk9fBTE6H](https://www.bilibili.com/video/BV1Hk9fBTE6H)

@@ -10,11 +10,18 @@ tags:
   - Firefly
   - Astro
   - 主题对比
+slug: mizuki-vs-firefly-themes
 category: 分享
 draft: false
 pinned: false
 author: fqzlr
 ---
+
+<iframe width="100%" height="468"
+  src="//player.bilibili.com/player.html?bvid=BV15n5n6nEKU&p=1&autoplay=0"
+  scrolling="no" border="0" frameborder="no"
+  framespacing="0" allowfullscreen="true">
+</iframe>
 
 ## fuwari 框架简介
 

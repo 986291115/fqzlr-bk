@@ -9,11 +9,18 @@ tags:
   - 图床
   - 博客
   - 笔记软件
+slug: obsidian-astro-imgbed-workflow
 category: 教程
 draft: false
 pinned: false
 author: fqzlr
 ---
+
+<iframe width="100%" height="468"
+  src="//player.bilibili.com/player.html?bvid=BV1jWLH6cERQ&p=1&autoplay=0"
+  scrolling="no" border="0" frameborder="no"
+  framespacing="0" allowfullscreen="true">
+</iframe>
 
 ## 这套工作流是什么
 
