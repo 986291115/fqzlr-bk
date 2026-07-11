@@ -1,0 +1,308 @@
+---
+import { Icon } from "astro-icon/components";
+import { announcementConfig } from "@/config";
+import { musicPlayerConfig } from "@/config/musicConfig";
+
+const showMusic = musicPlayerConfig.showInNavbar !== false;
+const showAnnouncement = !!announcementConfig.content;
+---
+
+<div class="mobile-dock" id="mobile-dock">
+	<button class="mobile-dock__btn" id="mobile-dock-home-btn" aria-label="首页" type="button">
+		<span class="mobile-dock__icon"><Icon name="material-symbols:home-outline-rounded" class="text-2xl" /></span>
+		<span class="mobile-dock__label">首页</span>
+	</button>
+
+	<button class="mobile-dock__btn" id="mobile-dock-theme-btn" aria-label="主题" type="button">
+		<span class="mobile-dock__icon">
+			<Icon name="material-symbols:wb-sunny-outline-rounded" class="text-2xl mobile-dock-theme-icon-light" />
+			<Icon name="material-symbols:dark-mode-outline-rounded" class="text-2xl mobile-dock-theme-icon-dark hidden" />
+		</span>
+		<span class="mobile-dock__label">主题</span>
+	</button>
+
+	<button class="mobile-dock__btn mobile-dock__btn--center" id="mobile-dock-search-btn" aria-label="搜索" type="button">
+		<span class="mobile-dock__icon"><Icon name="material-symbols:search-rounded" class="text-2xl" /></span>
+	</button>
+
+	<button class="mobile-dock__btn" id="mobile-dock-tools-btn" aria-label="工具栏" type="button">
+		<span class="mobile-dock__icon">
+			<Icon name="material-symbols:more-horiz" class="text-2xl mobile-dock-tools-icon-collapsed" />
+			<Icon name="material-symbols:close-rounded" class="text-2xl mobile-dock-tools-icon-open hidden" />
+		</span>
+		<span class="mobile-dock__label">工具</span>
+	</button>
+
+	<button class="mobile-dock__btn" id="mobile-dock-menu-btn" aria-label="菜单" type="button">
+		<span class="mobile-dock__icon">
+			<Icon name="material-symbols:menu-rounded" class="text-2xl mobile-dock-menu-icon-collapsed" />
+			<Icon name="material-symbols:close-rounded" class="text-2xl mobile-dock-menu-icon-open hidden" />
+		</span>
+		<span class="mobile-dock__label">菜单</span>
+	</button>
+</div>
+
+<div class="mobile-dock__overlay" id="mobile-dock-overlay" aria-hidden="true"></div>
+
+<div class="mobile-dock__sheet" id="mobile-dock-sheet">
+	<div class="mobile-dock__sheet-title">工具</div>
+	<div class="mobile-dock__sheet-grid">
+		<button class="mobile-dock__sheet-item hide" id="md-edit-btn" aria-label="编辑" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:edit-rounded" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label" id="md-edit-label">编辑</span>
+		</button>
+		<button class="mobile-dock__sheet-item" id="md-ai-search-btn" aria-label="AI 搜索" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:smart-toy-outline" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label">AI 搜索</span>
+		</button>
+		{showMusic && (
+			<button class="mobile-dock__sheet-item" id="md-music-btn" aria-label="音乐" type="button">
+				<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:music-note-rounded" class="text-2xl" /></span>
+				<span class="mobile-dock__sheet-item-label">音乐</span>
+			</button>
+		)}
+		{showAnnouncement && (
+			<button class="mobile-dock__sheet-item" id="md-announcement-btn" aria-label="公告" type="button">
+				<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:notifications-outline-rounded" class="text-2xl" /></span>
+				<span class="mobile-dock__sheet-item-label">公告</span>
+			</button>
+		)}
+		<button class="mobile-dock__sheet-item" id="md-tags-btn" aria-label="标签" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:label-outline" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label">标签</span>
+		</button>
+		<button class="mobile-dock__sheet-item hide" id="md-toc-btn" aria-label="目录" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:format-list-bulleted" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label">目录</span>
+		</button>
+		<button class="mobile-dock__sheet-item hide" id="md-comment-btn" aria-label="评论" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:chat-bubble-outline" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label">评论</span>
+		</button>
+		<button class="mobile-dock__sheet-item hide" id="md-top-btn" aria-label="回到顶部" type="button">
+			<span class="mobile-dock__sheet-item-icon"><Icon name="material-symbols:keyboard-arrow-up-rounded" class="text-2xl" /></span>
+			<span class="mobile-dock__sheet-item-label">顶部</span>
+		</button>
+	</div>
+</div>
+
+<script>
+(function initMobileDock() {
+	const dockEl = document.getElementById("mobile-dock");
+	const overlayEl = document.getElementById("mobile-dock-overlay");
+	const sheetEl = document.getElementById("mobile-dock-sheet");
+	if (!dockEl || !overlayEl || !sheetEl) return;
+
+	const dock = dockEl;
+	const overlay = overlayEl;
+	const sheet = sheetEl;
+
+	let lastScrollY = window.scrollY;
+	let isOverlayOpen = false;
+
+	function onScroll() {
+		if (isOverlayOpen) return;
+		const y = window.scrollY;
+		if (y > lastScrollY + 8 && y > 100) {
+			dock.classList.add("is-hidden");
+		} else if (y < lastScrollY - 8) {
+			dock.classList.remove("is-hidden");
+		}
+		lastScrollY = y;
+
+		const scrolled = y > 200;
+		document.getElementById("md-top-btn")?.classList.toggle("hide", !scrolled);
+	}
+
+	window.addEventListener("scroll", onScroll, { passive: true });
+
+	const themeBtn = document.getElementById("mobile-dock-theme-btn");
+	const themeLightIcon = themeBtn?.querySelector(".mobile-dock-theme-icon-light");
+	const themeDarkIcon = themeBtn?.querySelector(".mobile-dock-theme-icon-dark");
+
+	function updateThemeIcon() {
+		const isDark = document.documentElement.classList.contains("dark");
+		if (themeLightIcon) themeLightIcon.classList.toggle("hidden", isDark);
+		if (themeDarkIcon) themeDarkIcon.classList.toggle("hidden", !isDark);
+	}
+
+	themeBtn?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		const sunMoonBtn = document.getElementById("sun-moon-theme-btn");
+		if (sunMoonBtn) sunMoonBtn.click();
+		setTimeout(updateThemeIcon, 100);
+	});
+
+	updateThemeIcon();
+	const observer = new MutationObserver(updateThemeIcon);
+	observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+	document.getElementById("mobile-dock-home-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		const isHome = window.location.pathname === "/" || window.location.pathname === "";
+		if (!isHome) {
+			window.location.href = "/";
+		}
+	});
+
+	document.getElementById("mobile-dock-search-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		document.getElementById("dock-search-btn")?.click();
+	});
+
+	const menuBtn = document.getElementById("mobile-dock-menu-btn");
+	const menuCollapsedIcon = menuBtn?.querySelector(".mobile-dock-menu-icon-collapsed");
+	const menuOpenIcon = menuBtn?.querySelector(".mobile-dock-menu-icon-open");
+
+	function setMenuOpenState(open) {
+		if (menuCollapsedIcon) menuCollapsedIcon.classList.toggle("hidden", open);
+		if (menuOpenIcon) menuOpenIcon.classList.toggle("hidden", !open);
+	}
+
+	menuBtn?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		document.getElementById("nav-menu-switch")?.click();
+	});
+
+	const navDrawer = document.getElementById("nav-menu-panel");
+	if (navDrawer) {
+		new MutationObserver(() => {
+			const isOpen = navDrawer.classList.contains("is-open");
+			setMenuOpenState(isOpen);
+			isOverlayOpen = isOpen;
+		}).observe(navDrawer, { attributes: true, attributeFilter: ["class"] });
+	}
+
+	const toolsBtn = document.getElementById("mobile-dock-tools-btn");
+	const toolsCollapsedIcon = toolsBtn?.querySelector(".mobile-dock-tools-icon-collapsed");
+	const toolsOpenIcon = toolsBtn?.querySelector(".mobile-dock-tools-icon-open");
+
+	function openSheet() {
+		sheet.classList.add("is-open");
+		overlay.classList.add("is-open");
+		overlay.setAttribute("aria-hidden", "false");
+		if (toolsCollapsedIcon) toolsCollapsedIcon.classList.add("hidden");
+		if (toolsOpenIcon) toolsOpenIcon.classList.remove("hidden");
+		isOverlayOpen = true;
+	}
+
+	function closeSheet() {
+		sheet.classList.remove("is-open");
+		overlay.classList.remove("is-open");
+		overlay.setAttribute("aria-hidden", "true");
+		if (toolsCollapsedIcon) toolsCollapsedIcon.classList.remove("hidden");
+		if (toolsOpenIcon) toolsOpenIcon.classList.add("hidden");
+		isOverlayOpen = false;
+	}
+
+	toolsBtn?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		if (sheet.classList.contains("is-open")) {
+			closeSheet();
+		} else {
+			openSheet();
+		}
+	});
+
+	overlay.addEventListener("click", () => closeSheet());
+
+	document.addEventListener("keydown", (e) => {
+		if (e.key === "Escape" && sheet.classList.contains("is-open")) {
+			closeSheet();
+		}
+	});
+
+	const sheetBtnMap = {
+		"md-music-btn": "dock-music-btn",
+		"md-announcement-btn": "dock-announcement-btn",
+		"md-tags-btn": "dock-tags-btn",
+		"md-toc-btn": "dock-toc-btn",
+	};
+
+	Object.entries(sheetBtnMap).forEach(([sheetBtnId, dockBtnId]) => {
+		document.getElementById(sheetBtnId)?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			closeSheet();
+			setTimeout(() => {
+				document.getElementById(dockBtnId)?.click();
+			}, 50);
+		});
+	});
+
+	document.getElementById("md-ai-search-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		closeSheet();
+		window.dispatchEvent(new CustomEvent("toggle-ai-search"));
+	});
+
+	document.getElementById("md-edit-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		closeSheet();
+		const sidebarEditBtn = document.querySelector(".sidebar .write-btn-outline");
+		if (sidebarEditBtn) {
+			document.getElementById("nav-menu-switch")?.click();
+			setTimeout(() => {
+				(sidebarEditBtn as HTMLElement).click();
+			}, 300);
+		} else {
+			const sidebarWriteBtn = document.querySelector(".sidebar .write-btn-filled");
+			if (sidebarWriteBtn) {
+				window.location.href = "/write/";
+			}
+		}
+	});
+
+	document.getElementById("md-top-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		closeSheet();
+		window.scroll({ top: 0, behavior: "smooth" });
+	});
+
+	document.getElementById("md-comment-btn")?.addEventListener("click", (e) => {
+		e.stopPropagation();
+		closeSheet();
+		document.getElementById("post-comments")?.scrollIntoView({ behavior: "smooth", block: "start" });
+	});
+
+	function updatePathDependent() {
+		const isHome = window.location.pathname === "/" || window.location.pathname === "";
+		const isPost = /\/posts?\//.test(window.location.pathname);
+		const hasComment = !!document.getElementById("post-comments");
+		const editBtn = document.getElementById("md-edit-btn");
+		const editLabel = document.getElementById("md-edit-label");
+
+		document.getElementById("mobile-dock-home-btn")?.classList.toggle("is-active", !isHome);
+		document.getElementById("md-toc-btn")?.classList.toggle("hide", !isPost);
+		document.getElementById("md-comment-btn")?.classList.toggle("hide", !isPost || !hasComment);
+
+		if (editBtn) {
+			const sidebarEditBtn = document.querySelector(".sidebar .write-btn-outline");
+			const sidebarWriteBtn = document.querySelector(".sidebar .write-btn-filled");
+			const hasEdit = !!sidebarEditBtn || !!sidebarWriteBtn;
+			editBtn.classList.toggle("hide", !hasEdit);
+			if (editLabel) {
+				if (sidebarEditBtn) {
+					const btnText = sidebarEditBtn.querySelector(".btn-text")?.textContent || "编辑";
+					editLabel.textContent = btnText;
+				} else if (sidebarWriteBtn) {
+					const btnText = sidebarWriteBtn.querySelector(".btn-text")?.textContent || "写文章";
+					editLabel.textContent = btnText;
+				}
+			}
+		}
+	}
+
+	updatePathDependent();
+	setTimeout(updatePathDependent, 500);
+	setTimeout(updatePathDependent, 1500);
+
+	document.addEventListener("astro:page-load", () => {
+		closeSheet();
+		updatePathDependent();
+		setTimeout(updatePathDependent, 500);
+		setTimeout(updatePathDependent, 1500);
+		lastScrollY = window.scrollY;
+		dock.classList.remove("is-hidden");
+	});
+})();
+</script>

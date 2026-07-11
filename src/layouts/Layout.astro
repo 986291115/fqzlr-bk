@@ -9,6 +9,7 @@ import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
+import MobileDock from "@components/layout/MobileDock.astro";
 
 import {
 	backgroundWallpaper,
@@ -470,6 +471,7 @@ const siteLang = lang.replace("_", "-");
     <ConfigCarrier />
     <MusicManager />
     <FloatingLyrics />
+    <MobileDock />
     <slot />
 
 
