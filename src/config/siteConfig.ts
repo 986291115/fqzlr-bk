@@ -232,7 +232,7 @@ export const siteConfig: SiteConfig = {
 	// 文章列表布局配置
 	postListLayout: {
 		// 默认布局模式："list" 列表模式（单列布局），"grid" 网格模式（多列布局）
-		defaultMode: "grid",
+		defaultMode: "list",
 		// 是否允许用户切换布局
 		allowSwitch: true,
 		// 网格布局配置，仅在 defaultMode 为 "grid" 或允许切换布局时生效

@@ -1,13 +1,13 @@
 ---
-import type { CollectionEntry } from "astro:content";
 import { render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
 import CoverImage from "@/components/common/CoverImage.astro";
-import PostMetadata from "@/components/layout/PostMeta.astro";
+import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
-import { getFileDirFromPath, getTagUrl } from "@/utils/url-utils";
+import { getCategoryUrl, getFileDirFromPath, getTagUrl, url } from "@/utils/url-utils";
 
 interface Props {
 	class?: string;
@@ -22,222 +22,226 @@ interface Props {
 	description: string;
 	draft: boolean;
 	pinned?: boolean;
+	password?: string;
 	style: string;
 	loading?: "lazy" | "eager";
+	fetchpriority?: "high" | "low" | "auto";
+	index?: number;
 }
+
 const {
 	entry,
 	title,
-	url,
+	url: postUrl,
 	published,
-	updated,
 	tags,
 	category,
 	image,
 	description,
 	pinned,
+	password,
 	style,
 	loading = "lazy",
+	fetchpriority = "auto",
+	index = 0,
 } = Astro.props;
+
 const className = Astro.props.class;
 
-// 处理随机图：如果image为"api"或未设置，则从配置的API获取随机图
 const processedImage = processCoverImageSync(image || "api", entry.id);
 const apiUrls = getApiUrlList(image || "api", entry.id);
-const hasCover =
-	processedImage !== undefined &&
-	processedImage !== null &&
-	processedImage !== "";
-
-const coverWidth = "30%";
+const hasCover = processedImage !== undefined && processedImage !== null && processedImage !== "";
 
 const { remarkPluginFrontmatter } = await render(entry);
+const descriptionText =
+	description || remarkPluginFrontmatter.excerpt || "暂无文章简介，点击卡片查看完整内容。";
+
+const dateFormatter = new Intl.DateTimeFormat(siteConfig.lang.replace("_", "-"), {
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+const publishedText = dateFormatter.format(published);
+const publishedIso = published.toISOString();
+
+const rawCategory = category?.trim() || "";
+const categoryName = rawCategory || i18n(I18nKey.uncategorized);
+const categoryUrl = getCategoryUrl(rawCategory || null);
+
+const tagList = (tags || [])
+	.map((tag) => tag.trim())
+	.filter(Boolean)
+	.map((tag) => ({
+		name: tag,
+		url: getTagUrl(tag),
+	}));
+
+const categoryColorPalette = [
+	"#fbbf24",
+	"#fb7185",
+	"#34d399",
+	"#60a5fa",
+	"#a78bfa",
+	"#f472b6",
+	"#2dd4bf",
+	"#fb923c",
+	"#22d3ee",
+	"#818cf8",
+	"#e879f9",
+	"#a3e635",
+	"#f87171",
+	"#a78bfa",
+	"#06b6d4",
+	"#f59e0b",
+	"#f43f5e",
+	"#10b981",
+];
+
+function getCategoryColor(name: string): string {
+	let hash = 0;
+	for (let i = 0; i < name.length; i++) {
+		hash = name.charCodeAt(i) + ((hash << 5) - hash);
+	}
+	const index = Math.abs(hash) % categoryColorPalette.length;
+	return `color: ${categoryColorPalette[index]}`;
+}
+
+const fileDir = getFileDirFromPath(entry.filePath || "");
 ---
 
+<!-- 单卡片：根据父容器 .list-mode / .grid-mode 切换显示样式 -->
 <div
-  class:list={[
-    "post-card-wrapper",
-    hasCover ? "has-cover" : "no-cover",
-    pinned ? "pinned" : "",
-    "card-base flex flex-col-reverse md:flex-col w-full rounded-(--radius-large) overflow-hidden relative",
-    className,
-  ]}
-  style={style}
+	class:list={["post-card-wrapper", { "is-pinned": pinned }, className]}
+	data-post-id={entry.id}
+	style={style || ''}
 >
-  <!-- pinned icon -->
-  <div
-    class:list={[
-      "post-card-content",
-      "pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 md:pb-7 relative flex flex-col h-full",
-      {
-        "w-full md:w-[calc(100%-52px-12px)]": !hasCover,
-        "w-full md:w-[calc(100%-var(--coverWidth)-1.5rem)]": hasCover,
-      },
-    ]}
-  >
+	<!-- 列表模式：背景图右侧 + 内容左对齐 -->
+	<div class="article-list-row-card">
+		{hasCover && (
+			<div class="article-list-row-card__bg-wrapper">
+				<CoverImage
+					src={processedImage}
+					basePath={fileDir}
+					alt={`文章配图：${title}`}
+					class="article-list-row-card__bg-image"
+					loading={loading}
+					fetchpriority={fetchpriority}
+					apiUrls={apiUrls}
+				/>
+				<div class="article-list-row-card__gradient-overlay"></div>
+			</div>
+		)}
 
+		<a href={postUrl} class="article-list-row-card__content" aria-label={`查看文章：${title}`}>
+			<div class="article-list-row-card__layer-1">
+				{pinned && (
+					<span class="article-list-row-card__pinned-badge" aria-label="置顶文章">
+						<Icon name="material-symbols:push-pin-rounded" class="text-[0.9rem]" />
+						<span>{i18n(I18nKey.pinned)}</span>
+					</span>
+				)}
+				<h3 class="article-list-row-card__title">
+					{title}
+					{password && (
+						<span class="article-list-row-card__lock" aria-label="加密文章">
+							<Icon name="material-symbols:lock-outline" class="text-[0.9rem]" />
+						</span>
+					)}
+				</h3>
+			</div>
 
-    <a
-      href={url}
-      class="post-card-title transition group w-full block font-bold mb-3 text-3xl text-90
-        hover:text-(--primary) dark:hover:text-(--primary)
-        active:text-(--title-active) dark:active:text-(--title-active)
-        before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
-        before:absolute before:top-[35px] before:left-[18px] before:hidden md:before:block"
-    >
-      {title}<Icon
-        class="inline text-[2rem] text-(--primary) md:hidden align-middle -translate-y-[2px] -ml-1"
-        name="material-symbols:chevron-right-rounded"
-      />
-    </a>
+			<div class="article-list-row-card__layer-2">
+				<span class="al-category" style={getCategoryColor(categoryName)}>
+					#{categoryName}
+				</span>
+				<span class="article-list-row-card__meta-item">
+					<Icon name="material-symbols:calendar-month-rounded" class="text-[0.9rem]" />
+					<time datetime={publishedIso}>{publishedText}</time>
+				</span>
+				{tagList.length > 0 && (
+					<>
+						{tagList.slice(0, 3).map((tag, i) => (
+							<>
+								{i > 0 && <span class="al-meta-divider" aria-hidden="true">/</span>}
+								<span class="al-tag">{tag.name}</span>
+							</>
+						))}
+						{tagList.length > 3 && (
+							<span class="al-tag-more" aria-hidden="true">+{tagList.length - 3}</span>
+						)}
+					</>
+				)}
+			</div>
 
-    <!-- metadata -->
-    <PostMetadata
-      published={published}
-      updated={updated}
-      tags={tags}
-      category={category || undefined}
-      hideTagsForMobile={true}
-      hideUpdateDate={true}
-      words={remarkPluginFrontmatter.words}
-      minutes={remarkPluginFrontmatter.minutes}
-      showWordCount={true}
-      pinned={pinned}
-      className="mb-4 post-meta"
-    />
+			<div class="article-list-row-card__layer-3">
+				<p class="article-list-row-card__description">
+					{descriptionText}
+				</p>
+			</div>
+		</a>
+	</div>
 
-    <!-- description -->
-    <div
-      class:list={[
-        "transition text-75 mb-3.5 md:pr-4 description grow",
-        { "line-clamp-1": description },
-      ]}
-    >
-      {description}
-    </div>
+	<!-- 网格模式：封面图顶部 + 内容底部 -->
+	<a href={postUrl} class="article-grid-card" aria-label={`查看文章：${title}`}>
+		{hasCover && (
+			<div class="article-grid-card__image-wrapper">
+				<CoverImage
+					src={processedImage}
+					basePath={fileDir}
+					alt={`文章配图：${title}`}
+					class="article-grid-card__image"
+					loading={loading}
+					fetchpriority={fetchpriority}
+					apiUrls={apiUrls}
+				/>
+				<div class="article-grid-card__gradient-overlay"></div>
+				{pinned && (
+					<span class="article-grid-card__pinned-badge article-grid-card__pinned-badge--corner">
+						<Icon name="material-symbols:push-pin-rounded" class="text-[0.9rem]" />
+						<span>{i18n(I18nKey.pinned)}</span>
+					</span>
+				)}
+			</div>
+		)}
 
-    <!-- tags -->
-    <div
-      class="text-sm text-black/30 dark:text-white/30 flex flex-wrap gap-2 transition stats mt-auto"
-    >
-      {
-        tags &&
-          tags.length > 0 &&
-          tags.map((tag, _i) => (
-            <a
-              href={getTagUrl(tag)}
-              aria-label={`View all posts with the ${tag.trim()} tag`}
-              class="btn-regular h-6 text-xs px-2 py-1 rounded-md 
-                    transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              #{tag.trim()}
-            </a>
-          ))
-      }
-      {
-        !(tags && tags.length > 0) && (
-          <span class="text-(--content-meta) text-xs">
-            #{i18n(I18nKey.noTags)}
-          </span>
-        )
-      }
-    </div>
-  </div>
+		<div class="article-grid-card__content">
+			<div class="article-grid-card__layer-1">
+				<h3 class="article-grid-card__title">
+					{title}
+					{password && (
+						<span class="article-grid-card__lock" aria-label="加密文章">
+							<Icon name="material-symbols:lock-outline" class="text-[0.9rem]" />
+						</span>
+					)}
+				</h3>
+			</div>
 
-  {
-    hasCover && (
-      <a
-        href={url}
-        aria-label={title}
-        class:list={[
-          "post-card-image",
-          "group",
-          "w-full md:w-(--coverWidth)",
-          "aspect-2/1 md:aspect-auto",
-          "relative md:absolute md:top-4 md:bottom-4 md:right-4",
-          "rounded-t-(--radius-large) md:rounded-xl overflow-hidden",
-        ]}
-      >
-        <div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition" />
-        <div class="absolute pointer-events-none z-20 w-full h-full flex items-center justify-center ">
-          <Icon
-            name="material-symbols:chevron-right-rounded"
-            class="transition opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 text-white text-5xl"
-          />
-        </div>
-        <CoverImage
-          src={processedImage}
-          basePath={getFileDirFromPath(entry.filePath || '')}
-          alt="Cover Image of the Post"
-          class="w-full h-full transition-transform duration-300 group-hover:scale-110 group-active:scale-115"
-          preview={true}
-          loading={loading}
-          apiUrls={apiUrls}
-        />
-      </a>
-    )
-  }
+			<div class="article-grid-card__layer-2">
+				<span class="article-grid-card__meta-item">
+					<Icon name="material-symbols:calendar-month-rounded" class="text-[0.9rem]" />
+					<time datetime={publishedIso}>{publishedText}</time>
+				</span>
+			</div>
 
-  {
-    !hasCover && (
-      <a
-        href={url}
-        aria-label={title}
-        class:list={[
-          "post-card-enter-btn",
-          "hidden md:flex btn-regular w-13",
-          "absolute right-3 top-3 bottom-3 rounded-xl bg-(--enter-btn-bg)",
-          "hover:bg-(--enter-btn-bg-hover) active:bg-(--enter-btn-bg-active) active:scale-95",
-        ]}
-      >
-        <Icon
-          name="material-symbols:chevron-right-rounded"
-          class="transition text-(--primary) text-4xl mx-auto"
-        />
-      </a>
-    )
-  }
+			<div class="article-grid-card__layer-3">
+				<span class="ag-category" style={getCategoryColor(categoryName)}>
+					#{categoryName}
+				</span>
+				{tagList.length > 0 && (
+					<>
+						<span class="ag-meta-gap" aria-hidden="true"></span>
+						{tagList.slice(0, 2).map((tag, i) => (
+							<>
+								{i > 0 && <span class="ag-meta-divider" aria-hidden="true">/</span>}
+								<span class="ag-tag">{tag.name}</span>
+							</>
+						))}
+						{tagList.length > 2 && (
+							<span class="ag-tag-more" aria-hidden="true">+{tagList.length - 2}</span>
+						)}
+					</>
+				)}
+			</div>
+		</div>
+	</a>
 </div>
-
-<style define:vars={{ coverWidth }}>
-  /* Grid Mode Styles */
-  :global(.grid-mode) .post-card-wrapper {
-    flex-direction: column-reverse !important;
-    height: 100% !important;
-    justify-content: flex-end !important;
-  }
-
-  :global(.grid-mode) .post-card-content {
-    width: 100% !important;
-    height: auto !important;
-    flex-grow: 1 !important;
-  }
-
-  :global(.grid-mode) .post-card-image {
-    position: relative !important;
-    top: auto !important;
-    bottom: auto !important;
-    right: auto !important;
-    width: 100% !important;
-    margin: 0 !important;
-    border-radius: var(--radius-large) var(--radius-large) 0 0 !important;
-    max-height: none !important;
-    aspect-ratio: 2/1 !important;
-  }
-
-  :global(.grid-mode) .description {
-    flex-grow: 0 !important;
-  }
-
-  :global(.grid-mode) .stats {
-    margin-top: auto !important;
-  }
-
-  :global(.grid-mode) .has-cover .post-card-content {
-    padding-top: 0.8rem !important;
-  }
-  :global(.grid-mode) .has-cover .post-card-title::before {
-    top: 1.3rem !important;
-  }
-
-</style>

@@ -1,5 +1,5 @@
 ---
-import Icon from "@/components/common/Icon.astro";
+import { Icon } from "astro-icon/components";
 
 interface Props {
 	title: string;
@@ -21,7 +21,7 @@ const {
 <div class:list={["page-title", `page-title--${variant}`, className]}>
 	{variant === "compact" && icon && (
 		<span class="page-title__icon" aria-hidden="true">
-			<Icon name={icon} />
+			<Icon name={icon} class="text-[1.65rem]" />
 		</span>
 	)}
 	<div class="page-title__body">

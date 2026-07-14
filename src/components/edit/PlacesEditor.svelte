@@ -22,6 +22,10 @@ interface PlaceItem {
 	lat?: number;
 	lng?: number;
 	enabled?: boolean;
+	url?: string;
+	urlLabel?: string;
+	photos?: string[];
+	tags?: string[];
 	_draft?: boolean;
 	_deleted?: boolean;
 }
@@ -100,6 +104,10 @@ function parsePlacesFromTS(tsContent: string): PlaceItem[] {
 		lat: item.lat,
 		lng: item.lng,
 		enabled: item.enabled !== false,
+		url: item.url || "",
+		urlLabel: item.urlLabel || "",
+		photos: item.photos || [],
+		tags: item.tags || [],
 	}));
 }
 
@@ -116,6 +124,10 @@ function buildPlaceObject(p: PlaceItem): string {
 	if (p.location) obj.location = p.location;
 	if (p.lat !== undefined) obj.lat = p.lat;
 	if (p.lng !== undefined) obj.lng = p.lng;
+	if (p.url) obj.url = p.url;
+	if (p.urlLabel) obj.urlLabel = p.urlLabel;
+	if (p.photos && p.photos.length > 0) obj.photos = p.photos;
+	if (p.tags && p.tags.length > 0) obj.tags = p.tags;
 	obj.enabled = p.enabled !== false;
 
 	const json = JSON.stringify(obj, null, 2)
@@ -520,11 +532,44 @@ function handleAdd() {
 			date: new Date().toISOString().slice(0, 10),
 			location: "",
 			enabled: true,
+			url: "",
+			urlLabel: "",
+			photos: [],
+			tags: [],
 			_draft: true,
 		},
 		...places,
 	];
 	editingIndex = 0;
+}
+
+function addTag(index: number, tag: string) {
+	const trimmed = tag.trim();
+	if (!trimmed) return;
+	const currentTags = places[index].tags || [];
+	if (currentTags.includes(trimmed)) return;
+	places[index] = { ...places[index], tags: [...currentTags, trimmed] };
+	places = [...places];
+}
+
+function removeTag(index: number, tagIndex: number) {
+	const currentTags = places[index].tags || [];
+	places[index] = { ...places[index], tags: currentTags.filter((_, i) => i !== tagIndex) };
+	places = [...places];
+}
+
+function addPhoto(index: number, photoUrl: string) {
+	const trimmed = photoUrl.trim();
+	if (!trimmed) return;
+	const currentPhotos = places[index].photos || [];
+	places[index] = { ...places[index], photos: [...currentPhotos, trimmed] };
+	places = [...places];
+}
+
+function removePhoto(index: number, photoIndex: number) {
+	const currentPhotos = places[index].photos || [];
+	places[index] = { ...places[index], photos: currentPhotos.filter((_, i) => i !== photoIndex) };
+	places = [...places];
 }
 
 function handleSaveDraft() {
@@ -711,6 +756,95 @@ async function handleSubmit() {
                     }}
                     placeholder="如：120.1551"
                   />
+                </div>
+              </div>
+              <div class="pl-form-row">
+                <div class="pl-form-group">
+                  <label>链接文字</label>
+                  <input
+                    type="text"
+                    class="pl-input"
+                    value={p.urlLabel || ""}
+                    oninput={(e) => updateField(i, "urlLabel", (e.target as HTMLInputElement).value)}
+                    placeholder="如：游记"
+                  />
+                </div>
+                <div class="pl-form-group" style="grid-column: span 2;">
+                  <label>链接 URL</label>
+                  <input
+                    type="text"
+                    class="pl-input"
+                    value={p.url || ""}
+                    oninput={(e) => updateField(i, "url", (e.target as HTMLInputElement).value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+              <div class="pl-form-group">
+                <label>标签</label>
+                <p class="pl-form-hint">输入标签后按 Enter 添加</p>
+                <div class="pl-tags-input" id="pl-tags-{i}">
+                  {#if p.tags && p.tags.length > 0}
+                    {#each p.tags as tag, tagIndex (tag + tagIndex)}
+                      <span class="pl-tag-chip">
+                        {tag}
+                        <button type="button" class="pl-tag-remove" onclick={() => removeTag(i, tagIndex)}>×</button>
+                      </span>
+                    {/each}
+                  {/if}
+                  <input
+                    type="text"
+                    class="pl-tag-input"
+                    placeholder="输入标签..."
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const input = e.target as HTMLInputElement;
+                        addTag(i, input.value);
+                        input.value = '';
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div class="pl-form-group">
+                <label>照片</label>
+                <div class="pl-photos-list">
+                  {#if p.photos && p.photos.length > 0}
+                    {#each p.photos as photo, photoIndex (photo + photoIndex)}
+                      <div class="pl-photo-item">
+                        <img src={photo} alt="" class="pl-photo-thumb" />
+                        <button type="button" class="pl-photo-remove" onclick={() => removePhoto(i, photoIndex)}>×</button>
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+                <div class="pl-photo-input-row">
+                  <input
+                    type="text"
+                    class="pl-input pl-photo-input"
+                    placeholder="输入照片 URL..."
+                    id="pl-photo-input-{i}"
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const input = e.target as HTMLInputElement;
+                        addPhoto(i, input.value);
+                        input.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    class="pl-btn pl-btn-add-photo"
+                    onclick={() => {
+                      const input = document.getElementById('pl-photo-input-' + i) as HTMLInputElement;
+                      if (input) {
+                        addPhoto(i, input.value);
+                        input.value = '';
+                      }
+                    }}
+                  >添加</button>
                 </div>
               </div>
               <div class="pl-form-actions">
@@ -991,6 +1125,147 @@ async function handleSubmit() {
     font-size: 14px;
     border-radius: 16px;
     border: 2px dashed var(--border, rgba(0, 0, 0, 0.1));
+  }
+
+  .pl-form-hint {
+    margin: 0 0 4px;
+    font-size: 11px;
+    color: var(--content-meta, #9ca3af);
+  }
+
+  .pl-tags-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1.5px solid var(--border, #d1d5db);
+    border-radius: 8px;
+    min-height: 36px;
+    align-items: center;
+    background: var(--bg-color, white);
+    transition: border-color 0.2s;
+  }
+  :global(.dark) .pl-tags-input {
+    background: #0f0f1a;
+    border-color: #374151;
+  }
+  .pl-tags-input:focus-within {
+    border-color: hsl(var(--theme-hue, 165), 70%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--theme-hue, 165), 70%, 50%, 0.1);
+  }
+
+  .pl-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    background: var(--btn-plain-bg-active, hsl(var(--theme-hue, 165), 70%, 92%));
+    color: var(--primary, hsl(var(--theme-hue, 165), 70%, 45%));
+  }
+
+  .pl-tag-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .pl-tag-remove:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .pl-tag-input {
+    flex: 1;
+    min-width: 80px;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 13px;
+    padding: 2px 0;
+    color: var(--text-color, #1f2937);
+    font-family: inherit;
+  }
+  :global(.dark) .pl-tag-input {
+    color: #e5e7eb;
+  }
+
+  .pl-photos-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .pl-photo-item {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid var(--border, #d1d5db);
+  }
+
+  .pl-photo-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pl-photo-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pl-photo-remove:hover {
+    background: rgba(220, 38, 38, 1);
+  }
+
+  .pl-photo-input-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .pl-photo-input {
+    flex: 1;
+  }
+
+  .pl-btn-add-photo {
+    flex: none;
+    padding: 0 14px;
+    font-size: 12px;
+    background: var(--bg-secondary, #f3f4f6);
+    color: var(--text-color, #374151);
+  }
+  .pl-btn-add-photo:hover {
+    background: var(--border, #e5e7eb);
+  }
+  :global(.dark) .pl-btn-add-photo {
+    background: #2d2d44;
+    color: #d1d5db;
   }
 
   @media (max-width: 640px) {

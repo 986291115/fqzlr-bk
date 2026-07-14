@@ -12,12 +12,12 @@ const { class: className } = Astro.props;
 ---
 
 <div class:list={["category-tools", className]} id="category-tools">
-  <!-- 封面图拨动开关 (骷髅头样式) -->
-  <div class="skull-cover-wrap" id="cover-toggle" title="封面图开关">
+  <!-- 布局切换开关 (骷髅头样式) -->
+  <div class="skull-cover-wrap" id="layout-toggle" title="切换布局">
     <div class="skull-cover-scale">
       <div class="skull-cover-toggle">
-        <input type="checkbox" id="cover-checkbox" checked>
-        <label for="cover-checkbox">
+        <input type="checkbox" id="layout-checkbox">
+        <label for="layout-checkbox">
           <span class="thumb">
             <div class="cranium"></div>
             <div class="mouth"></div>
@@ -555,29 +555,37 @@ const { class: className } = Astro.props;
     }, 250);
   }
 
-  // 初始化封面图开关状态
-  function initCoverToggle() {
-    var cb = document.getElementById("cover-checkbox");
+  // 初始化布局切换开关状态
+  function initLayoutToggle() {
+    var cb = document.getElementById("layout-checkbox");
     if (!cb) return;
-    var stored = localStorage.getItem("hideCovers");
+    var stored = localStorage.getItem("postLayout");
     if (stored === null) {
-      // 首次访问：默认隐藏封面
-      localStorage.setItem("hideCovers", "true");
-      document.documentElement.setAttribute("data-hide-covers", "true");
-      cb.checked = true;
-    } else if (stored === "true") {
+      localStorage.setItem("postLayout", "list");
+      cb.checked = false;
+    } else if (stored === "grid") {
       cb.checked = true;
     } else {
       cb.checked = false;
     }
+    applyLayoutMode(stored || "list");
+  }
+
+  function applyLayoutMode(mode) {
+    var container = document.getElementById("post-list-container");
+    if (!container) return;
+    container.classList.remove("list-mode", "grid-mode");
+    container.classList.add(mode === "grid" ? "grid-mode" : "list-mode");
+    window.dispatchEvent(new CustomEvent("layoutChange", { detail: { layout: mode } }));
   }
 
   // 事件委托 - 绑定在 document 上，不受 Swup DOM 替换影响
   document.addEventListener("change", function(e) {
-    if (e.target && e.target.id === "cover-checkbox") {
+    if (e.target && e.target.id === "layout-checkbox") {
       var active = e.target.checked;
-      localStorage.setItem("hideCovers", String(active));
-      document.documentElement.setAttribute("data-hide-covers", String(active));
+      var mode = active ? "grid" : "list";
+      localStorage.setItem("postLayout", mode);
+      applyLayoutMode(mode);
     }
   });
 
@@ -600,8 +608,8 @@ const { class: className } = Astro.props;
   });
 
   // 初始化
-  initCoverToggle();
-  document.addEventListener("astro:page-load", initCoverToggle);
-  document.addEventListener("swup:contentReplaced", initCoverToggle);
+  initLayoutToggle();
+  document.addEventListener("astro:page-load", initLayoutToggle);
+  document.addEventListener("swup:contentReplaced", initLayoutToggle);
 })();
 </script>

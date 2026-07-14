@@ -3,6 +3,7 @@ title: "Obsidian 笔记软件联动 Mizuki & Firefly Astro 等个人博客，优
 published: 2026-05-18
 updated: 2026-05-18
 description: "博客系列第7期。用 Obsidian 写笔记，通过 Astro Composer 插件自动转换为博客内容，配合图床优雅发布。"
+image: "api"
 tags:
   - Obsidian
   - Astro
@@ -10,7 +11,7 @@ tags:
   - 博客
   - 笔记软件
 slug: obsidian-astro-imgbed-workflow
-category: 教程
+category: 博客相关
 draft: false
 pinned: false
 author: fqzlr

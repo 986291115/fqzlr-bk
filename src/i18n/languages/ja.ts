@@ -7,6 +7,7 @@ export const ja: Translation = {
 	[Key.categoryList]: "カテゴリリスト",
 	[Key.categoryPosts]: "このカテゴリの記事",
 	[Key.allCategories]: "すべてのカテゴリ",
+	[Key.allPosts]: "すべての記事",
 	[Key.about]: "について",
 	[Key.archive]: "アーカイブ",
 	[Key.search]: "検索",

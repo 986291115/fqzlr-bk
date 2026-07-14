@@ -3,6 +3,7 @@ title: "博客部署教程补充之 Cloudflare IP优选及文章编写发布"
 published: 2026-05-03
 updated: 2026-05-03
 description: "博客系列第4期。教你做 Cloudflare IP 优选加速国内访问，以及 Astro 博客的 Markdown 文章编写规范。"
+image: "api"
 tags:
   - Cloudflare
   - IP优选
@@ -10,7 +11,7 @@ tags:
   - Markdown
   - 博客
 slug: cloudflare-ip-optimize-and-writing
-category: 教程
+category: 博客相关
 draft: false
 pinned: false
 author: fqzlr

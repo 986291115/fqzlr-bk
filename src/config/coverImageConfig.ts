@@ -24,7 +24,7 @@ export const coverImageConfig: CoverImageConfig = {
 		enable: true,
 		// 封面图API列表
 		apis: [
-			"https://tu.fqzlr.com/random?dir=shuiji&type=img&orientation=landscape",
+			"https://tu.fqzlr.com/random?dir=fate&type=img&orientation=landscape",
 		],
 		// API失败时的回退图片路径（相对于src目录或以/开头的public目录路径）
 		fallback: "assets/images/cover.avif",

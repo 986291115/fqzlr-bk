@@ -1,69 +1,22 @@
 ---
 import { Picture } from "astro:assets";
 import * as path from "node:path";
+import Icon from "@components/common/Icon.astro";
 import type { ImageMetadata } from "astro";
-import { Icon } from "astro-icon/components";
-import DisplaySettings from "@/components/controls/DisplaySettingsIntegrated.svelte";
-import LightDarkSwitch from "@/components/controls/LightDarkSwitch.svelte";
-import MusicPlayer from "@/components/features/MusicPlayer.astro";
-import { backgroundWallpaper, navBarConfig, siteConfig } from "@/config";
-import { musicPlayerConfig } from "@/config/musicConfig";
+import { navBarConfig, siteConfig } from "@/config";
 import { LinkPresets } from "@/constants/link-presets";
-import I18nKey from "@/i18n/i18nKey";
-import { i18n } from "@/i18n/translation";
-import { LinkPreset, type NavBarLink } from "@/types/config";
 import { getFallbackFormat, getImageFormats } from "@/utils/image-utils";
-import { isHomePage } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
 import DropdownMenu from "./DropdownMenu.astro";
-import NavMenuPanel from "./NavMenuPanel.astro";
 
-const className = Astro.props.class;
-
-// 获取导航栏透明模式配置
-const navbarTransparentMode =
-	backgroundWallpaper.mode === "banner"
-		? backgroundWallpaper.banner?.navbar?.transparentMode || "semi"
-		: "semi";
-
-// 获取导航栏毛玻璃效果配置
-const navbarEnableBlur =
-	backgroundWallpaper.mode === "banner"
-		? (backgroundWallpaper.banner?.navbar?.enableBlur ?? true)
-		: false;
-
-// 获取导航栏模糊度
-const navbarBlur =
-	backgroundWallpaper.mode === "banner"
-		? (backgroundWallpaper.banner?.navbar?.blur ?? 20)
-		: 0;
-
-// 获取导航栏标题，如果没有设置则使用 siteConfig.title
 const navbarTitle = siteConfig.navbar.title || siteConfig.title;
+void siteConfig.navbar.widthFull;
 
-// 获取导航栏宽度配置
-const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
+let links = navBarConfig.links.map((item) => {
+	if (typeof item === "number") return LinkPresets[item];
+	return item;
+});
 
-// 检查是否为首页
-const isHomePageCheck = isHomePage(Astro.url.pathname);
-
-// 检查是否有任何显示设置可用
-const showThemeColor = !siteConfig.themeColor.fixed;
-const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
-const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
-const hasDisplaySettings =
-	showThemeColor || isWallpaperSwitchable || allowLayoutSwitch;
-
-let links: NavBarLink[] = navBarConfig.links.map(
-	(item: NavBarLink | LinkPreset): NavBarLink => {
-		if (typeof item === "number") {
-			return LinkPresets[item];
-		}
-		return item;
-	},
-);
-
-// 处理导航栏 Logo 图片
 const logoValue = siteConfig.navbar.logo?.value || "";
 const isLocalSrcLogo =
 	siteConfig.navbar.logo?.type === "image" &&
@@ -81,316 +34,363 @@ if (isLocalSrcLogo) {
 		.normalize(path.join("../../", logoValue))
 		.replace(/\\/g, "/");
 	const file = files[normalizedPath];
-	if (file) {
-		logoImg = await file();
-	}
+	if (file) logoImg = await file();
 }
 ---
-<div id="navbar" class="z-50" style={`--navbar-glass-blur: ${navbarBlur}px;`} data-transparent-mode={navbarTransparentMode} data-enable-blur={String(navbarEnableBlur)} data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
-    <div class:list={[
-        className,
-        "overflow-visible! h-18 mx-auto flex items-center px-4",
-        navbarWidthFull ? "" : "justify-between max-w-(--page-width)"
-    ]}>
-        <a href={url('/')} class="btn-plain scale-animation rounded-lg h-13 px-5 font-bold active:scale-95 navbar-logo-link">
-            <div class:list={[
-                "flex flex-row items-center text-md navbar-logo-content",
-                siteConfig.navbar.followTheme ? "text-(--primary)" : "dark:text-white text-black"
-            ]}>
-                                {siteConfig.navbar.logo?.type === "icon" ? (
-                                    <Icon name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="text-[1.75rem] mb-1 mr-2 navbar-logo-icon" />
-                                ) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
-                                    <Picture
-                                        src={logoImg}
-                                        alt={siteConfig.navbar.logo.alt || siteConfig.title}
-                                        class="h-7 w-7 mb-1 mr-2 object-contain navbar-logo-img"
-                                        formats={getImageFormats()}
-                                        fallbackFormat={getFallbackFormat()}
-                                        widths={[28, 56]}
-                                        loading="eager"
-                                        fetchpriority="high"
-                                    />
-                                ) : siteConfig.navbar.logo?.type === "image" ? (
-                                    <img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 object-contain navbar-logo-img" fetchpriority="high" />
-                                ) : siteConfig.navbar.logo?.type === "url" ? (
-                                    <img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 object-contain navbar-logo-img" fetchpriority="high" />
-                                ) : (
-                                    <Icon name="material-symbols:home-pin-outline" class="text-[1.75rem] mb-1 mr-2 navbar-logo-icon" />
-                                )}
-                <span class="navbar-logo-text">{navbarTitle}</span>
-            </div>
-        </a>
-        <div class="hidden lg:flex items-center space-x-1 relative" data-navbar-nav>
-            <div class="navbar-hover-border" data-hover-border></div>
-            {links.map((l) => {
-                return <DropdownMenu link={l} />;
-            })}
-        </div>
-        <div class:list={["flex items-center gap-0.5", navbarWidthFull ? "ml-auto" : ""]}>
-            <!-- 太阳/月亮主题切换 -->
-            <button id="sun-moon-theme-btn" class="btn-plain rounded-lg sun-moon-btn" title="切换主题" aria-label="切换主题">
-                <span class="sun-moon-icon sun-icon">
-                    <Icon name="material-symbols:wb-sunny-rounded" class="text-[1.25rem]" />
-                </span>
-                <span class="sun-moon-icon moon-icon">
-                    <Icon name="material-symbols:dark-mode-rounded" class="text-[1.25rem]" />
-                </span>
-            </button>
-            <button aria-label="Menu" name="Nav Menu" class="btn-plain rounded-lg w-11 h-11 lg:hidden! nav-hamburger-btn" id="nav-menu-switch">
-                <Icon name="material-symbols:menu-rounded" class="text-[1.5rem] hamburger-icon-menu" /><Icon name="material-symbols:close-rounded" class="text-[1.5rem] hamburger-icon-close hidden" />
-            </button>
-        </div>
-        <NavMenuPanel links={links} siteTitle={navbarTitle}></NavMenuPanel>
-        <DisplaySettings client:load></DisplaySettings>
-    </div>
+
+<div id="navbar" class="z-50">
+	<div class="navbar-segments">
+		<!-- 左段：logo + 标题（滚动收缩成球） -->
+		<div class="navbar-seg navbar-seg--left">
+			<a href={url('/')} class="navbar-logo scale-animation flex items-center text-(--deep-text)">
+				{siteConfig.navbar.logo?.type === "icon" ? (
+					<Icon name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} is:inline class="text-[1.35rem] flex-shrink-0" />
+				) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
+					logoImg.format === "svg" ? (
+						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+					) : (
+					<Picture
+						src={logoImg}
+						alt={siteConfig.navbar.logo.alt || siteConfig.title}
+						class="h-6 w-6 object-contain flex-shrink-0"
+						formats={getImageFormats()}
+						fallbackFormat={getFallbackFormat()}
+						widths={[24, 48]}
+						loading="eager"
+						fetchpriority="high"
+					/>
+					)
+				) : siteConfig.navbar.logo?.type === "image" ? (
+					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+				) : siteConfig.navbar.logo?.type === "url" ? (
+					<img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+				) : (
+					<Icon name="material-symbols:home-pin-outline" is:inline class="text-[1.35rem] flex-shrink-0" />
+				)}
+				<span class="navbar-logo-text font-mono uppercase tracking-[0.12em] text-xs font-semibold ml-2">{navbarTitle}</span>
+			</a>
+		</div>
+
+		<!-- 中段：紧凑导航椭圆（滚动不变） -->
+		<div class="navbar-seg navbar-seg--center" data-navbar-nav>
+			<div class="navbar-nav hidden lg:flex items-center gap-0.5 relative">
+				<div class="navbar-hover-highlight" data-hover-border></div>
+				{links.map((l) => <DropdownMenu link={l} />)}
+			</div>
+		</div>
+
+		<!-- 右段：搜索 + 快捷键（滚动收缩成球），移动端追加菜单按钮 -->
+		<div class="navbar-seg navbar-seg--right">
+			<button aria-label="Search" name="Search" class="btn-plain h-9 nav-search-btn" id="nav-search-btn">
+				<span class="nav-search-btn__shortcut" data-shortcut>⌘ K</span>
+				<Icon name="material-symbols:search-rounded" is:inline class="text-[1.4rem]" style="font-variation-settings: 'wght' 700"></Icon>
+			</button>
+			<button aria-label="Menu" name="Nav Menu" class="btn-plain h-9 w-9 lg:hidden!" id="nav-menu-switch">
+				<Icon name="material-symbols:menu-rounded" is:inline class="text-[1.2rem]"></Icon>
+			</button>
+		</div>
+	</div>
 </div>
 
-<style>
-  /* ============ 太阳/月亮主题切换按钮 ============ */
-  .sun-moon-btn {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .sun-moon-icon {
-    position: absolute;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 亮色模式：显示太阳，隐藏月亮 */
-  .sun-icon { opacity: 1; transform: rotate(0deg) scale(1); }
-  .moon-icon { opacity: 0; transform: rotate(-90deg) scale(0.5); }
-
-  /* 暗色模式：显示月亮，隐藏太阳 */
-  :root.dark .sun-icon { opacity: 0; transform: rotate(90deg) scale(0.5); }
-  :root.dark .moon-icon { opacity: 1; transform: rotate(0deg) scale(1); }
-
-  /* ============ hover 滑动边框指示器 ============ */
-  .navbar-hover-border {
-    position: absolute;
-    height: 2.5rem;
-    border-radius: 9999px;
-    border: 1.5px solid oklch(0.35 0 0);
-    background-color: transparent;
-    opacity: 0;
-    transition:
-      left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-      width 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-      height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-      top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-      opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-      border-color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  :root.dark .navbar-hover-border {
-    border-color: oklch(0.6 0 0);
-  }
-
-  [data-navbar-nav]:hover .navbar-hover-border,
-  [data-navbar-nav].nav-has-active .navbar-hover-border {
-    opacity: 1;
-  }
-
-  /* 禁用各 item 自身的悬浮背景 */
-  [data-navbar-nav] .dropdown-container > .btn-plain:hover,
-  [data-navbar-nav] .dropdown-container > .btn-plain:active,
-  [data-navbar-nav] .dropdown-container > .btn-plain:focus-visible {
-    background-color: transparent !important;
-  }
-
-</style>
+<!-- 样式已迁移至 src/styles/layout/navbar-new.css -->
 
 <script>
-// ============ hover 滑动边框指示器 ============
+import { requestSearchModalToggle } from "@/utils/search-modal-controller";
+
 let _hoverSliderAbortController: AbortController | null = null;
 let _hoverSliderMouseEnterHandlers: Array<[Element, (e: Event) => void]> = [];
 
 function cleanupHoverSlider() {
-    if (_hoverSliderAbortController) {
-        _hoverSliderAbortController.abort();
-        _hoverSliderAbortController = null;
-    }
-    _hoverSliderMouseEnterHandlers.forEach(([item, handler]) => {
-        item.removeEventListener('mouseenter', handler);
-    });
-    _hoverSliderMouseEnterHandlers = [];
+	if (_hoverSliderAbortController) {
+		_hoverSliderAbortController.abort();
+		_hoverSliderAbortController = null;
+	}
+	_hoverSliderMouseEnterHandlers.forEach(([item, handler]) => {
+		item.removeEventListener('mouseenter', handler);
+	});
+	_hoverSliderMouseEnterHandlers = [];
+}
+
+/**
+ * 规范化路径：去掉尾部斜杠，根路径保留为 "/"
+ */
+function normalizePath(p: string): string {
+	return p.replace(/\/$/, '') || '/';
+}
+
+/**
+ * 判断一个路径是否匹配某个 href（含子路径）
+ */
+function pathMatches(currentPath: string, href: string): boolean {
+	const cp = normalizePath(currentPath);
+	const hp = normalizePath(href);
+	if (hp === '/') return cp === '/';
+	return cp === hp || cp.startsWith(hp + '/');
+}
+
+function moveHighlight(navContainer: HTMLElement, hoverBorder: HTMLElement, item: HTMLElement | null) {
+	if (!item) {
+		hoverBorder.style.opacity = '0';
+		return;
+	}
+	const rect = item.getBoundingClientRect();
+	const containerRect = navContainer.getBoundingClientRect();
+	hoverBorder.style.width = `${rect.width}px`;
+	hoverBorder.style.height = `${rect.height}px`;
+	hoverBorder.style.left = `${rect.left - containerRect.left}px`;
+	hoverBorder.style.top = `${rect.top - containerRect.top}px`;
 }
 
 function initHoverSlider() {
-    cleanupHoverSlider();
+	cleanupHoverSlider();
 
-    const navContainer = document.querySelector('[data-navbar-nav]') as HTMLElement | null;
-    const hoverBorder = document.querySelector('[data-hover-border]') as HTMLElement | null;
+	const navContainer = document.querySelector('[data-navbar-nav] .navbar-nav') as HTMLElement | null;
+	const hoverBorder = document.querySelector('[data-hover-border]') as HTMLElement | null;
 
-    if (!navContainer || !hoverBorder) return;
+	if (!navContainer || !hoverBorder) return;
 
-    _hoverSliderAbortController = new AbortController();
+	_hoverSliderAbortController = new AbortController();
 
-    const _navContainer = navContainer;
-    const _hoverBorder = hoverBorder;
-    const navItems = _navContainer.querySelectorAll(':scope > .dropdown-container');
+	const _navContainer = navContainer;
+	const _hoverBorder = hoverBorder;
+	const navItems = Array.from(_navContainer.querySelectorAll(':scope > .dropdown-container')) as HTMLElement[];
 
-    function detectActiveItem() {
-        const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
-        let hasActive = false;
-        navItems.forEach((item) => {
-            const link = item.querySelector('a') as HTMLAnchorElement | null;
-            if (!link) return;
-            const href = link.getAttribute('href')?.replace(/\/$/, '') || '/';
-            if (href === currentPath || (currentPath !== '/' && currentPath.startsWith(href + '/')) || (href !== '/' && currentPath.startsWith(href))) {
-                item.classList.add('nav-item-active');
-                hasActive = true;
-                const rect = item.getBoundingClientRect();
-                const containerRect = _navContainer.getBoundingClientRect();
-                _hoverBorder.style.width = `${rect.width}px`;
-                _hoverBorder.style.height = `${rect.height}px`;
-                _hoverBorder.style.left = `${rect.left - containerRect.left}px`;
-                _hoverBorder.style.top = `${(containerRect.height - rect.height) / 2}px`;
-            } else {
-                item.classList.remove('nav-item-active');
-            }
-        });
-        if (hasActive) {
-            _navContainer.classList.add('nav-has-active');
-        } else {
-            _navContainer.classList.remove('nav-has-active');
-        }
-    }
+	/**
+	 * 选中判定：
+	 * - 单项导航：直接匹配自身 href
+	 * - 下拉导航：匹配自身 href 或任一子菜单 href（二级激活则一级也选中）
+	 */
+	function detectActiveItem() {
+		const currentPath = window.location.pathname;
+		let activeItem: HTMLElement | null = null;
 
-    navItems.forEach((item) => {
-        const handler = () => {
-            const rect = item.getBoundingClientRect();
-            const containerRect = _navContainer.getBoundingClientRect();
+		navItems.forEach((item) => {
+			item.classList.remove('nav-item-active');
 
-            _hoverBorder.style.width = `${rect.width}px`;
-            _hoverBorder.style.height = `${rect.height}px`;
-            _hoverBorder.style.left = `${rect.left - containerRect.left}px`;
-            _hoverBorder.style.top = `${(containerRect.height - rect.height) / 2}px`;
-        };
-        item.addEventListener('mouseenter', handler);
-        _hoverSliderMouseEnterHandlers.push([item, handler]);
-    });
+			// 收集所有可匹配的 href：自身 + 子菜单
+			const hrefs: string[] = [];
+			const selfLink = item.querySelector(':scope > a') as HTMLAnchorElement | null;
+			if (selfLink) {
+				const href = selfLink.getAttribute('href');
+				if (href) hrefs.push(href);
+			}
+			item.querySelectorAll('.dropdown-item[href]').forEach((el) => {
+				const a = el as HTMLAnchorElement;
+				const href = a.getAttribute('href');
+				if (href) hrefs.push(href);
+			});
 
-    _navContainer.addEventListener('mouseleave', () => {
-        const activeItem = _navContainer.querySelector('.nav-item-active') as HTMLElement | null;
-        if (activeItem) {
-            const rect = activeItem.getBoundingClientRect();
-            const containerRect = _navContainer.getBoundingClientRect();
-            _hoverBorder.style.width = `${rect.width}px`;
-            _hoverBorder.style.height = `${rect.height}px`;
-            _hoverBorder.style.left = `${rect.left - containerRect.left}px`;
-            _hoverBorder.style.top = `${(containerRect.height - rect.height) / 2}px`;
-        } else {
-            _hoverBorder.style.opacity = '0';
-        }
-    }, { signal: _hoverSliderAbortController.signal });
+			const matched = hrefs.some((href) => pathMatches(currentPath, href));
+			if (matched) {
+				item.classList.add('nav-item-active');
+				if (!activeItem) activeItem = item;
+			}
+		});
 
-    _navContainer.addEventListener('mouseenter', () => {
-        _hoverBorder.style.opacity = '1';
-    }, { signal: _hoverSliderAbortController.signal });
+		if (activeItem) {
+			_navContainer.classList.add('nav-has-active');
+			// 图标从 display:none 显示后容器宽度会变化，等浏览器重排后再计算 slider
+			requestAnimationFrame(() => {
+				moveHighlight(_navContainer, _hoverBorder, activeItem);
+			});
+		} else {
+			_navContainer.classList.remove('nav-has-active');
+			_hoverBorder.style.opacity = '0';
+		}
+	}
 
-    detectActiveItem();
-    document.addEventListener('astro:page-load', detectActiveItem, { signal: _hoverSliderAbortController.signal });
+	navItems.forEach((item) => {
+		const handler = () => moveHighlight(_navContainer, _hoverBorder, item);
+		item.addEventListener('mouseenter', handler);
+		_hoverSliderMouseEnterHandlers.push([item, handler]);
+	});
+
+	_navContainer.addEventListener('mouseleave', () => {
+		const activeItem = _navContainer.querySelector('.nav-item-active') as HTMLElement | null;
+		moveHighlight(_navContainer, _hoverBorder, activeItem);
+	}, { signal: _hoverSliderAbortController.signal });
+
+	_navContainer.addEventListener('mouseenter', () => {
+		_hoverBorder.style.opacity = '1';
+	}, { signal: _hoverSliderAbortController.signal });
+
+	detectActiveItem();
+	document.addEventListener('astro:page-load', detectActiveItem, { signal: _hoverSliderAbortController.signal });
 }
 
 initHoverSlider();
-document.addEventListener('astro:page-load', initHoverSlider);
 
-function loadButtonScript() {
-    document.addEventListener("click", function(event) {
-        const panel = document.getElementById("display-setting");
-        if (panel && !panel.classList.contains("float-panel-closed")) {
-            if (event.target instanceof Node && !panel.contains(event.target)) {
-                panel.classList.add("float-panel-closed");
-            }
-        }
-    });
+(function() {
+	const navbar = document.getElementById('navbar');
+	const navbarWrapper = document.getElementById('navbar-wrapper');
+	if (!navbar) return;
+
+	const SCROLL_IN = 80;   // 超过此值收缩
+	const SCROLL_OUT = 40;  // 低于此值展开
+	const COMPACT_GAP = 8;  // 0.5rem，缩球与中段胶囊的间距
+
+	let ticking = false;
+	let resizeTicking = false;
+
+	function updateCompactLayout() {
+		const segments = document.querySelector('.navbar-segments') as HTMLElement | null;
+		const center = document.querySelector('.navbar-seg--center') as HTMLElement | null;
+		const left = document.querySelector('.navbar-seg--left') as HTMLElement | null;
+		const right = document.querySelector('.navbar-seg--right') as HTMLElement | null;
+
+		if (!segments || !center || !left || !right) return;
+
+		const isScrolled = navbar?.classList.contains('scrolled');
+		const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+
+		if (isMobile) {
+			// 移动端：清空 JS 定位，交给 CSS flex
+			left.style.left = '';
+			left.style.transform = '';
+			right.style.left = '';
+			right.style.right = '';
+			right.style.transform = '';
+			return;
+		}
+
+		const segmentsRect = segments.getBoundingClientRect();
+		const centerRect = center.getBoundingClientRect();
+		const leftRect = left.getBoundingClientRect();
+		const rightRect = right.getBoundingClientRect();
+
+		// 左右段始终用 left 属性定位，保证 transition 连续、避免 right→auto 闪现
+		if (isScrolled) {
+			// 左球右边缘紧贴中段左边缘
+			left.style.left = `${centerRect.left - segmentsRect.left - COMPACT_GAP - leftRect.width}px`;
+			left.style.transform = 'translateY(-50%)';
+
+			// 右球（搜索）左边缘紧贴中段右边缘，向中间缩放
+			right.style.left = `${centerRect.right - segmentsRect.left + COMPACT_GAP}px`;
+			right.style.right = 'auto';
+			right.style.transform = 'translateY(-50%)';
+		} else {
+			// 默认展开态：左贴边、右贴边
+			left.style.left = '0px';
+			left.style.transform = 'translateY(-50%)';
+
+			// 首次从 CSS right:0 切换到 left 定位时，先禁用 transition 避免闪现
+			const isFirstRightPosition = right.style.left === '';
+			if (isFirstRightPosition) {
+				right.style.transition = 'none';
+			}
+			right.style.left = `${segmentsRect.width - rightRect.width}px`;
+			right.style.right = 'auto';
+			right.style.transform = 'translateY(-50%)';
+			if (isFirstRightPosition) {
+				// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+				right.offsetHeight; // 强制重排
+				right.style.transition = '';
+			}
+		}
+	}
+
+	function handleScroll() {
+		const y = window.scrollY;
+		const wasScrolled = navbar?.classList.contains('scrolled');
+
+		if (y > SCROLL_IN) {
+			navbar?.classList.add('scrolled');
+			navbarWrapper?.classList.add('navbar-scrolled');
+		} else if (y < SCROLL_OUT) {
+			navbar?.classList.remove('scrolled');
+			navbarWrapper?.classList.remove('navbar-scrolled');
+		}
+
+		const isScrolled = navbar?.classList.contains('scrolled');
+		// 滚动状态变化或处于收缩态时，更新左右球位置
+		if (wasScrolled !== isScrolled || isScrolled) {
+			requestAnimationFrame(updateCompactLayout);
+		}
+
+		ticking = false;
+	}
+
+	window.addEventListener('scroll', () => {
+		if (!ticking) {
+			requestAnimationFrame(handleScroll);
+			ticking = true;
+		}
+	}, { passive: true });
+
+	window.addEventListener('resize', () => {
+		if (!resizeTicking) {
+			requestAnimationFrame(() => {
+				updateCompactLayout();
+				resizeTicking = false;
+			});
+			resizeTicking = true;
+		}
+	}, { passive: true });
+
+	handleScroll();
+	// 初始化定位，确保右段默认位置用 left 表示，避免后续滚动切换 right→auto 闪现
+	requestAnimationFrame(updateCompactLayout);
+})();
+
+function initSearchShortcut() {
+	const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+	const text = isMac ? "⌘K" : "Ctrl K";
+	document.querySelectorAll("[data-shortcut]").forEach((el) => {
+		el.textContent = text;
+	});
 }
 
-loadButtonScript();
+document.addEventListener("astro:page-load", () => {
+	initHoverSlider();
+	initSearchShortcut();
+});
 
-// 滚动方向检测：向下滚动隐藏导航栏，向上滚动显示
-(function() {
-    const navbar = document.getElementById('navbar');
-    if (!navbar) return;
-
-    let lastScrollY = window.scrollY;
-    let ticking = false;
-    const threshold = 10;
-
-    function updateNavbar() {
-        const currentScrollY = window.scrollY;
-        const diff = currentScrollY - lastScrollY;
-
-        if (currentScrollY <= 0) {
-            // 在页面顶部，始终显示 + 恢复药丸态
-            navbar.classList.remove('nav-hidden');
-            navbar.classList.remove('scrolled');
-        } else if (diff > threshold) {
-            // 向下滚动：隐藏
-            navbar.classList.add('nav-hidden');
-        } else if (diff < -threshold) {
-            // 向上滚动：显示 + 收缩为药丸
-            navbar.classList.remove('nav-hidden');
-            navbar.classList.add('scrolled');
-        }
-
-        lastScrollY = currentScrollY;
-        ticking = false;
-    }
-
-    window.addEventListener('scroll', function() {
-        if (!ticking) {
-            requestAnimationFrame(updateNavbar);
-            ticking = true;
-        }
-    }, { passive: true });
-})();
+// Navbar search button → open search modal
+// 使用事件委托绑定在 #navbar 上，Swup 导航后无需重新绑定
+document.getElementById("navbar")?.addEventListener("click", (e) => {
+	const btn = (e.target as HTMLElement)?.closest?.("#nav-search-btn");
+	if (!btn) return;
+	e.stopPropagation();
+	requestSearchModalToggle();
+});
 </script>
 
 {
-    import.meta.env.PROD && (
-        <script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
-            {/* 你的 loadPagefind 函数的完整内容放在这里 */}
-            async function loadPagefind() {
-                try {
-                    const response = await fetch(scriptUrl, { method: 'HEAD' });
-                    if (!response.ok) {
-                        throw new Error(`Pagefind script not found: ${response.status}`);
-                    }
-                    const pagefind = await import(scriptUrl);
-                    await pagefind.options({
-                        excerptLength: 20
-                    });
-                    window.pagefind = pagefind;
-                    document.dispatchEvent(new CustomEvent('pagefindready'));
-                    console.log('Pagefind loaded and initialized successfully, event dispatched.');
-                } catch (error) {
-                    console.error('Failed to load Pagefind:', error);
-                    window.pagefind = {
-                        search: () => Promise.resolve({ results: [] }),
-                        options: () => Promise.resolve(),
-                    };
-                    document.dispatchEvent(new CustomEvent('pagefindloaderror'));
-                    console.log('Pagefind load error, event dispatched.');
-                }
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', loadPagefind);
-            } else {
-                loadPagefind();
-            }
-        </script>
-    )
+	import.meta.env.PROD && (
+		<script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
+			async function loadPagefind() {
+				if (window.__pagefindLoading || window.pagefind) return;
+				window.__pagefindLoading = true;
+				try {
+					const response = await fetch(scriptUrl, { method: 'HEAD' });
+					if (!response.ok) throw new Error(`Pagefind script not found: ${response.status}`);
+					const pagefind = await import(scriptUrl);
+					await pagefind.options({ excerptLength: 20 });
+					window.pagefind = pagefind;
+					document.dispatchEvent(new CustomEvent('pagefindready'));
+				} catch (error) {
+					console.error('Failed to load Pagefind:', error);
+					window.pagefind = {
+						search: () => Promise.resolve({ results: [] }),
+						options: () => Promise.resolve(),
+					};
+					document.dispatchEvent(new CustomEvent('pagefindloaderror'));
+				}
+			}
+			// 延迟到首次用户交互才加载：纯浏览/跳出的访客不会拉取 Pagefind
+			// 运行时与索引；任何交互意图都会触发后台预载，确保搜索时已就绪。
+			const _pfEvents = ['pointerdown', 'keydown', 'touchstart'];
+			function _pfOnInteract() {
+				_pfEvents.forEach((evt) =>
+					document.removeEventListener(evt, _pfOnInteract, { capture: true })
+				);
+				loadPagefind();
+			}
+			_pfEvents.forEach((evt) =>
+				document.addEventListener(evt, _pfOnInteract, { capture: true, passive: true })
+			);
+			// 供搜索控制器在程序化打开时兜底调用
+			window.__loadPagefind = loadPagefind;
+		</script>
+	)
 }

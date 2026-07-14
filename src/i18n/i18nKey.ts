@@ -14,6 +14,7 @@ enum I18nKey {
 	categoryList = "categoryList",
 	categoryPosts = "categoryPosts",
 	allCategories = "allCategories",
+	allPosts = "allPosts",
 	about = "about",
 	archive = "archive",
 	search = "search",

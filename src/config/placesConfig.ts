@@ -15,6 +15,10 @@ export interface PlaceItem {
 	lat?: number;
 	lng?: number;
 	enabled?: boolean;
+	url?: string;
+	urlLabel?: string;
+	photos?: string[];
+	tags?: string[];
 }
 
 export interface PlacesPageConfig {
@@ -35,6 +39,9 @@ export const placesConfig: PlaceItem[] = [
 		city: "杭州",
 		experience: "困死了",
 		visitCount: 99,
+		lat: 30.2741,
+		lng: 120.1551,
+		tags: ["旅行", "工作"],
 		enabled: true,
 	},
 ];

@@ -1,8 +1,10 @@
 ---
 import { Icon } from "astro-icon/components";
 import { pengyouConfig } from "@/config/pengyouConfig";
+import { circleConfig } from "@/config/circleConfig";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import PengyouEditor from "@/components/edit/PengyouEditor.svelte";
+import "@/styles/features/circle.css";
 
 const title = "朋友圈";
 const description = "来看看我的朋友们都在干嘛";
@@ -15,6 +17,7 @@ interface PengyouItem {
 	date: string;
 	link: string;
 	content: string;
+	avatar?: string;
 }
 
 let items: PengyouItem[] = data;
@@ -138,276 +141,208 @@ function formatDate(dateString: string): string {
 	if (diffDays < 365) return `${Math.floor(diffDays / 30)}月前`;
 	return `${Math.floor(diffDays / 365)}年前`;
 }
+
+function getAvatar(item: PengyouItem): string {
+	const domain = item.link.split("//")[1]?.split("/")[0] || "";
+	return `https://icon.bqb.cool/?url=${domain}`;
+}
+
+const totalFriends = new Set(items.map(i => i.author)).size;
+const totalArticles = items.length;
+const itemsJson = JSON.stringify(items.map(i => ({
+	...i,
+	avatar: getAvatar(i),
+})));
 ---
 
 <MainGridLayout title={title} description={description}>
-	<div class="card-base z-10 px-9 py-6 relative w-full">
-		<div class="flex items-center gap-3 mb-6">
-			<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
-				<Icon name="material-symbols:group" class="text-[1.5rem]" />
-			</div>
-			<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-				{title}
-			</h1>
-		</div>
+  <div class="circle-container">
+    <!-- 顶部导航栏 -->
+    <div class="circle-header">
+      <div class="circle-header-left">
+        <span class="circle-header-icon">
+          <Icon name="material-symbols:group" class="text-xl text-[var(--primary)]" />
+        </span>
+        <span class="circle-header-title">朋友圈</span>
+      </div>
+      <a href="/friends/" class="circle-header-link">
+        全部友链
+        <Icon name="material-symbols:chevron-right-rounded" class="text-base" />
+      </a>
+    </div>
 
-		<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6">
-			{description}
-		</p>
+    <!-- 统计区域 -->
+    <div class="circle-stats-bar">
+      <div class="stats-left">
+        <span class="stats-item">好友 <strong id="stat-friends">{totalFriends}</strong></span>
+        <span class="stats-divider">·</span>
+        <span class="stats-item">动态 <strong id="stat-articles">{totalArticles}</strong></span>
+      </div>
+      <div class="stats-right">
+        <button class="sort-btn is-active" data-sort="date" id="sort-date">最新发布</button>
+      </div>
+    </div>
 
-		<div class="bg-(--card-bg) rounded-(--radius-large) p-4 mb-6">
-			<p class="text-sm text-neutral-500 dark:text-neutral-500">
-				如果你是我的邻居，但是没有在这里看到自己，可以立刻马上告诉我你的 RSS 订阅地址噢～
-			</p>
-		</div>
+    <!-- RSS 源数据（编辑器读取用） -->
+    <div id="pengyou-rss-sources" style="display:none">
+      {rss.map((source) => (
+        <div
+          class="pengyou-rss-source"
+          data-name={source.name}
+          data-url={source.url}
+          data-enabled={source.enabled !== false ? "true" : "false"}
+        ></div>
+      ))}
+    </div>
 
-		<div id="pengyou-rss-sources" style="display:none">
-			{rss.map((source) => (
-				<div
-					class="pengyou-rss-source"
-					data-name={source.name}
-					data-url={source.url}
-					data-enabled={source.enabled !== false ? "true" : "false"}
-				></div>
-			))}
-		</div>
+    <!-- 编辑器（仅编辑模式可见） -->
+    <div data-no-swup style="padding: 0 1.25rem 1rem;">
+      <PengyouEditor client:load />
+    </div>
 
-		<div data-no-swup>
-			<PengyouEditor client:load />
-		</div>
+    <!-- 文章网格 -->
+    <div id="pengyou-feed">
+      {items.length > 0 ? (
+        <div class="circle-grid" id="circle-grid">
+        {items.slice(0, circleConfig.pageSize).map((item, index) => (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="circle-card"
+            data-full-date={item.date}
+          >
+            <div class="card-avatar-watermark" data-initial={(item.author || "?").slice(0, 1)}>
+              <img src={getAvatar(item)} alt="" loading="lazy" onerror="this.style.display='none'" />
+            </div>
+            <span class="card-date-overlay">{formatDate(item.date)}</span>
+            <h3 class="card-title">{item.title}</h3>
+            <span class="card-author-tag">{item.author}</span>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="circle-error" style="padding: 4rem 1rem;">
+        <Icon name="material-symbols:sentiment-neutral-outline" class="text-4xl text-neutral-400" />
+        <p class="error-text">暂无文章</p>
+      </div>
+    )}
 
-		<div class="pengyou-feed" id="pengyou-feed">
-			{items.length > 0 ? (
-				items.map((item, index) => (
-					<article
-						key={index}
-						class="pengyou-card"
-						data-pengyou-item
-					>
-						<div class="pengyou-card-accent-bar"></div>
-						<a
-							href={item.link}
-							target="_blank"
-							rel="noopener nofollow"
-							class="pengyou-card-link"
-						>
-							<div class="pengyou-card-header">
-								<div class="pengyou-card-avatar">
-									<img
-										src={`https://icon.bqb.cool/?url=${item.link.split("//")[1]?.split("/")[0] || ""}`}
-										alt={item.author}
-										class="pengyou-avatar-img"
-									/>
-								</div>
-								<div class="pengyou-card-meta">
-									<span class="pengyou-card-author">{item.author}</span>
-									<time class="pengyou-card-date">{formatDate(item.date)}</time>
-								</div>
-							</div>
-							<div class="pengyou-card-body">
-								<h2 class="pengyou-card-title">{item.title}</h2>
-								<p class="pengyou-card-content">{item.content}</p>
-							</div>
-						</a>
-					</article>
-				))
-			) : (
-				<div class="pengyou-empty">
-					<Icon name="material-symbols:sentiment-neutral-outline" class="pengyou-empty-icon" />
-					<h3>暂无文章</h3>
-					<p>等待朋友们更新动态...</p>
-				</div>
-			)}
-		</div>
-	</div>
+    <!-- 加载更多 -->
+    {items.length > circleConfig.pageSize && (
+      <div class="circle-load-more" id="circle-load-more">
+        <div class="load-more-spinner"></div>
+      </div>
+    )}
+
+    <!-- 没有更多 -->
+    <div class="circle-no-more" id="circle-no-more" style={items.length <= circleConfig.pageSize ? "" : "display:none;"}>
+      <span>—— 没有更多了 ——</span>
+    </div>
+    </div>
+  </div>
+
+<script is:inline define:vars={{ pageSize: circleConfig.pageSize, allItems: itemsJson }}>
+(function() {
+  var displayedCount = pageSize;
+  var isLoadingMore = false;
+  var currentSort = "date";
+  var items = allItems;
+
+  function $(id) { return document.getElementById(id); }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    var date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    var now = new Date();
+    var diffTime = Math.abs(now.getTime() - date.getTime());
+    var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "今天";
+    if (diffDays === 1) return "昨天";
+    if (diffDays < 7) return diffDays + "天前";
+    if (diffDays < 30) return Math.floor(diffDays / 7) + "周前";
+    if (diffDays < 365) return Math.floor(diffDays / 30) + "月前";
+    return Math.floor(diffDays / 365) + "年前";
+  }
+
+  function esc(t) {
+    var d = document.createElement("div");
+    d.textContent = t;
+    return d.innerHTML;
+  }
+
+  function renderCard(item) {
+    var title = esc(item.title || "无标题");
+    var author = esc(item.author || "未知");
+    var link = item.link || "#";
+    var avatar = item.avatar || "";
+    var date = formatDate(item.date);
+    var initial = (item.author || "?").slice(0, 1);
+
+    return '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="circle-card">' +
+      '<div class="card-avatar-watermark" data-initial="' + initial + '">' +
+        '<img src="' + esc(avatar) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />' +
+      '</div>' +
+      '<span class="card-date-overlay">' + date + '</span>' +
+      '<h3 class="card-title">' + title + '</h3>' +
+      '<span class="card-author-tag">' + author + '</span>' +
+    '</a>';
+  }
+
+  function renderGrid() {
+    var grid = $("circle-grid");
+    if (!grid) return;
+
+    var sorted = items.slice();
+    sorted.sort(function(a, b) {
+      return (b.date || "").localeCompare(a.date || "");
+    });
+
+    var toShow = sorted.slice(0, displayedCount);
+    grid.innerHTML = toShow.map(renderCard).join("");
+
+    var loadMore = $("circle-load-more");
+    var noMore = $("circle-no-more");
+    if (displayedCount >= sorted.length) {
+      if (loadMore) loadMore.style.display = "none";
+      if (noMore) noMore.style.display = "";
+    } else {
+      if (loadMore) loadMore.style.display = "";
+      if (noMore) noMore.style.display = "none";
+    }
+  }
+
+  function loadMore() {
+    if (isLoadingMore) return;
+    isLoadingMore = true;
+    setTimeout(function() {
+      displayedCount += pageSize;
+      renderGrid();
+      isLoadingMore = false;
+    }, 300);
+  }
+
+  // 滚动加载更多
+  function onScroll() {
+    var loadMoreEl = $("circle-load-more");
+    if (!loadMoreEl || loadMoreEl.style.display === "none") return;
+    var rect = loadMoreEl.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) {
+      loadMore();
+    }
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  // Swup 导航后重新初始化
+  document.addEventListener("astro:page-load", function() {
+    var grid = $("circle-grid");
+    if (!grid) return;
+    displayedCount = pageSize;
+    renderGrid();
+  });
+})();
+</script>
+
 </MainGridLayout>
-
-<style>
-	.pengyou-feed {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		padding: 1rem 0 2rem;
-	}
-
-	.pengyou-card {
-		position: relative;
-		background: var(--card-bg);
-		border-radius: var(--radius-large);
-		padding: 1.25rem 1.25rem 1.25rem 2.25rem;
-		border: 2px solid #000;
-		overflow: hidden;
-		transition:
-			box-shadow 0.25s ease,
-			transform 0.25s ease,
-			border-color 0.25s ease;
-	}
-
-	:root.dark .pengyou-card {
-		border-color: #3f3f46;
-	}
-
-	.pengyou-card-accent-bar {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 4px;
-		background: var(--primary);
-		opacity: 0.35;
-		border-radius: 0 2px 2px 0;
-	}
-
-	.pengyou-card:hover {
-		border-color: var(--primary);
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-		transform: translateY(-2px);
-	}
-
-	:root.dark .pengyou-card:hover {
-		border-color: #fff;
-		box-shadow: 0 4px 24px rgba(255, 255, 255, 0.08);
-	}
-
-	.pengyou-card-link {
-		display: block;
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.pengyou-card-header {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.pengyou-card-avatar {
-		flex-shrink: 0;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 50%;
-		overflow: hidden;
-		border: 2px solid var(--primary);
-		background: var(--btn-regular-bg);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.pengyou-avatar-img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.pengyou-card-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.pengyou-card-author {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--primary);
-	}
-
-	.pengyou-card-date {
-		font-size: 0.75rem;
-		color: var(--content-meta);
-	}
-
-	.pengyou-card-body {
-		margin-bottom: 0;
-	}
-
-	.pengyou-card-title {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--text-color);
-		margin-bottom: 0.5rem;
-		transition: color 0.2s;
-	}
-
-	.pengyou-card-link:hover .pengyou-card-title {
-		color: var(--primary);
-	}
-
-	.pengyou-card-content {
-		font-size: 0.875rem;
-		color: var(--text-secondary);
-		line-height: 1.6;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.pengyou-empty {
-		text-align: center;
-		padding: 3rem 1rem;
-		background: var(--card-bg);
-		border: 1px solid var(--border);
-		border-radius: 12px;
-	}
-
-	.pengyou-empty-icon {
-		width: 4rem;
-		height: 4rem;
-		margin: 0 auto 1rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--btn-regular-bg);
-		border-radius: 50%;
-		color: var(--content-meta);
-		font-size: 2rem;
-	}
-
-	.pengyou-empty h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--text-color);
-		margin-bottom: 0.375rem;
-	}
-
-	.pengyou-empty p {
-		font-size: 0.875rem;
-		color: var(--content-meta);
-		margin: 0;
-	}
-
-	@media (max-width: 480px) {
-		.pengyou-card {
-			padding: 0.875rem;
-			border-radius: var(--radius);
-		}
-
-		.pengyou-card-header {
-			gap: 0.5rem;
-		}
-
-		.pengyou-card-avatar {
-			width: 2.25rem;
-			height: 2.25rem;
-		}
-
-		.pengyou-card-author {
-			font-size: 0.875rem;
-		}
-
-		.pengyou-card-date {
-			font-size: 0.6875rem;
-		}
-
-		.pengyou-card-title {
-			font-size: 0.9375rem;
-		}
-
-		.pengyou-card-content {
-			font-size: 0.8125rem;
-		}
-	}
-</style>

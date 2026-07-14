@@ -41,11 +41,15 @@
 @import './components/floating-lyrics.css';
 @import './components/mobile-dock.css';
 @import './components/ai-search.css';
-@import './components/post-list.css';
+@import './components/friend-rules-modal.css';
+@import './components/post-card.css';
+@import './components/page-title.css';
 @import './components/home-hero.css';
 @import './components/home-ticker.css';
 @import './components/home-data-layer.css';
 @import './components/home-portfolio-shutter.css';
+@import './components/animated-tabs.css';
+@import './components/article-catalog.css';
 @import './components/page-loader.css';
 
 /* --- 功能样式 --- */
@@ -61,10 +65,13 @@
 @import './features/moments.css';
 @import './features/movies-games.css';
 @import './pages/music-visualizer.css';
+@import './pages/article-list.css';
 
 /* --- 布局样式 --- */
 @import './layout/layout-styles.css';
-@import './layout/navbar.css';
+@import './layout/navbar-new.css';
+@import './layout/nav-menu-panel.css';
+@import './layout/dropdown-menu.css';
 @import './layout/banner-title.css';
 @import './layout/waves.css';
 
@@ -77,3 +84,122 @@
 @import './vendor/waline.css';
 @import './vendor/twikoo.css';
 @import './vendor/photoswipe.css';
+
+/* === 全局工具类（参考 my-blog） === */
+@layer components {
+	.card-base,
+	.card-base-transparent {
+		background-color: transparent !important;
+		border: 0 !important;
+		box-shadow: none !important;
+		backdrop-filter: none !important;
+		border-radius: 0 !important;
+		overflow: visible;
+	}
+
+	.section {
+		@apply w-full;
+	}
+	.section + .section {
+		@apply mt-12 pt-12 border-t border-(--line-divider);
+	}
+	.section-label {
+		@apply text-xs uppercase tracking-[0.2em] text-(--content-meta) mb-6 font-mono;
+	}
+	.section-label::before { content: "[ "; }
+	.section-label::after  { content: " ]"; }
+
+	.btn-line {
+		@apply inline-flex items-center justify-center px-4 py-1.5 rounded-full
+		       border border-(--line-divider) text-(--deep-text)
+		       transition-colors duration-150
+		       hover:border-(--deep-text) hover:bg-(--deep-text) hover:text-(--page-bg);
+	}
+	:root.dark .btn-line {
+		@apply text-white/85 hover:bg-white hover:text-black hover:border-white;
+	}
+
+	.float-panel {
+		@apply top-21 overflow-hidden bg-(--float-panel-bg) transition-colors duration-150 border border-(--line-divider);
+	}
+
+	.btn-plain {
+		@apply transition-colors duration-150 relative flex items-center justify-center bg-none
+		text-black/75 hover:text-(--primary) dark:text-white/75 dark:hover:text-(--primary);
+		&:not(.scale-animation) {
+			@apply hover:bg-(--btn-plain-bg-hover) active:bg-(--btn-plain-bg-active);
+		}
+		&.scale-animation {
+			@apply expand-animation;
+		}
+	}
+
+	.btn-regular {
+		@apply transition-colors duration-150 flex items-center justify-center bg-(--btn-regular-bg) hover:bg-(--btn-regular-bg-hover) active:bg-(--btn-regular-bg-active)
+		text-(--btn-content) dark:text-white/75;
+	}
+
+	.link-underline {
+		@apply transition-colors duration-150 underline decoration-2 decoration-dashed decoration-(--link-underline)
+		hover:decoration-(--link-hover) active:decoration-(--link-active) underline-offset-[0.25rem];
+	}
+
+	.text-90 {
+		@apply text-black/90 dark:text-white/90;
+	}
+	.text-75 {
+		@apply text-black/75 dark:text-white/75;
+	}
+	.text-50 {
+		@apply text-black/50 dark:text-white/50;
+	}
+	.text-30 {
+		@apply text-black/30 dark:text-white/30;
+	}
+	.text-25 {
+		@apply text-black/25 dark:text-white/25;
+	}
+
+	/* 下拉菜单 */
+	.dropdown-container {
+		@apply relative;
+	}
+
+	.dropdown-menu {
+		@apply absolute top-full left-0 pt-2 opacity-0 invisible pointer-events-none transition-all duration-200 ease-out transform translate-y-[-8px] z-50;
+	}
+
+	.dropdown-container:hover .dropdown-menu,
+	.dropdown-container:focus-within .dropdown-menu {
+		@apply opacity-100 visible pointer-events-auto translate-y-0;
+	}
+
+	.dropdown-container:hover .dropdown-arrow,
+	.dropdown-container:focus-within .dropdown-arrow {
+		@apply rotate-180;
+	}
+
+	.dropdown-content,
+	.dropdown-content-wrapper {
+		@apply border border-(--line-divider) py-2 min-w-48 rounded-xl;
+		background: color-mix(in oklch, var(--float-panel-bg) 85%, transparent);
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
+	}
+
+	.dropdown-item {
+		@apply flex items-center justify-between px-4 py-2.5 text-black/75 dark:text-white/75 hover:text-(--primary) transition-colors duration-150 font-medium;
+		border: 1.5px solid transparent;
+		border-radius: 0.75rem;
+		background-color: transparent !important;
+	}
+
+	.dropdown-item:hover {
+		border-color: oklch(0.2 0 0);
+		background-color: transparent !important;
+	}
+
+	:root.dark .dropdown-item:hover {
+		border-color: oklch(0.75 0 0);
+	}
+}

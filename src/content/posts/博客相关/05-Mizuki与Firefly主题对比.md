@@ -3,6 +3,7 @@ title: "fuwari 博客主题 Mizuki 和 Firefly 对比，以及好玩的主页和
 published: 2026-05-10
 updated: 2026-05-10
 description: "博客系列第6期。对比 fuwari 框架下两个好看的主题 Mizuki 和 Firefly，顺便分享一些好玩的主页和笔记博客玩法。"
+image: "api"
 tags:
   - 博客
   - fuwari
@@ -11,7 +12,7 @@ tags:
   - Astro
   - 主题对比
 slug: mizuki-vs-firefly-themes
-category: 分享
+category: 博客相关
 draft: false
 pinned: false
 author: fqzlr

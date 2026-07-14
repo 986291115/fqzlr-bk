@@ -7,6 +7,7 @@ export const ru: Translation = {
 	[Key.categoryList]: "Список категорий",
 	[Key.categoryPosts]: "Статьи в этой категории",
 	[Key.allCategories]: "Все категории",
+	[Key.allPosts]: "Все статьи",
 	[Key.about]: "О нас",
 	[Key.archive]: "Архив",
 	[Key.search]: "Поиск",

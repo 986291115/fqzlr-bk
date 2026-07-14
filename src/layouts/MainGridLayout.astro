@@ -10,10 +10,12 @@ import { Icon } from "astro-icon/components";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import FloatingDock from "@/components/controls/FloatingDock.astro";
 import TypewriterText from "@/components/features/TypewriterText.astro";
+import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
 import {
 	backgroundWallpaper,
 	commentConfig,
 	live2dModelConfig,
+	navBarConfig,
 	sidebarLayoutConfig,
 	siteConfig,
 } from "@/config";
@@ -298,11 +300,22 @@ const mobileQuality = Math.round(configQuality * 0.9);
 	</script>
 )}
 
-<!-- Navbar -->
+<!-- Navbar — 三段式椭圆 sticky 顶栏，顶部留距 -->
 <slot slot="head" name="head"></slot>
-<div id="navbar-wrapper" class="pointer-events-auto transition-all" data-full-width={String(navbarWidthFull)}>
-    <Navbar></Navbar>
+<div
+	id="top-row"
+	class="z-50 pointer-events-none relative mx-auto"
+	class:list={[
+		"sticky top-0 left-0 right-0 z-80 pt-2.5",
+		navbarWidthFull ? "w-full" : "w-full max-w-(--page-width) px-0 md:px-4",
+	]}
+>
+	<div id="navbar-wrapper" class="pointer-events-auto bg-transparent" data-full-width={String(navbarWidthFull)}>
+		<Navbar></Navbar>
+	</div>
 </div>
+
+<NavMenuPanel links={navBarConfig.links} />
 
 <!-- Wallpaper - 如果允许切换则始终渲染，否则只渲染当前模式 -->
 {(isWallpaperSwitchable || isBannerMode || isOverlayMode) && (

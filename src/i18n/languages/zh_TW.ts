@@ -7,6 +7,7 @@ export const zh_TW: Translation = {
 	[Key.categoryList]: "分類列表",
 	[Key.categoryPosts]: "該分類下的文章",
 	[Key.allCategories]: "全部分類",
+	[Key.allPosts]: "全部文章",
 	[Key.about]: "關於我",
 	[Key.archive]: "歸檔",
 	[Key.search]: "搜尋",

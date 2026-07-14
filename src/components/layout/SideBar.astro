@@ -150,6 +150,11 @@ const getComponentProps = (
 		return { ...baseProps, headings: Astro.props.headings || [], postSlug: Astro.props.postSlug };
 	}
 
+	// 特殊处理 PostDirectory 组件（全部文章目录）
+	if (config.type === "postDirectory") {
+		return { ...baseProps, currentSlug: Astro.props.postSlug };
+	}
+
 	// 特殊处理 EditPostButton 组件
 	if (config.type === "editPostButton") {
 		return { ...baseProps, postSlug: Astro.props.postSlug };

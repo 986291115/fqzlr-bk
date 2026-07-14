@@ -107,3 +107,23 @@ export function getFallbackFormat(): "avif" | "webp" {
 	const formatConfig = siteConfig.imageOptimization?.formats ?? "both";
 	return formatConfig === "avif" ? "avif" : "webp";
 }
+
+/**
+ * 判断远程图片是否需要设置 referrerpolicy="no-referrer"
+ * 依据 siteConfig.imageOptimization.noReferrerDomains 配置
+ * 支持通配符 * 匹配子域名
+ */
+export function shouldAddNoReferrer(urlStr: string): boolean {
+	if (!urlStr.startsWith("http")) return false;
+	const domains = (siteConfig.imageOptimization as any)?.noReferrerDomains || [];
+	if (domains.length === 0) return false;
+	try {
+		const hostname = new URL(urlStr).hostname;
+		return domains.some((pattern: string) => {
+			const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
+			return new RegExp(`^${regexPattern}$`).test(hostname);
+		});
+	} catch {
+		return false;
+	}
+}

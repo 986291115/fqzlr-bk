@@ -3,6 +3,7 @@ title: "用 Obsidian 丝滑的写博客，分享一个轻量化的笔记博客"
 published: 2026-05-27
 updated: 2026-05-27
 description: "博客系列番外。分享一个轻量化的笔记博客方案，用 Obsidian 直接写，直接发布，适合不想折腾的人。"
+image: "api"
 tags:
   - Obsidian
   - 博客
@@ -10,7 +11,7 @@ tags:
   - 静态博客
   - 笔记
 slug: obsidian-lightweight-note-blog
-category: 分享
+category: 博客相关
 draft: false
 pinned: false
 author: fqzlr

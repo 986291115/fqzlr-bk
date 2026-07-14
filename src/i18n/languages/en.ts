@@ -7,6 +7,7 @@ export const en: Translation = {
 	[Key.categoryList]: "Category List",
 	[Key.categoryPosts]: "Posts in this category",
 	[Key.allCategories]: "All Categories",
+	[Key.allPosts]: "All Posts",
 	[Key.about]: "About",
 	[Key.archive]: "Archive",
 	[Key.search]: "Search",

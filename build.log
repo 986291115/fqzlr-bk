@@ -1,0 +1,1322 @@
+﻿
+> firefly@6.6.13 build E:\AItool\zzwork\fqzlr-bk
+> node scripts/generate-icons/index.js && astro build && pagefind --site dist
+
+🔍 扫描源文件中的图标使用...
+
+📁 找到 266 个源文件
+
+🎨 发现 210 个不同的图标:
+
+   material-symbols: 184 个图标
+   fa7-solid: 4 个图标
+   svg-spinners: 1 个图标
+   simple-icons: 18 个图标
+   mdi: 1 个图标
+   fa7-brands: 2 个图标
+
+node.exe : ⚠️  图标未找到: material-symbols:collections-rounded
+At C:\Program Files\nodejs\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⚠️  图标未找到: mate...ections-rounded:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⚠️  图标未找到: material-symbols:restore
+⚠️  图标未找到: material-symbols:progress-activity-rounded
+⚠️  图标未找到: material-symbols:cloud-upload-rounded
+⚠️  图标未找到: material-symbols:rss-feed-off-rounded
+⚠️  图标未找到: material-symbols:checklist-outline-rounded
+⚠️  图标未找到: material-symbols:lock-rounded
+⚠️  图标未找到: material-symbols:push-pin-rounded
+✅ 成功加载 202 个图标
+❌ 失败 8 个图标
+
+📝 已生成: E:\AItool\zzwork\fqzlr-bk\src\constants\icons.ts
+📦 文件大小: 121.33 KB
+
+[astro] `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` are deprecated. Pass them to `u
+nified({...})` from `@astrojs/markdown-remark` directly instead.
+[2m00:32:18[22m [34m[content][39m Syncing content
+[33m[1m00:32:18[22m [WARN] [glob-loader][39m No files found matching "**/*.{md,mdx}" in directory "src\content\danmu"
+[33m[1m00:32:18[22m [WARN] [glob-loader][39m No files found matching "**/*.{md,mdx}" in directory "src\content\life"
+[2m00:32:18[22m [34m[content][39m Synced content
+[2m00:32:18[22m [34m[types][39m Generated [2m569ms[22m
+[2m00:32:18[22m [34m[build][39m output: [34m"static"[39m
+[2m00:32:18[22m [34m[build][39m mode: [34m"static"[39m
+[2m00:32:18[22m [34m[build][39m directory: [34mE:\AItool\zzwork\fqzlr-bk\dist\[39m
+[2m00:32:18[22m [34m[build][39m Collecting build info...
+[2m00:32:18[22m [34m[build][39m [32m✓ Completed in 772ms.[39m
+[2m00:32:18[22m [34m[build][39m Building static entrypoints...
+[2m00:32:33[22m [34m[vite][39m [32m✓ built in 15.10s[39m
+[33m[1m00:32:42[22m [WARN] [vite][39m [33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[2m00:32:42[22m [34m[vite][39m [32m✓ built in 9.06s[39m
+[2m00:32:42[22m [34m[build][39m Rearranging server assets...
+
+[42m[30m generating static routes [39m[49m
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/404.html[22m [2m(+142ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/about/index.html[22m [2m(+37ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/album/index.html[22m [2m(+43ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/album/gpt-sheng-tu/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/album/luo-li/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:44[22m   [34m├─[39m [2m/album/ming-chao/index.html[22m [2m(+31ms)[22m 
+[2m00:32:44[22m   [34m├─[39m [2m/api/allPostMeta.json[22m [2m(+5ms)[22m 
+[2m00:32:44[22m   [34m├─[39m [2m/api/calendar.json[22m [2m(+5ms)[22m 
+[2m00:32:44[22m   [34m├─[39m [2m/api/holidays.json[22m [31m(+568ms)[39m 
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/archive/index.html[22m [2m(+43ms)[22m 
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/index.html[22m [2m(+12ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/阿甘正传/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/爱乐之城/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/霸王别姬/index.html[22m [2m(+30ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/白日梦想家/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/爆裂鼓手/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/蝙蝠侠黑暗骑士/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/镖人/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/茶馆/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/豺狼的日子/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/穿条纹睡衣的男孩/index.html[22m [2m(+20ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/大王饶命/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/当幸福来敲门/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/盗梦空间/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/斗罗大陆/index.html[22m [2m(+31ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/斗破苍穹/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/夺命许愿/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/凡人修仙传/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/飞越疯人院/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/釜山行/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:45[22m   [34m├─[39m [2m/bangumi/anime/给阿嬷的情书/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/功夫/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/鬼客/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/海边的曼彻斯特/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/河狸变身计划/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/黑暗荣耀1/index.html[22m [2m(+30ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/黑暗荣耀第二季/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/画江湖之不良人/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/极速风流/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/九品芝麻官/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/绿皮书/index.html[22m [2m(+34ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/美丽人生/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/迷雾/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/你的名字/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/诺曼底72小时/index.html[22m [2m(+34ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/千与千寻/index.html[22m [2m(+30ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/让子弹飞/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/三傻大闹宝莱坞/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/少年派的奇幻漂流/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/神印王座/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/食神/index.html[22m [2m(+30ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/摔跤吧爸爸/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/素媛/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/泰坦尼克号/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/唐伯虎点秋香/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/唐人街探案/index.html[22m [2m(+20ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/头号玩家/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/吞噬星空/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/完美世界/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/我不是药神/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/午夜凶铃/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/喜剧之王/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/仙逆/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/向阳花/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/消失的人/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/小丑/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/肖申克的救赎/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/星辰变/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/星际穿越/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:46[22m   [34m├─[39m [2m/bangumi/anime/遮天/index.html[22m [2m(+41ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/这个杀手不太冷/index.html[22m [2m(+50ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/蜘蛛侠/index.html[22m [2m(+59ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/咒怨/index.html[22m [2m(+59ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/咒怨2/index.html[22m [2m(+59ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/侏罗纪世界/index.html[22m [2m(+101ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/anime/紫川/index.html[22m [2m(+46ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/个人成长/人性的弱点/index.html[22m [2m(+35ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/经济理财/冯唐成事心法/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/精品小说/被嫌弃的松子的一生/index.html[22m [2m(+31ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/精品小说/恶意/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/文学/啊20/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/文学/追风筝的人/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/心理/认知觉醒开启自我改变的原动力/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/book/哲学宗教/强者思维/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/game/王者荣耀/index.html[22m [2m(+35ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/game/英雄联盟/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/爱得起李溪芮张彬彬/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/爱情转移/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/大鱼唱片版/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/富士山下/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/海底live/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/海阔天空/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/红玫瑰/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/后来/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/玫瑰/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/男孩别哭/index.html[22m [2m(+20ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/少女的祈祷/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:47[22m   [34m├─[39m [2m/bangumi/music/十年/index.html[22m [2m(+20ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/私奔/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/我曾/index.html[22m [2m(+19ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/我的心在海对面/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/我怀念的/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/消愁/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/笑看風雲/index.html[22m [2m(+19ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/野孩子/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/一生所爱/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/知我/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/纸短情长/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/bangumi/music/ps我爱你-live/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/index.html[22m [2m(+32ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/个人成长/人性的弱点/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/经济理财/冯唐成事心法/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/精品小说/被嫌弃的松子的一生/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/精品小说/恶意/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/文学/啊20/index.html[22m [2m(+31ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/文学/追风筝的人/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/心理/认知觉醒开启自我改变的原动力/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:48[22m   [34m├─[39m [2m/books/book/哲学宗教/强者思维/index.html[22m [2m(+25ms)[22m 
+[2m00:32:48[22m   [34m├─[39m [2m/calendar/index.html[22m [31m(+2.01s)[39m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/教程/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/文章示例/index.html[22m [2m(+34ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/分享/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/博客/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/分类/index.html[22m [2m(+21ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/Examples/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/Firefly 博客教程/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/Git/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/IP优选/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/Technology/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/categories/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/changelog/index.html[22m [2m(+31ms)[22m 
+[2m00:32:50[22m   [34m├─[39m [2m/config/index.html[22m [2m(+20ms)[22m 
+[2m00:32:50[22m   [34m├─[39m [2m/debug-urls/index.html[22m [2m(+5ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/friends/index.html[22m [2m(+38ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/guestbook/index.html[22m [2m(+25ms)[22m 
+The collection "danmu" does not exist or is empty. Please check your content config file for errors.
+The collection "danmu" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/life/guestbook/index.html[22m [2m(+30ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/life/notebooks/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:50[22m   [34m├─[39m [2m/life/notebooks/ximalaya/index.html[22m [2m(+35ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/life/notebooks/ximalaya/2026-06-05-zhibing/index.html[22m [2m(+20ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/life/notebooks/ximalaya/2026-06-01-nabuchu/index.html[22m [2m(+22ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/life/places/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/life/routines/index.html[22m [2m(+39ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/moments/pinned/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/moments/index.html[22m [2m(+36ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/movies-games/index.html[22m [2m(+33ms)[22m 
+[2m00:32:51[22m   [34m├─[39m [2m/music/index.html[22m [2m(+40ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:51[22m   [34m├─[39m [2m/pengyou/index.html[22m [31m(+1.07s)[39m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/ai-tools-customize-blog/index.html[22m [2m(+34ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/obsidian-lightweight-note-blog/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/obsidian-astro-imgbed-workflow/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/mizuki-vs-firefly-themes/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/img-bed/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/cloudflare-imgbed-setup/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/ip/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/cloudflare-ip-optimize-and-writing/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/zero-cost-blog-setup/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/firefly-set/windows-firefly/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/git-use/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/firefly-link-button/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/friend-link-auto-apply-guide/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/domain-registration-tutorial/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/blog/obsidian-astro/index.html[22m [2m(+23ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/encrypted-post/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/video/index.html[22m [2m(+26ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/mdx-example/index.html[22m [2m(+29ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/markdown-extended/index.html[22m [2m(+24ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/markdown-mermaid/index.html[22m [2m(+33ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/markdown-plantuml/index.html[22m [2m(+25ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/posts/其他/markdown-tutorial/index.html[22m [2m(+27ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/projects/index.html[22m [2m(+34ms)[22m 
+[2m00:32:52[22m   [34m├─[39m [2m/robots.txt[22m [2m(+3ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:52[22m   [34m├─[39m [2m/rss/index.html[22m [2m(+33ms)[22m 
+[astro] `markdown.gfm` and `markdown.smartypants` are deprecated. Move them onto your processor instead (e.g. `unified(
+{ gfm: false, smartypants: false })`). Will be removed in a future major.
+[2m00:32:52[22m   [34m├─[39m [2m/rss.xml[22m [2m(+193ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:53[22m   [34m├─[39m [2m/search/index.html[22m [2m(+34ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:53[22m   [34m├─[39m [2m/sponsor/index.html[22m [2m(+28ms)[22m 
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:53[22m   [34m├─[39m [2m/write/index.html[22m [2m(+31ms)[22m 
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "notebooks" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+The collection "routines" does not exist or is empty. Please check your content config file for errors.
+[2m00:32:53[22m   [34m├─[39m [2m/index.html[22m [2m(+38ms)[22m 
+[2m00:32:53[22m [32m✓ Completed in 9.70s.
+[39m
+[42m[30m generating optimized images [39m[49m
+[2m00:32:53[22m   [32m▶[39m /_astro/avatar.COjAOSY5_ZUcBpV.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(1/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/github.urcbElKG_Z1bC9wS.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(2/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/cover.LVH5wcXY_hy8TC.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(3/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/shangban.Cuwav3Rr_1q4OG7.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(4/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/obsidian.Cwb2iYzd_1I7Wom.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(5/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/vitepress.D2YnjBWE_Z1rUl1H.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(6/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/docusaurus.Cu-On_k2_Zy4rHX.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(7/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/firefly1.CZCuCN4V_1dgNYg.webp [2m(reused cache entry)[22m [2m(+3ms)[22m [2m(8/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/firefly2.dxmXG905_ZyJm5m.webp [2m(reused cache entry)[22m [2m(+4ms)[22m [2m(9/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/firefly3.CGzFXcxi_Z1Lz6q8.webp [2m(reused cache entry)[22m [2m(+4ms)[22m [2m(10/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/0.Bo2jSFGw_Z1rxQWs.webp [2m(reused cache entry)[22m [2m(+4ms)[22m [2m(11/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/1.ClCpcFMe_Z1YWmXT.webp [2m(reused cache entry)[22m [2m(+4ms)[22m [2m(12/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/2.BOhhtOYK_UgSR2.webp [2m(reused cache entry)[22m [2m(+4ms)[22m [2m(13/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/3.DldE8ZN2_Z1NEa7w.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(14/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/4.BorHAQD__1bRgGw.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(15/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/5.CWjvx00D_14nenz.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(16/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/6.BddCk9An_1cYbUf.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(17/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/7.bR1kpt6Z_2oVyUH.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(18/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/8.CePNvVJd_1DagtY.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(19/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/9.Okdbk641_ZnS7wW.webp [2m(reused cache entry)[22m [2m(+6ms)[22m [2m(20/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/avatar.COjAOSY5_Z1YY9Vi.webp [2m(reused cache entry)[22m [2m(+6ms)[22m [2m(21/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/cover.LVH5wcXY_Zbh0mI.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(22/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/shangban.Cuwav3Rr_Z15lvaS.webp [2m(reused cache entry)[22m [2m(+5ms)[22m [2m(23/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/cover.LVH5wcXY_Z272bIG.webp [2m(reused cache entry)[22m [2m(+1ms)[22m [2m(24/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/avatar.COjAOSY5_1QcMVz.webp [2m(reused cache entry)[22m [2m(+1ms)[22m [2m(25/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/cover.LVH5wcXY_ZEw7sS.webp [2m(reused cache entry)[22m [2m(+1ms)[22m [2m(26/27)[22m
+[2m00:32:53[22m   [32m▶[39m /_astro/avatar.COjAOSY5_1KBnaT.webp [2m(reused cache entry)[22m [2m(+1ms)[22m [2m(27/27)[22m
+[2m00:32:53[22m [32m✓ Completed in 11ms.
+[39m
+[2m00:32:53[22m [34m[build][39m [32m✓ Completed in 35.05s.[39m
+[2m00:32:53[22m [34m[@astrojs/sitemap][39m `sitemap-index.xml` created at `dist`
+[2m00:32:53[22m [34m[build][39m 173 page(s) built in [1m35.84s[22m
+[2m00:32:53[22m [34m[build][39m [1mComplete![22m
+
+Running Pagefind v1.4.0 (Extended)
+Running from: "E:\\AItool\\zzwork\\fqzlr-bk"
+Source:       "dist"
+Output:       "dist\\pagefind"
+
+[Walking source directory]
+Found 174 files matching **/*.{html}
+
+[Parsing files]
+Found a data-pagefind-body element on the site.
+↳ Ignoring pages without this tag.
+1 page found without an <html> element. 
+Pages without an outer <html> element will not be processed by default. 
+If adding this element is not possible, use the root selector config to target a different root element.
+  * "/bangumi/" has no <html> element
+
+[Reading languages]
+Discovered 1 language: zh-cn
+
+[Building search indexes]
+Total: 
+  Indexed 1 language
+  Indexed 90 pages
+  Indexed 4672 words
+  Indexed 0 filters
+  Indexed 0 sorts
+Note: Pagefind doesn't support stemming for the language zh-cn. 
+Search will still work, but will not match across root words.
+Note: Pagefind doesn't support stemming for the language zh-cn. 
+Search will still work, but will not match across root words.
+
+Finished in 4.036 seconds

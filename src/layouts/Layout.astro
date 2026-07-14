@@ -10,6 +10,7 @@ import PageLoader from "@components/features/PageLoader.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 import MobileDock from "@components/layout/MobileDock.astro";
+import SearchModal from "@components/controls/SearchModal.svelte";
 
 import {
 	backgroundWallpaper,
@@ -481,6 +482,9 @@ const siteLang = lang.replace("_", "-");
 
     <!-- Fancybox Manager -->
     <FancyboxManager />
+
+    <!-- 全屏搜索弹窗 (Ctrl+K / Cmd+K 触发) -->
+    <SearchModal client:idle placeholders={["搜索文章、标签、分类...", "输入关键词开始搜索", "试试搜索「Astro」或「Svelte」", "按 ESC 关闭搜索面板", "Ctrl+K 快速切换AI搜索/普通搜索"]} />
   </body>
 </html>
 
@@ -507,11 +511,6 @@ const siteLang = lang.replace("_", "-");
     .enable-banner #main-grid {
       transform: translateY(var(--banner-height-extend));
     }
-
-    .enable-banner #top-row {
-      height: calc(var(--banner-height-home) - 4.5rem);
-      @apply transition-all duration-300;
-    }
   }
 
   @layer utilities {
@@ -524,37 +523,6 @@ const siteLang = lang.replace("_", "-");
     .enable-banner #right-sidebar-sticky {
       top: calc(1rem - var(--banner-height-extend)) !important;
     }
-  }
-
-  /* 滚动时隐藏/显示导航栏 - 使用 fixed 定位 */
-  #navbar-wrapper {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* 非全宽模式下限制导航栏宽度 */
-  #navbar-wrapper:not([data-full-width="true"]) #navbar > div {
-    max-width: var(--page-width);
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  @media (max-width: 1023px) {
-    #navbar-wrapper:not([data-full-width="true"]) #navbar > div {
-      max-width: 100%;
-    }
-  }
-
-  #navbar-wrapper.navbar-hidden {
-    transform: translateY(-100%);
-  }
-
-  #navbar-wrapper.navbar-visible {
-    transform: translateY(0);
   }
 
   @media (max-width: 1023px) {
@@ -763,19 +731,9 @@ function disableAnimation() {
         document.documentElement.classList.add("is-navigating-to-music");
       }
 
-      // 简化navbar处理逻辑
-      if (bannerEnabled) {
-        const navbar = document.getElementById("navbar-wrapper");
-        if (navbar) {
-          const threshold = window.innerHeight * (BANNER_HEIGHT_HOME / 100) - 88;
-          if (document.documentElement.scrollTop >= threshold) {
-            navbar.classList.add("navbar-hidden");
-          }
-        }
-      }
     });
 
-    // Swup 内容替换后移除音乐页面过渡类，并恢复主题
+    // Swup 内容替换后移除音乐页面过渡类
     window.swup.hooks.on("content:replace", () => {
       document.documentElement.classList.remove("is-navigating-to-music");
       // 如果离开音乐页面，恢复用户原始主题
@@ -1115,7 +1073,6 @@ function disableAnimation() {
 
   let backToTopBtn = document.getElementById("back-to-top-btn");
   let toc = document.getElementById("toc-wrapper");
-  let navbar = document.getElementById("navbar-wrapper");
 
   // 优化的滚动处理函数
   function scrollFunction() {
@@ -1145,50 +1102,15 @@ function disableAnimation() {
       });
     }
 
-    // 滚动方向检测 - 导航栏自动隐藏/显示（始终执行）
-    if (navbar) {
-      operations.push(() => {
-        const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // 始终在顶部时显示
-        if (currentScrollY <= 10) {
-          navbar.classList.remove("navbar-hidden");
-          navbar.classList.add("navbar-visible");
-          (window as any)._navbarHidden = false;
-          const _navEl2 = document.getElementById("navbar"); if (_navEl2) _navEl2.classList.remove("scrolled");
-          (window as any)._lastScrollY = currentScrollY;
-          return;
-        }
-        
-        const lastScrollY = (window as any)._lastScrollY || 0;
-        const isHidden = (window as any)._navbarHidden || false;
-
-          // 滚动超过 20px 启用导航栏药丸形收缩
-          const _navEl = document.getElementById("navbar");
-          if (_navEl) {
-            if (currentScrollY > 20) {
-              _navEl.classList.add("scrolled");
-            }
-          }
-        const scrollDelta = currentScrollY - lastScrollY;
-        
-        // 向上滚动 - 显示导航栏
-        if (scrollDelta < 0) {
-          if (isHidden) {
-            navbar.classList.remove("navbar-hidden");
-            navbar.classList.add("navbar-visible");
-            (window as any)._navbarHidden = false;
-          }
-        }
-        // 向下滚动超过50px - 隐藏导航栏
-        else if (scrollDelta > 50 && !isHidden) {
-          navbar.classList.remove("navbar-visible");
-          navbar.classList.add("navbar-hidden");
-          (window as any)._navbarHidden = true;
-        }
-        
-        (window as any)._lastScrollY = currentScrollY;
-      });
+    // 滚动超过 20px 启用导航栏药丸形收缩
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const _navEl = document.getElementById("navbar");
+    if (_navEl) {
+      if (currentScrollY > 20) {
+        _navEl.classList.add("scrolled");
+      } else {
+        _navEl.classList.remove("scrolled");
+      }
     }
 
     // 批量执行DOM操作
