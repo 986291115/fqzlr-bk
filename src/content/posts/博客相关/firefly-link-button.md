@@ -9,8 +9,9 @@ tags:
   - 自助申请
   - Astro
   - 博客优化
-category: 教程
+category: 博客相关
 draft: false
+image: "api"
 author: fqzlr
 slug: blog/firefly-link-button
 ---

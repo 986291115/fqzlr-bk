@@ -4,6 +4,7 @@ published: 2022-07-01
 tags: [Markdown, Blogging, Demo]
 category: 文章示例
 draft: true
+image: "api"
 ---
 
 # This Article is a Draft

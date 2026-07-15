@@ -5,8 +5,9 @@ updated: 2026-05-07
 description: 搭建属于自己的图床
 image: /src/assets/images/cover.avif
 tags: [图床]
-category: 博客
+category: 博客相关
 draft: false
+image: "api"
 author: fqzlr
 slug: blog/img-bed
 ---

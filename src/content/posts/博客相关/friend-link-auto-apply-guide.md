@@ -8,8 +8,9 @@ tags:
   - 友链
   - 自动化
   - Firefly
-category: 教程
+category: 博客相关
 draft: false
+image: "api"
 author: fqzlr
 slug: blog/friend-link-auto-apply-guide
 ---

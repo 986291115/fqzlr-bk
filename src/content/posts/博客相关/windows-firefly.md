@@ -4,8 +4,9 @@ published: 2026-04-29
 description: 前置准备｜Windows 搭建 Firefly 必备环境全套安装
 image: /src/assets/images/cover.avif
 tags: [Firefly, 环境安装, Windows, 博客搭建]
-category: Firefly 博客教程
+category: 博客相关
 draft: false
+image: "api"
 slug: blog/windows-firefly
 ---
 # Firefly 博客部署教程

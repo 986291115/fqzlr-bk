@@ -248,8 +248,8 @@ export const siteConfig: SiteConfig = {
 
 	// 分页配置
 	pagination: {
-		// 每页显示的文章数量
-		postsPerPage: 10,
+		// 每页显示的文章数量，取 3/2/1 列的公倍数避免最后一行单出来
+		postsPerPage: 12,
 	},
 
 	// 统计分析

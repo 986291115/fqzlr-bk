@@ -7,8 +7,9 @@ image: https://tu.682000.xyz/file/blog/wenzhang/1776516130544_image.png
 tags:
   - Obsidian
   - astro
-category: 分类
+category: 博客相关
 draft: false
+image: "api"
 author: fqzlr
 slug: blog/obsidian-astro
 ---

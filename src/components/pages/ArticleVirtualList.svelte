@@ -35,7 +35,7 @@ interface Props {
 	postsPerPage?: number;
 }
 
-let { posts, defaultView = "list", postsPerPage = 9 }: Props = $props();
+let { posts, defaultView = "list", postsPerPage = 12 }: Props = $props();
 
 let containerRef = $state<HTMLElement | null>(null);
 let view = $state<ArticleListView>("list");

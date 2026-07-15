@@ -5,8 +5,9 @@ updated: 2026-05-03
 description: Cloudflare IP优选
 image: /src/assets/images/cover.avif
 tags: [IP优选]
-category: IP优选
+category: 博客相关
 draft: false
+image: "api"
 author: fqzlr
 slug: blog/ip
 ---
