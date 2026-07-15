@@ -29,14 +29,34 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	const allPosts = await getCollection("posts");
 	const publishedPosts = allPosts.filter((post) => !post.data.draft);
 
-	return publishedPosts.map((post) => {
-		// 将 id 转换为 slug（移除扩展名）以匹配路由参数
-		const slug = removeFileExtension(post.id);
-		return {
-			params: { slug },
-			props: { post },
-		};
-	});
+	const paths: Array<{
+		params: { slug: string };
+		props: { post: (typeof publishedPosts)[number] };
+	}> = [];
+	const seen = new Set<string>();
+
+	for (const post of publishedPosts) {
+		// 1) 基于文件 ID 的 OG 图路径
+		const idSlug = removeFileExtension(post.id);
+		if (!seen.has(idSlug)) {
+			seen.add(idSlug);
+			paths.push({ params: { slug: idSlug }, props: { post } });
+		}
+
+		// 2) 基于 frontmatter slug 字段的别名 OG 图路径
+		const customSlug = post.data.slug;
+		if (
+			typeof customSlug === "string" &&
+			customSlug.trim() !== "" &&
+			customSlug !== idSlug &&
+			!seen.has(customSlug)
+		) {
+			seen.add(customSlug);
+			paths.push({ params: { slug: customSlug }, props: { post } });
+		}
+	}
+
+	return paths;
 };
 
 let fontCache: { regular: Buffer | null; bold: Buffer | null } | null = null;

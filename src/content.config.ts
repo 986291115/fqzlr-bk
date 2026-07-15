@@ -53,6 +53,9 @@ const postsCollection = defineCollection({
 		prevSlug: z.string().default(""),
 		nextTitle: z.string().default(""),
 		nextSlug: z.string().default(""),
+
+		// 自定义 URL 路径（与文件 ID 解耦，设为有效 slug 时会同时生成 slug 别名路由）
+		slug: z.string().optional().default(""),
 	}),
 });
 

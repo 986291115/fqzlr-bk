@@ -34,14 +34,35 @@ import { url } from "@/utils/url-utils";
 
 export async function getStaticPaths() {
 	const blogEntries = await getSortedPosts();
-	return blogEntries.map((entry) => {
-		// 将 id 转换为 slug（移除扩展名）以匹配路由参数
-		const slug = removeFileExtension(entry.id);
-		return {
-			params: { slug },
-			props: { entry },
-		};
-	});
+	const paths: Array<{
+		params: { slug: string };
+		props: { entry: (typeof blogEntries)[number] };
+	}> = [];
+	const seen = new Set<string>();
+
+	for (const entry of blogEntries) {
+		// 1) 基于文件 ID（entry.id 去除扩展名）的主 URL，保持向后兼容
+		const idSlug = removeFileExtension(entry.id);
+		if (!seen.has(idSlug)) {
+			seen.add(idSlug);
+			paths.push({ params: { slug: idSlug }, props: { entry } });
+		}
+
+		// 2) 基于 frontmatter slug 字段的别名 URL
+		//    让用户可以通过自定义 slug（如 "ai-tools-customize-blog"）访问文章
+		const customSlug = entry.data.slug;
+		if (
+			typeof customSlug === "string" &&
+			customSlug.trim() !== "" &&
+			customSlug !== idSlug &&
+			!seen.has(customSlug)
+		) {
+			seen.add(customSlug);
+			paths.push({ params: { slug: customSlug }, props: { entry } });
+		}
+	}
+
+	return paths;
 }
 
 const { entry } = Astro.props;
