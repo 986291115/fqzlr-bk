@@ -2,7 +2,8 @@
 title: Draft Example
 published: 2022-07-01
 tags: [Markdown, Blogging, Demo]
-category: Examples
+category: 文章示例
+draft: true
 draft: true
 ---
 

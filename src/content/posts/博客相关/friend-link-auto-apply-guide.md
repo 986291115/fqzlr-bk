@@ -11,6 +11,7 @@ tags:
 category: 教程
 draft: false
 author: fqzlr
+slug: blog/friend-link-auto-apply-guide
 ---
 
 # Firefly 友链自助申请自动化 

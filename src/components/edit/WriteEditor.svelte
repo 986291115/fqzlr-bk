@@ -264,9 +264,53 @@ function parseYamlValue(v: string): any {
 }
 
 // ============ Load article from local files ============
+// 根据匹配到的 key（glob 路径）和原始内容填充编辑器状态
+function applyLocalArticle(key: string, rawContent: string): void {
+	const ext = key.endsWith(".mdx") ? ".mdx" : ".md";
+	const { data: fmData, body } = parseFrontmatter(rawContent);
+
+	// 去掉前缀和扩展名，得到相对路径（用作 savePath / slug 来源）
+	const relPath = key
+		.replace("../../content/", "")
+		.replace(/\.(md|mdx)$/, "");
+
+	existingExt = ext;
+	slug = relPath.includes("/")
+		? relPath.split("/").pop() || ""
+		: relPath;
+	savePath = `src/content/${relPath}`;
+	editMode = true;
+
+	title = fmData.title || "";
+	content = body || "";
+	description = fmData.description || "";
+	coverUrl = fmData.image || "";
+	category = fmData.category || "";
+	isDraft = !!fmData.draft;
+	isPinned = !!fmData.pinned;
+
+	if (Array.isArray(fmData.tags)) {
+		tagsInput = fmData.tags.join(", ");
+	}
+
+	if (fmData.published) {
+		const d =
+			fmData.published instanceof Date
+				? fmData.published
+				: new Date(fmData.published);
+		pubDate = isNaN(d.getTime()) ? today : d.toISOString().slice(0, 10);
+	}
+
+	originalArticle = snapshotArticle();
+	restoreFromDrafts();
+	showToast("文章已加载", "success");
+}
+
 function loadArticleFromLocal(pathParam: string): boolean {
-	const possibleKeys: string[] = [];
 	const normalizedPath = pathParam.replace(/\/+$/, "").toLowerCase();
+
+	// 1) 直接按可能的文件路径匹配
+	const possibleKeys: string[] = [];
 	const baseRelPath = `../../content/${normalizedPath}`;
 	possibleKeys.push(baseRelPath + ".md");
 	possibleKeys.push(baseRelPath + ".mdx");
@@ -279,84 +323,31 @@ function loadArticleFromLocal(pathParam: string): boolean {
 
 	for (const key of possibleKeys) {
 		if (postFiles[key]) {
-			const rawContent = postFiles[key];
-			const ext = key.endsWith(".mdx") ? ".mdx" : ".md";
-			const { data: fmData, body } = parseFrontmatter(rawContent);
-
-			existingExt = ext;
-			slug = pathParam.includes("/")
-				? pathParam.split("/").pop() || ""
-				: pathParam;
-			savePath = `src/content/${pathParam}`;
-			editMode = true;
-
-			title = fmData.title || "";
-			content = body || "";
-			description = fmData.description || "";
-			coverUrl = fmData.image || "";
-			category = fmData.category || "";
-			isDraft = !!fmData.draft;
-			isPinned = !!fmData.pinned;
-
-			if (Array.isArray(fmData.tags)) {
-				tagsInput = fmData.tags.join(", ");
-			}
-
-			if (fmData.published) {
-				const d =
-					fmData.published instanceof Date
-						? fmData.published
-						: new Date(fmData.published);
-				pubDate = isNaN(d.getTime()) ? today : d.toISOString().slice(0, 10);
-			}
-
-			originalArticle = snapshotArticle();
-			restoreFromDrafts();
-			showToast("文章已加载", "success");
+			applyLocalArticle(key, postFiles[key]);
 			return true;
 		}
 	}
 
-	// 大小写不敏感匹配（遍历所有 postFiles）
+	// 2) 回退遍历：先按 entry.id（文件相对路径）匹配
 	for (const [key, rawContent] of Object.entries(postFiles)) {
-		// 去掉前缀和扩展名，得到相对路径
 		const relPath = key
 			.replace("../../content/", "")
 			.replace(/\.(md|mdx)$/, "");
 		if (relPath.toLowerCase() === normalizedPath) {
-			const ext = key.endsWith(".mdx") ? ".mdx" : ".md";
-			const { data: fmData, body } = parseFrontmatter(rawContent);
+			applyLocalArticle(key, rawContent);
+			return true;
+		}
+	}
 
-			existingExt = ext;
-			slug = relPath.includes("/")
-				? relPath.split("/").pop() || ""
-				: relPath;
-			savePath = `src/content/${relPath}`;
-			editMode = true;
-
-			title = fmData.title || "";
-			content = body || "";
-			description = fmData.description || "";
-			coverUrl = fmData.image || "";
-			category = fmData.category || "";
-			isDraft = !!fmData.draft;
-			isPinned = !!fmData.pinned;
-
-			if (Array.isArray(fmData.tags)) {
-				tagsInput = fmData.tags.join(", ");
-			}
-
-			if (fmData.published) {
-				const d =
-					fmData.published instanceof Date
-						? fmData.published
-						: new Date(fmData.published);
-				pubDate = isNaN(d.getTime()) ? today : d.toISOString().slice(0, 10);
-			}
-
-			originalArticle = snapshotArticle();
-			restoreFromDrafts();
-			showToast("文章已加载", "success");
+	// 3) 再回退：按 frontmatter slug 字段匹配
+	//    支持用户通过自定义 slug 访问文章（与 entry.id 解耦）
+	for (const [key, rawContent] of Object.entries(postFiles)) {
+		const { data: fmData } = parseFrontmatter(rawContent);
+		if (
+			typeof fmData.slug === "string" &&
+			fmData.slug.toLowerCase() === normalizedPath
+		) {
+			applyLocalArticle(key, rawContent);
 			return true;
 		}
 	}

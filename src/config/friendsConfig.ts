@@ -9,12 +9,12 @@ export const friendsPageConfig: FriendsPageConfig = {
 	showCustomContent: true,
 	showComment: true,
 	randomizeSort: false,
-	applyLink: "https://github.com/fqzlr/dumplingandcakeblog/issues/new?template=friend-link.yml",
+	applyLink: "https://github.com/fqzlr/fqzl-bk/issues/new?template=friend-link.yml",	
 	siteInfo: {
-		name: "dumplingandcake",
-		desc: "饺子与蛋糕的博客",
-		url: "https://dumplingandcakeblog.pages.dev",
-		avatar: "",
+		name: "fqzlr",
+		desc: "坐而言不如起而行.",
+		url: "https://fqzlr.com/",
+		avatar: "https://fqzlr.com/avatar.png",
 		email: "",
 	},
 	notes: [

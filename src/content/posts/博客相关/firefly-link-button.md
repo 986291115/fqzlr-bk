@@ -12,6 +12,7 @@ tags:
 category: 教程
 draft: false
 author: fqzlr
+slug: blog/firefly-link-button
 ---
 
 # Firefly 友链自助申请按钮添加

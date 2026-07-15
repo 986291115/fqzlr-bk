@@ -8,6 +8,7 @@ tags: [图床]
 category: 博客
 draft: false
 author: fqzlr
+slug: blog/img-bed
 ---
 # Cloudflare Workers 部署 Cloudflare‑ImgBed 图床完整教程
 

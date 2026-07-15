@@ -8,6 +8,7 @@ tags: [IP优选]
 category: IP优选
 draft: false
 author: fqzlr
+slug: blog/ip
 ---
 
 ## 一、Cloudflare IP优选

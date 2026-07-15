@@ -79,7 +79,8 @@ const typeColor = typeColors[primaryTag] || typeColors.Blog;
     align-items: center;
     gap: 0.875rem;
     padding: 0.875rem 1rem;
-    border-radius: var(--radius-large, 0.75rem);
+    /* 左上角直角，其余三圆角（与 type 徽章形成一体） */
+    border-radius: 0 0.75rem 0.75rem 0.75rem;
     background: #fff;
     border: 2px solid #000;
     text-decoration: none;

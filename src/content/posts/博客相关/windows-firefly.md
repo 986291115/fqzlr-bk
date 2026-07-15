@@ -6,6 +6,7 @@ image: /src/assets/images/cover.avif
 tags: [Firefly, 环境安装, Windows, 博客搭建]
 category: Firefly 博客教程
 draft: false
+slug: blog/windows-firefly
 ---
 # Firefly 博客部署教程
 <iframe width="100%" height="468" src="//player.bilibili.com/player.html?bvid=BV1hX9XBKEhm&p=1&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>

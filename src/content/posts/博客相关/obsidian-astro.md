@@ -10,6 +10,7 @@ tags:
 category: 分类
 draft: false
 author: fqzlr
+slug: blog/obsidian-astro
 ---
 Obsidian + Astro Composer + Git 插件 同步 Astro 博客到 GitHub 完整教程
 
