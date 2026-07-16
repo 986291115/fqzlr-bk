@@ -3,7 +3,7 @@ title: 怎么使用obsidian 来编写 astro 博客
 published: 2026-04-18
 updated: 2026-04-18
 description: 本教程专为「Obsidian 撰写笔记」+「Astro Composer 插件转换笔记为 Astro 博客内容」+「Git 插件同步到 GitHub」的 workflow 设计，全程无需复杂命令行，纯 Obsidian 内操作（少量 GitHub 后台配置），适合新手快速上手，解决“Obsidian 写文→Astro 发布→GitHub 托管”的全流程同步问题。
-image: https://tu.682000.xyz/file/blog/wenzhang/1776516130544_image.png
+
 tags:
   - Obsidian
   - astro
