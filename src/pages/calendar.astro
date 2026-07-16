@@ -9,6 +9,8 @@ import { calendarConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import Layout from "@/layouts/Layout.astro";
+import { GET as getAllPostMeta } from "@/pages/api/allPostMeta.json";
+import { GET as getHolidays } from "@/pages/api/holidays.json";
 import "@/styles/pages/calendar.css";
 
 if (!siteConfig.pages.calendar) {
@@ -27,8 +29,8 @@ const now = new Date();
 const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
 const [holidaysRes, postsRes] = await Promise.all([
-	fetch(new URL("/api/holidays.json", Astro.url)),
-	fetch(new URL("/api/allPostMeta.json", Astro.url)),
+	getHolidays(),
+	getAllPostMeta(),
 ]);
 
 const holidays = holidaysRes.ok ? await holidaysRes.json() : [];
