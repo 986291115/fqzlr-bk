@@ -16,7 +16,7 @@ export const profileConfig: ProfileConfig = {
 	name: "Fqzlr", // 名字
 
 	// 首页展示名字（留空则使用 name）
-	displayName: "Fqzlrの博客",
+	displayName: "xurの博客",
 
 	// 职业/身份标签
 	occupation: "[啥都不会 / 无技术博主]",
@@ -44,19 +44,19 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "Bilibili",
 			icon: "simple-icons:bilibili",
-			url: "https://space.bilibili.com/2017273493",
+			url: "https://space.bilibili.com/1254745362",
 			showName: false,
 		},
 		{
 			name: "GitHub",
 			icon: "simple-icons:github",
-			url: "https://github.com/fqzlr",
+			url: "https://github.com/986291115",
 			showName: false,
 		},
 		{
 			name: "Email",
 			icon: "material-symbols:mail-outline",
-			url: "mailto:fqzlr@outlook.com",
+			url: "mailto:986291115@qq.com",
 			showName: false,
 		},
 		{
@@ -87,7 +87,7 @@ export const profileConfig: ProfileConfig = {
 
 		// ---------- B站徽章 ----------
 		showBilibiliBadge: true, // 名字下方 B站徽章
-		bilibiliBadgeText: "B站：番茄煮理人",
+		bilibiliBadgeText: "B站：xuxuya",
 
 		// ---------- 个人签名 ----------
 		showBio: true,
@@ -116,7 +116,7 @@ export const profileConfig: ProfileConfig = {
 
 		// ---------- 角色对话气泡 ----------
 		showSpeech: true,
-		speechChinese: "番茄主理人？",
+		speechChinese: "xuxuya？",
 		speechEnglish: "Welcome to my blog, enjoy your stay!",
 	},
 };

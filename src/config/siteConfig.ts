@@ -7,21 +7,21 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "Fqzlr的博客",
+	title: "xu的博客",
 
 	// 站点副标题
-	subtitle: "Fqzlr",
+	subtitle: "xu",
 
 	// 站点 URL
-	site_url: "https://fqzlr.com/",
+	site_url: "https://yfdoors.work/",
 
 	// 站点描述
 	description:
-		"fqzlr的个人技术博客，专注NAS分享、AI实践、学习笔记与技术总结，与个人成长分享。",
+		"xu的个人技术博客，专注NAS分享、AI实践、学习笔记与技术总结，与个人成长分享。",
 
 	// 站点关键词
 	keywords: [
-		"fqzlr",
+		"xu",
 		"JAVA",
 		"AI",
 		"Astro",
@@ -118,7 +118,7 @@ export const siteConfig: SiteConfig = {
 			alt: "logo",
 		},
 		// 导航栏标题
-		title: "Fqzlr的博客",
+		title: "xu的博客",
 		// 悬停时显示的互动颜文字
 		hoverTitle: "w(ﾟДﾟ)w 不要走！再看看嘛！",
 		// 全宽导航栏，导航栏是否占满屏幕宽度，true：占满，false：不占满
@@ -128,13 +128,13 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点开始日期，用于统计运行天数
-	siteStartDate: "2026-04-12",
+	siteStartDate: "2026-07-17",
 
 	// 门户区配置
 	portal: {
 		announcement: {
 			enable: true,
-			text: "欢迎来到Fqzlr的博客！专注NAS分享、AI实践、学习笔记与技术总结。",
+			text: "欢迎来到xu的博客！专注NAS分享、AI实践、学习笔记与技术总结。",
 		},
 		dailyQuote: {
 			enable: true,
